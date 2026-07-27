@@ -1,13 +1,22 @@
 /* =======================================================
-   Metronom Stüdyosu — Web Audio motoru + dikkat protokolleri
+   Metronom Stüdyosu v2 — Web Audio motoru + dikkat protokolleri
    Zamanlama: lookahead planlayıcı (25 ms tarama, 120 ms ileri)
+   v2: alt bölünme, vuruş başına aksan deseni, tempo trainer,
+   poliritim, geniş ses kiti + seçim önizlemesi, sesli sayma,
+   flaş modu, preset'ler, Spontan Tempo + Aksak Bulma testleri.
    ======================================================= */
 (function () {
   'use strict';
 
   function byId(id) { return document.getElementById(id); }
+  function ort(dizi) {
+    if (!dizi.length) { return 0; }
+    return dizi.reduce(function (a, b) { return a + b; }, 0) / dizi.length;
+  }
 
-  /* ---------- Ses motoru ---------- */
+  /* ================================================================
+     SES MOTORU — kit sesleri sentezlenir, dosya yok
+     ================================================================ */
   var ses = {
     ctx: null,
     master: null,
@@ -22,11 +31,14 @@
       return this.ctx;
     },
     duzey: function (v) { if (this.master) { this.master.gain.value = v; } },
-    /* Tek vuruş sesi. tur: 'tahta' | 'klik' | 'bip' */
-    vur: function (zaman, aksan, tur) {
+
+    /* Ana vuruş. vurgu: true/2 = aksan, false/1 = normal (0 çağrılmaz). */
+    vur: function (zaman, vurgu, tur) {
+      var aksan = vurgu === true || vurgu === 2;
       var ctx = this.ctx;
       var g = ctx.createGain();
       g.connect(this.master);
+
       if (tur === 'klik') {
         var o = ctx.createOscillator();
         o.type = 'square';
@@ -34,6 +46,7 @@
         g.gain.setValueAtTime(aksan ? 0.55 : 0.35, zaman);
         g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.045);
         o.connect(g); o.start(zaman); o.stop(zaman + 0.05);
+
       } else if (tur === 'bip') {
         var o2 = ctx.createOscillator();
         o2.type = 'sine';
@@ -41,14 +54,64 @@
         g.gain.setValueAtTime(aksan ? 0.5 : 0.32, zaman);
         g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.1);
         o2.connect(g); o2.start(zaman); o2.stop(zaman + 0.11);
-      } else { /* tahta blok: gövde + klik geçici */
+
+      } else if (tur === 'klaves') {
         var o3 = ctx.createOscillator();
         o3.type = 'sine';
-        o3.frequency.setValueAtTime(aksan ? 980 : 720, zaman);
-        o3.frequency.exponentialRampToValueAtTime(aksan ? 640 : 480, zaman + 0.05);
+        o3.frequency.setValueAtTime(aksan ? 2800 : 2200, zaman);
+        o3.frequency.exponentialRampToValueAtTime(aksan ? 2000 : 1600, zaman + 0.025);
+        g.gain.setValueAtTime(aksan ? 0.65 : 0.45, zaman);
+        g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.035);
+        o3.connect(g); o3.start(zaman); o3.stop(zaman + 0.04);
+
+      } else if (tur === 'zil') { /* inek çanı: iki metalik kare dalga */
+        var z1 = ctx.createOscillator(); var z2 = ctx.createOscillator();
+        z1.type = 'square'; z2.type = 'square';
+        z1.frequency.value = aksan ? 940 : 800;
+        z2.frequency.value = aksan ? 635 : 540;
+        g.gain.setValueAtTime(aksan ? 0.35 : 0.24, zaman);
+        g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.14);
+        z1.connect(g); z2.connect(g);
+        z1.start(zaman); z2.start(zaman);
+        z1.stop(zaman + 0.15); z2.stop(zaman + 0.15);
+
+      } else if (tur === 'davul') { /* kick; aksanda üstüne trampet fırçası */
+        var k = ctx.createOscillator();
+        k.type = 'sine';
+        k.frequency.setValueAtTime(150, zaman);
+        k.frequency.exponentialRampToValueAtTime(48, zaman + 0.11);
+        g.gain.setValueAtTime(0.9, zaman);
+        g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.13);
+        k.connect(g); k.start(zaman); k.stop(zaman + 0.14);
+        if (aksan) {
+          var n = ctx.createBufferSource();
+          var buf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate);
+          var d = buf.getChannelData(0);
+          for (var i = 0; i < d.length; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); }
+          n.buffer = buf;
+          var ng = ctx.createGain();
+          ng.gain.setValueAtTime(0.35, zaman);
+          ng.gain.exponentialRampToValueAtTime(0.001, zaman + 0.06);
+          n.connect(ng).connect(this.master);
+          n.start(zaman);
+        }
+
+      } else if (tur === 'sayma') { /* sesli sayma: alt tık; sayı TTS ile görselde */
+        var s = ctx.createOscillator();
+        s.type = 'sine';
+        s.frequency.value = aksan ? 1200 : 900;
+        g.gain.setValueAtTime(0.12, zaman);
+        g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.03);
+        s.connect(g); s.start(zaman); s.stop(zaman + 0.035);
+
+      } else { /* tahta blok (varsayılan) */
+        var o4 = ctx.createOscillator();
+        o4.type = 'sine';
+        o4.frequency.setValueAtTime(aksan ? 980 : 720, zaman);
+        o4.frequency.exponentialRampToValueAtTime(aksan ? 640 : 480, zaman + 0.05);
         g.gain.setValueAtTime(aksan ? 0.7 : 0.5, zaman);
         g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.07);
-        o3.connect(g); o3.start(zaman); o3.stop(zaman + 0.08);
+        o4.connect(g); o4.start(zaman); o4.stop(zaman + 0.08);
         var t = ctx.createOscillator();
         var tg = ctx.createGain();
         t.type = 'square';
@@ -58,22 +121,63 @@
         t.connect(tg).connect(this.master);
         t.start(zaman); t.stop(zaman + 0.02);
       }
+    },
+
+    /* Alt bölünme tıkı: kısık ve tiz. */
+    vurSub: function (zaman) {
+      var o = this.ctx.createOscillator();
+      var g = this.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = 1500;
+      g.gain.setValueAtTime(0.16, zaman);
+      g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.028);
+      o.connect(g).connect(this.master);
+      o.start(zaman); o.stop(zaman + 0.03);
+    },
+
+    /* Poliritim çapraz vuruşu: ayırt edici tiz bip. */
+    vurCapraz: function (zaman) {
+      var o = this.ctx.createOscillator();
+      var g = this.ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.value = 1976;
+      g.gain.setValueAtTime(0.3, zaman);
+      g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.07);
+      o.connect(g).connect(this.master);
+      o.start(zaman); o.stop(zaman + 0.08);
     }
   };
+
+  var SAYILAR_TR = ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'];
+  function konus(metin) {
+    if (!('speechSynthesis' in window)) { return; }
+    var u = new SpeechSynthesisUtterance(metin);
+    u.lang = 'tr-TR';
+    u.rate = 1.25;
+    u.volume = 1;
+    window.speechSynthesis.speak(u);
+  }
 
   /* ================================================================
      A) SERBEST METRONOM
      ================================================================ */
   var m = {
     bpm: 92, calisiyor: false, zamanlayici: null,
-    sonrakiZaman: 0, vurusNo: 0,
+    sonrakiZaman: 0, vurusNo: 0, olcuSayaci: 0,
     sarkacYonu: 1,
+    aksanDeseni: [2, 1, 1, 1],
     el: {
       bpm: byId('mBpm'), tempoAdi: byId('mTempoAdi'), surgu: byId('mBpmSurgu'),
       noktalar: byId('mNoktalar'), olcu: byId('mOlcu'), ses: byId('mSes'),
-      duzey: byId('mSesDuzeyi'), aksan: byId('mAksan'),
+      duzey: byId('mSesDuzeyi'), altBolunme: byId('mAltBolunme'),
+      poliritim: byId('mPoliritim'), flasModu: byId('mFlasModu'), flas: byId('mFlas'),
+      sayac: byId('mSayac'),
       sessizModu: byId('mSessizModu'), sessizSecim: byId('mSessizSecim'),
       sesliOlcu: byId('mSesliOlcu'), sessizOlcu: byId('mSessizOlcu'),
+      trainer: byId('mTrainer'), trainerSecim: byId('mTrainerSecim'),
+      trainerHedef: byId('mTrainerHedef'), trainerOlcu: byId('mTrainerOlcu'),
+      trainerArtis: byId('mTrainerArtis'),
+      presetler: byId('mPresetler'), presetKaydet: byId('mPresetKaydet'),
       baslat: byId('mBaslat'), tap: byId('mTap'),
       sarkac: byId('mSarkac'), halka: byId('mHalka')
     }
@@ -98,56 +202,109 @@
     m.el.tempoAdi.textContent = tempoAdi(m.bpm);
   }
 
-  function noktalariKur() {
-    var adet = parseInt(m.el.olcu.value, 10);
-    m.el.noktalar.innerHTML = '';
-    for (var i = 0; i < adet; i++) {
-      var n = document.createElement('span');
-      n.className = 'm-nokta';
-      m.el.noktalar.appendChild(n);
-    }
+  /* ---- Aksan deseni editörü: nokta tıkla → aksan(2) → normal(1) → sessiz(0) ---- */
+  function noktaSinifi(deger) {
+    return 'm-nokta ' + (deger === 2 ? 'm-nokta-aksan' : (deger === 1 ? 'm-nokta-normal' : 'm-nokta-sessiz'));
   }
 
-  function gorselVurus(zaman, olcuIcindeki, sesli) {
+  function noktalariKur() {
+    var adet = parseInt(m.el.olcu.value, 10);
+    while (m.aksanDeseni.length < adet) { m.aksanDeseni.push(1); }
+    m.aksanDeseni = m.aksanDeseni.slice(0, adet);
+    if (!m.aksanDeseni.some(function (v) { return v > 0; })) { m.aksanDeseni[0] = 2; }
+    m.el.noktalar.innerHTML = '';
+    m.aksanDeseni.forEach(function (deger, i) {
+      var n = document.createElement('button');
+      n.type = 'button';
+      n.className = noktaSinifi(deger);
+      n.dataset.idx = i;
+      n.title = (i + 1) + '. vuruş: ' + (deger === 2 ? 'aksan' : deger === 1 ? 'normal' : 'sessiz');
+      m.el.noktalar.appendChild(n);
+    });
+  }
+
+  m.el.noktalar.addEventListener('click', function (ev) {
+    var n = ev.target.closest('.m-nokta');
+    if (!n) { return; }
+    var i = parseInt(n.dataset.idx, 10);
+    m.aksanDeseni[i] = (m.aksanDeseni[i] + 2) % 3; /* 2→1→0→2 */
+    n.className = noktaSinifi(m.aksanDeseni[i]);
+    n.title = (i + 1) + '. vuruş: ' + (m.aksanDeseni[i] === 2 ? 'aksan' : m.aksanDeseni[i] === 1 ? 'normal' : 'sessiz');
+  });
+
+  function gorselVurus(zaman, olcuIcindeki, vurgu, sesli) {
     var gecikme = Math.max(0, (zaman - ses.ctx.currentTime) * 1000);
     var sure = 60 / m.bpm;
     setTimeout(function () {
       if (!m.calisiyor) { return; }
-      /* sarkaç: her vuruşta yön değiştir */
       m.sarkacYonu = -m.sarkacYonu;
       m.el.sarkac.style.transition = 'transform ' + sure.toFixed(3) + 's ease-in-out';
       m.el.sarkac.style.transform = 'rotate(' + (26 * m.sarkacYonu) + 'deg)';
+      m.el.sayac.textContent = olcuIcindeki + 1;
+
       var noktalar = m.el.noktalar.children;
-      for (var i = 0; i < noktalar.length; i++) {
-        noktalar[i].className = 'm-nokta' + (sesli ? '' : ' sessiz');
-      }
-      if (sesli && noktalar[olcuIcindeki]) {
-        noktalar[olcuIcindeki].className = 'm-nokta ' +
-          (olcuIcindeki === 0 && m.el.aksan.checked ? 'aktif-aksan' : 'aktif');
-      }
-      if (sesli) {
-        m.el.halka.classList.add(olcuIcindeki === 0 && m.el.aksan.checked ? 'vur-aksan' : 'vur');
+      for (var i = 0; i < noktalar.length; i++) { noktalar[i].classList.remove('aktif'); }
+      if (noktalar[olcuIcindeki]) { noktalar[olcuIcindeki].classList.add('aktif'); }
+
+      if (sesli && vurgu > 0) {
+        m.el.halka.classList.add(vurgu === 2 ? 'vur-aksan' : 'vur');
         setTimeout(function () { m.el.halka.classList.remove('vur', 'vur-aksan'); }, 100);
+        if (m.el.flasModu.checked) {
+          m.el.flas.classList.add(vurgu === 2 ? 'flas-aksan' : 'flas');
+          setTimeout(function () { m.el.flas.classList.remove('flas', 'flas-aksan'); }, 90);
+        }
+        if (m.el.ses.value === 'sayma') { konus(SAYILAR_TR[olcuIcindeki] || String(olcuIcindeki + 1)); }
       }
     }, gecikme);
   }
 
   function planla() {
     var olcuAdedi = parseInt(m.el.olcu.value, 10);
+    var alt = parseInt(m.el.altBolunme.value, 10);
+    var capraz = parseInt(m.el.poliritim.value, 10);
+
     while (m.sonrakiZaman < ses.ctx.currentTime + 0.12) {
+      var spb = 60 / m.bpm;
       var olcuIcindeki = m.vurusNo % olcuAdedi;
       var olcuNo = Math.floor(m.vurusNo / olcuAdedi);
+
+      /* Tempo trainer: her N ölçüde hedefe doğru yaklaş */
+      if (olcuIcindeki === 0 && m.vurusNo > 0 && m.el.trainer.checked) {
+        m.olcuSayaci++;
+        var herOlcu = parseInt(m.el.trainerOlcu.value, 10);
+        if (m.olcuSayaci % herOlcu === 0) {
+          var hedef = Math.max(30, Math.min(240, parseInt(m.el.trainerHedef.value, 10) || m.bpm));
+          var artis = parseInt(m.el.trainerArtis.value, 10);
+          if (m.bpm < hedef) { bpmAyarla(Math.min(hedef, m.bpm + artis)); }
+          else if (m.bpm > hedef) { bpmAyarla(Math.max(hedef, m.bpm - artis)); }
+          spb = 60 / m.bpm;
+        }
+      }
+
       var sesli = true;
       if (m.el.sessizModu.checked) {
         var a = parseInt(m.el.sesliOlcu.value, 10);
         var s = parseInt(m.el.sessizOlcu.value, 10);
         sesli = (olcuNo % (a + s)) < a;
       }
-      if (sesli) {
-        ses.vur(m.sonrakiZaman, olcuIcindeki === 0 && m.el.aksan.checked, m.el.ses.value);
+
+      var vurgu = m.aksanDeseni[olcuIcindeki] === undefined ? 1 : m.aksanDeseni[olcuIcindeki];
+      if (sesli && vurgu > 0) {
+        ses.vur(m.sonrakiZaman, vurgu, m.el.ses.value);
       }
-      gorselVurus(m.sonrakiZaman, olcuIcindeki, sesli);
-      m.sonrakiZaman += 60 / m.bpm;
+      if (sesli && alt > 1 && m.el.ses.value !== 'sayma') {
+        for (var sb = 1; sb < alt; sb++) {
+          ses.vurSub(m.sonrakiZaman + sb * spb / alt);
+        }
+      }
+      if (sesli && capraz > 0 && olcuIcindeki === 0) {
+        var olcuSuresi = spb * olcuAdedi;
+        for (var c = 0; c < capraz; c++) {
+          ses.vurCapraz(m.sonrakiZaman + c * olcuSuresi / capraz);
+        }
+      }
+      gorselVurus(m.sonrakiZaman, olcuIcindeki, vurgu, sesli);
+      m.sonrakiZaman += spb;
       m.vurusNo++;
     }
   }
@@ -156,6 +313,7 @@
     ses.hazirla();
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     m.vurusNo = 0;
+    m.olcuSayaci = 0;
     m.sonrakiZaman = ses.ctx.currentTime + 0.08;
     m.zamanlayici = setInterval(planla, 25);
     m.calisiyor = true;
@@ -170,7 +328,8 @@
     m.el.baslat.classList.remove('calisiyor');
     m.el.sarkac.style.transition = 'transform .4s ease';
     m.el.sarkac.style.transform = 'rotate(0deg)';
-    noktalariKur();
+    m.el.sayac.textContent = '–';
+    Array.prototype.forEach.call(m.el.noktalar.children, function (n) { n.classList.remove('aktif'); });
   }
 
   m.el.baslat.addEventListener('click', function () {
@@ -184,11 +343,23 @@
   });
   m.el.olcu.addEventListener('change', noktalariKur);
   m.el.duzey.addEventListener('input', function () { ses.duzey(parseInt(this.value, 10) / 100); });
-  m.el.sessizModu.addEventListener('change', function () {
-    m.el.sessizSecim.hidden = !this.checked;
+  m.el.sessizModu.addEventListener('change', function () { m.el.sessizSecim.hidden = !this.checked; });
+  m.el.trainer.addEventListener('change', function () {
+    m.el.trainerSecim.hidden = !this.checked;
+    if (this.checked && !m.el.trainerHedef.value) { m.el.trainerHedef.value = m.bpm + 20; }
   });
 
-  /* Tap tempo: son 5 dokunuşun ortalaması */
+  /* Ses kiti önizlemesi: seçince iki vuruşluk tadımlık */
+  m.el.ses.addEventListener('change', function () {
+    ses.hazirla();
+    ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
+    var t = ses.ctx.currentTime + 0.03;
+    ses.vur(t, 2, this.value);
+    ses.vur(t + 0.32, 1, this.value);
+    if (this.value === 'sayma') { konus('bir, iki'); }
+  });
+
+  /* Tap tempo */
   var tapZamanlari = [];
   function tapTempo() {
     var simdi = performance.now();
@@ -208,8 +379,58 @@
   }
   m.el.tap.addEventListener('click', tapTempo);
 
+  /* ---- Preset'ler (localStorage) ---- */
+  var PRESET_ANAHTAR = 'ritim_presetler_v1';
+  function presetOku() {
+    try { return JSON.parse(localStorage.getItem(PRESET_ANAHTAR) || '[]'); }
+    catch (e) { return []; }
+  }
+  function presetYaz(liste) {
+    try { localStorage.setItem(PRESET_ANAHTAR, JSON.stringify(liste)); } catch (e) { /* dolu */ }
+  }
+  function presetCiz() {
+    var liste = presetOku();
+    m.el.presetler.innerHTML = '';
+    if (!liste.length) {
+      m.el.presetler.innerHTML = '<span class="alan-ipucu">yok</span>';
+      return;
+    }
+    liste.forEach(function (p, i) {
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'm-preset-chip';
+      chip.innerHTML = '<b>' + p.ad + '</b> ' + p.bpm + ' <span class="m-preset-sil" title="Sil">×</span>';
+      chip.addEventListener('click', function (ev) {
+        if (ev.target.closest('.m-preset-sil')) {
+          liste.splice(i, 1);
+          presetYaz(liste);
+          presetCiz();
+          return;
+        }
+        bpmAyarla(p.bpm);
+        m.el.olcu.value = p.olcu;
+        m.el.ses.value = p.ses;
+        m.el.altBolunme.value = p.alt || '1';
+        m.el.poliritim.value = p.poliritim || '0';
+        m.aksanDeseni = (p.desen || []).slice();
+        noktalariKur();
+      });
+      m.el.presetler.appendChild(chip);
+    });
+  }
+  m.el.presetKaydet.addEventListener('click', function () {
+    var ad = window.prompt('Preset adı:', tempoAdi(m.bpm) + ' ' + m.bpm);
+    if (!ad) { return; }
+    var liste = presetOku();
+    liste.push({ ad: ad.slice(0, 18), bpm: m.bpm, olcu: m.el.olcu.value, ses: m.el.ses.value,
+                 alt: m.el.altBolunme.value, poliritim: m.el.poliritim.value, desen: m.aksanDeseni.slice() });
+    presetYaz(liste.slice(0, 12));
+    presetCiz();
+  });
+
   bpmAyarla(92);
   noktalariKur();
+  presetCiz();
 
   /* ================================================================
      Sekmeler
@@ -223,27 +444,32 @@
     });
   });
 
-  /* ================================================================
-     Ortak test yardımcıları
-     ================================================================ */
-  function ort(dizi) {
-    if (!dizi.length) { return 0; }
-    return dizi.reduce(function (a, b) { return a + b; }, 0) / dizi.length;
+  /* Kaydet formu: öğrenci seçilmeden gönderilmesin */
+  function kaydetFormuBagla(onek, ogrenciSelId) {
+    var form = byId(onek + 'Form');
+    if (!form) { return; }
+    form.addEventListener('submit', function (ev) {
+      var secim = byId(ogrenciSelId).value;
+      if (!secim) {
+        ev.preventDefault();
+        window.alert('Kaydetmek için önce öğrenci seçin.');
+        return;
+      }
+      byId(onek + 'FormOgrenci').value = secim;
+    });
   }
 
   /* ================================================================
      B) VURUŞ TUTTURMA TESTİ
-     Akış: 4 vuruş hazırlık (sesli) → N vuruş sesli faz → N vuruş sessiz faz
      ================================================================ */
   var vt = {
     aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
-    vuruslar: [],  /* {zaman, faz} faz: 0 hazırlık, 1 sesli, 2 sessiz */
-    taplar: [], bpm: 72, fazVurus: 16, toplamVurus: 0, bitisZamani: 0
+    vuruslar: [], taplar: [], bpm: 72, fazVurus: 16, toplamVurus: 0, bitisZamani: 0
   };
 
   function vtBaslat() {
     if (m.calisiyor) { metronomDurdur(); }
-    if (bf.aktif) { bfIptalEt(); }
+    digerleriniIptalEt('vt');
     ses.hazirla();
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     vt.bpm = parseInt(byId('vtBpm').value, 10);
@@ -273,7 +499,7 @@
     while (vt.aktif && vt.sonrakiZaman < ses.ctx.currentTime + 0.12 && vt.vurusNo < vt.toplamVurus) {
       var faz = vt.vurusNo < 4 ? 0 : (vt.vurusNo < 4 + vt.fazVurus ? 1 : 2);
       if (faz < 2) {
-        ses.vur(vt.sonrakiZaman, vt.vurusNo % 4 === 0, m.el.ses.value);
+        ses.vur(vt.sonrakiZaman, vt.vurusNo % 4 === 0, m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value);
       }
       vt.vuruslar.push({ zaman: vt.sonrakiZaman, faz: faz });
       (function (no, f, zamanX) {
@@ -316,7 +542,7 @@
         var fark = Math.abs(tap - v.zaman);
         if (fark < enKucukFark) { enKucukFark = fark; enYakin = v; enYakinIdx = i; }
       });
-      if (!enYakin || enYakin.faz === 0) { return; } /* hazırlık vuruşları puanlanmaz */
+      if (!enYakin || enYakin.faz === 0) { return; }
       var sapmaMs = (tap - enYakin.zaman) * 1000;
       var kacik = Math.abs(sapmaMs) > aralikMs * 0.45;
       if (!kacik) {
@@ -378,9 +604,7 @@
 
     byId('vtFormBpm').value = vt.bpm;
     byId('vtFormSkor').value = genel;
-    byId('vtFormDetay').value = JSON.stringify({
-      bpm: vt.bpm, fazVurus: vt.fazVurus, sesli: f1, sessiz: f2
-    });
+    byId('vtFormDetay').value = JSON.stringify({ bpm: vt.bpm, fazVurus: vt.fazVurus, sesli: f1, sessiz: f2 });
   }
 
   function vtIptalEt() {
@@ -393,30 +617,20 @@
   byId('vtIptal').addEventListener('click', vtIptalEt);
   byId('vtTekrar').addEventListener('click', function () { byId('vtSonuc').hidden = true; vtBaslat(); });
   byId('vtPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); vtTap(); });
-  byId('vtForm').addEventListener('submit', function (ev) {
-    var secim = byId('vtOgrenci').value;
-    if (!secim) {
-      ev.preventDefault();
-      window.alert('Kaydetmek için önce öğrenci seçin (testin üstündeki liste).');
-      return;
-    }
-    byId('vtFormOgrenci').value = secim;
-  });
+  kaydetFormuBagla('vt', 'vtOgrenci');
 
   /* ================================================================
      C) BPM BULMA OYUNU
-     Tur: gizli tempoda 8 vuruş dinle → 8 vuruşla sürdür. 3 tur.
      ================================================================ */
   var bf = {
     aktif: false, dinlemede: false, zamanlayici: null,
     tur: 0, gercekBpm: 0, taplar: [], sonuclar: []
   };
-
   var BF_ARALIK = { kolay: [60, 100], orta: [50, 130], zor: [40, 160] };
 
   function bfBaslatOyun() {
     if (m.calisiyor) { metronomDurdur(); }
-    if (vt.aktif) { vtIptalEt(); }
+    digerleriniIptalEt('bf');
     ses.hazirla();
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     bf.tur = 0;
@@ -437,18 +651,18 @@
     var aralik = BF_ARALIK[byId('bfZorluk').value] || BF_ARALIK.kolay;
     bf.gercekBpm = Math.round(aralik[0] + Math.random() * (aralik[1] - aralik[0]));
     var baslangic = ses.ctx.currentTime + 0.5;
+    var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
     for (var i = 0; i < 8; i++) {
-      ses.vur(baslangic + i * 60 / bf.gercekBpm, false, m.el.ses.value);
+      ses.vur(baslangic + i * 60 / bf.gercekBpm, false, kit);
     }
     var bitis = baslangic + 8 * 60 / bf.gercekBpm;
-    var bekle = (bitis - ses.ctx.currentTime) * 1000;
     clearTimeout(bf.zamanlayici);
     bf.zamanlayici = setTimeout(function () {
       if (!bf.aktif) { return; }
       bf.dinlemede = false;
       byId('bfFaz').textContent = '🥁 Şimdi sürdür — 8 vuruş';
       byId('bfFaz').classList.add('sessiz-faz');
-    }, bekle);
+    }, (bitis - ses.ctx.currentTime) * 1000);
   }
 
   function bfTap() {
@@ -503,15 +717,206 @@
   byId('bfIptal').addEventListener('click', bfIptalEt);
   byId('bfTekrar').addEventListener('click', function () { byId('bfSonuc').hidden = true; bfBaslatOyun(); });
   byId('bfPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); bfTap(); });
-  byId('bfForm').addEventListener('submit', function (ev) {
-    var secim = byId('bfOgrenci').value;
-    if (!secim) {
-      ev.preventDefault();
-      window.alert('Kaydetmek için önce öğrenci seçin (oyunun üstündeki liste).');
-      return;
+  kaydetFormuBagla('bf', 'bfOgrenci');
+
+  /* ================================================================
+     D) RİTİM OKUMA (stüdyo sürümü — ritim-okuma.js widget'ı)
+     ================================================================ */
+  var roKok = byId('roKok');
+  function roKur() {
+    if (!roKok || !window.RitimOkuma) { return; }
+    byId('roKaydetSatir').hidden = true;
+    window.RitimOkuma.baslat(roKok, {
+      seviye: parseInt(byId('roSeviye').value, 10),
+      bpm: parseInt(byId('roBpm').value, 10),
+      onBitti: function (sonuc) {
+        byId('roFormBpm').value = sonuc.bpm;
+        byId('roFormSkor').value = sonuc.skor;
+        byId('roFormDetay').value = JSON.stringify(sonuc);
+        byId('roKaydetSatir').hidden = false;
+      }
+    });
+  }
+  if (roKok) {
+    roKur();
+    byId('roYenile').addEventListener('click', roKur);
+    byId('roSeviye').addEventListener('change', roKur);
+    byId('roBpm').addEventListener('change', roKur);
+    kaydetFormuBagla('ro', 'roOgrenci');
+  }
+
+  /* ================================================================
+     E) SPONTAN TEMPO (BAASTA: unpaced tapping)
+     ================================================================ */
+  var st = { aktif: false, taplar: [], HEDEF: 21 };
+
+  function stBaslat() {
+    if (m.calisiyor) { metronomDurdur(); }
+    digerleriniIptalEt('st');
+    ses.hazirla();
+    st.taplar = [];
+    st.aktif = true;
+    byId('stSahne').hidden = false;
+    byId('stSonuc').hidden = true;
+    byId('stSayac').textContent = '0 / ' + st.HEDEF;
+    byId('stFaz').textContent = 'Kendi hızında vur — acele yok';
+  }
+
+  function stTap() {
+    if (!st.aktif) { return; }
+    st.taplar.push(ses.ctx.currentTime);
+    var pad = byId('stPad');
+    pad.classList.add('vurdum');
+    setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
+    byId('stSayac').textContent = st.taplar.length + ' / ' + st.HEDEF;
+    if (st.taplar.length >= st.HEDEF) { stBitir(); }
+  }
+
+  function stBitir() {
+    st.aktif = false;
+    byId('stSahne').hidden = true;
+    byId('stSonuc').hidden = false;
+
+    var araliklar = [];
+    for (var i = 1; i < st.taplar.length; i++) { araliklar.push((st.taplar[i] - st.taplar[i - 1]) * 1000); }
+    var ortMs = ort(araliklar);
+    var varyans = ort(araliklar.map(function (a) { return (a - ortMs) * (a - ortMs); }));
+    var cv = ortMs > 0 ? Math.sqrt(varyans) / ortMs : 1;
+    var smt = ortMs > 0 ? Math.round(60000 / ortMs) : 0;
+    var skor = Math.max(0, Math.min(100, Math.round(100 * (1 - (cv - 0.02) / 0.10))));
+
+    byId('stSkor').textContent = skor;
+    byId('stOzet').innerHTML = 'Spontan tempon: <strong>' + smt + ' BPM</strong> '
+      + '(ortalama aralık ' + Math.round(ortMs) + ' ms · dalgalanma CV %' + (cv * 100).toFixed(1) + ')';
+
+    var g = byId('stGrafik');
+    g.innerHTML = '';
+    var enB = Math.max.apply(null, araliklar);
+    araliklar.forEach(function (a) {
+      var c = document.createElement('span');
+      c.className = 'm-sapma-cubuk ' + (Math.abs(a - ortMs) / ortMs > 0.1 ? 'gec' : '');
+      c.style.height = Math.max(5, Math.round(60 * a / enB)) + 'px';
+      c.style.alignSelf = 'flex-end';
+      c.title = Math.round(a) + ' ms';
+      g.appendChild(c);
+    });
+
+    byId('stFormBpm').value = smt;
+    byId('stFormSkor').value = skor;
+    byId('stFormDetay').value = JSON.stringify({ smt: smt, ortMs: Math.round(ortMs), cv: Math.round(cv * 1000) / 1000, vurus: st.taplar.length });
+  }
+
+  function stIptalEt() {
+    st.aktif = false;
+    byId('stSahne').hidden = true;
+  }
+
+  byId('stBaslat').addEventListener('click', stBaslat);
+  byId('stIptal').addEventListener('click', stIptalEt);
+  byId('stTekrar').addEventListener('click', function () { byId('stSonuc').hidden = true; stBaslat(); });
+  byId('stPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); stTap(); });
+  kaydetFormuBagla('st', 'stOgrenci');
+
+  /* ================================================================
+     F) AKSAK BULMA (BAASTA: anizokroni algısı)
+     ================================================================ */
+  var ab = { aktif: false, tur: 0, TOPLAM: 8, dogru: 0, aksakMi: false, zamanlayici: null, sonuclar: [] };
+  var AB_KAYMA = { kolay: 0.15, orta: 0.10, zor: 0.06 };
+
+  function abBaslat() {
+    if (m.calisiyor) { metronomDurdur(); }
+    digerleriniIptalEt('ab');
+    ses.hazirla();
+    ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
+    ab.tur = 0;
+    ab.dogru = 0;
+    ab.sonuclar = [];
+    ab.aktif = true;
+    byId('abSahne').hidden = false;
+    byId('abSonuc').hidden = true;
+    abTurBaslat();
+  }
+
+  function abTurBaslat() {
+    ab.tur++;
+    byId('abTur').textContent = 'Tur ' + ab.tur + ' / ' + ab.TOPLAM;
+    byId('abFaz').textContent = '🎧 Dinle…';
+    byId('abCevaplar').hidden = true;
+    ab.aksakMi = Math.random() < 0.5;
+    var kayma = AB_KAYMA[byId('abZorluk').value] || 0.15;
+    var IOI = 0.6; /* 100 BPM */
+    var aksakIdx = 2 + Math.floor(Math.random() * 3); /* 3.–5. vuruş */
+    var yon = Math.random() < 0.5 ? -1 : 1;
+    var t = ses.ctx.currentTime + 0.5;
+    var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
+    var zamanlar = [];
+    for (var i = 0; i < 6; i++) {
+      var z = t + i * IOI;
+      if (ab.aksakMi && i === aksakIdx) { z += yon * kayma * IOI; }
+      zamanlar.push(z);
     }
-    byId('bfFormOgrenci').value = secim;
+    zamanlar.forEach(function (z) { ses.vur(z, false, kit); });
+    var bitis = t + 5 * IOI + 0.35;
+    clearTimeout(ab.zamanlayici);
+    ab.zamanlayici = setTimeout(function () {
+      if (!ab.aktif) { return; }
+      byId('abFaz').textContent = '❓ Dizi nasıldı?';
+      byId('abCevaplar').hidden = false;
+    }, (bitis - ses.ctx.currentTime) * 1000);
+  }
+
+  function abCevap(cevap) {
+    if (!ab.aktif || byId('abCevaplar').hidden) { return; }
+    byId('abCevaplar').hidden = true;
+    var dogruCevap = ab.aksakMi ? 'aksak' : 'duzenli';
+    var dogruMu = cevap === dogruCevap;
+    if (dogruMu) { ab.dogru++; }
+    ab.sonuclar.push({ dizi: ab.aksakMi ? 'Aksak' : 'Düzenli',
+                       cevap: cevap === 'aksak' ? 'Aksadı' : 'Düzenliydi', dogru: dogruMu });
+    byId('abFaz').textContent = (dogruMu ? '✅ Doğru!' : '❌ Değildi — dizi ' + (ab.aksakMi ? 'aksaktı.' : 'düzenliydi.'));
+    if (ab.tur < ab.TOPLAM) {
+      ab.zamanlayici = setTimeout(function () { if (ab.aktif) { abTurBaslat(); } }, 1300);
+    } else {
+      ab.zamanlayici = setTimeout(function () { if (ab.aktif) { abBitir(); } }, 1300);
+    }
+  }
+
+  function abBitir() {
+    ab.aktif = false;
+    byId('abSahne').hidden = true;
+    byId('abSonuc').hidden = false;
+    var skor = Math.round(100 * ab.dogru / ab.TOPLAM);
+    byId('abSkor').textContent = skor;
+    byId('abTablo').innerHTML = ab.sonuclar.map(function (s, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + s.dizi + '</td><td>' + s.cevap + '</td>' +
+             '<td>' + (s.dogru ? '✅' : '❌') + '</td></tr>';
+    }).join('');
+    byId('abFormBpm').value = 100;
+    byId('abFormSkor').value = skor;
+    byId('abFormDetay').value = JSON.stringify({ zorluk: byId('abZorluk').value, dogru: ab.dogru, tur: ab.TOPLAM, sonuclar: ab.sonuclar });
+  }
+
+  function abIptalEt() {
+    clearTimeout(ab.zamanlayici);
+    ab.aktif = false;
+    byId('abSahne').hidden = true;
+  }
+
+  byId('abBaslat').addEventListener('click', abBaslat);
+  byId('abIptal').addEventListener('click', abIptalEt);
+  byId('abTekrar').addEventListener('click', function () { byId('abSonuc').hidden = true; abBaslat(); });
+  document.querySelectorAll('.ab-cevap').forEach(function (b) {
+    b.addEventListener('click', function () { abCevap(b.dataset.cevap); });
   });
+  kaydetFormuBagla('ab', 'abOgrenci');
+
+  /* Bir test başlarken diğerlerini iptal et */
+  function digerleriniIptalEt(haric) {
+    if (haric !== 'vt' && vt.aktif) { vtIptalEt(); }
+    if (haric !== 'bf' && bf.aktif) { bfIptalEt(); }
+    if (haric !== 'st' && st.aktif) { stIptalEt(); }
+    if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
+  }
 
   /* ================================================================
      Klavye kısayolları
@@ -523,6 +928,8 @@
       ev.preventDefault();
       if (vt.aktif) { vtTap(); }
       else if (bf.aktif) { bfTap(); }
+      else if (st.aktif) { stTap(); }
+      else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(); }
       else if (m.calisiyor) { metronomDurdur(); }
       else { metronomBaslat(); }
     } else if (ev.key === 't' || ev.key === 'T') {

@@ -84,17 +84,23 @@ oluşturulur ve teknik kütüphanesi başlangıç içeriğiyle dolar.
 
 ## Metronom Stüdyosu ve dikkat protokolleri
 
-Menüdeki **Metronom** sayfası tek ses motoru üzerinde iki iş görür:
+Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
+(özellik araştırması: `docs/metronom-arastirma.md`):
 
-- **Serbest metronom:** 30–240 BPM, tap tempo, 2/4–6/8 ölçü, aksan, üç ses rengi,
-  ses düzeyi, sarkaç + vuruş noktaları görselleştirmesi, sessiz aralık çalışması
-  (N ölçü sesli → M ölçü sessiz). Kısayollar: Boşluk, T, ↑↓.
-- **Protokoller** (skor 0–100, öğrenciye kaydedilir, haftalık izlenir):
-  - *Vuruş Tutturma:* 4 vuruş hazırlık → sesli faz (metronomla vur) → sessiz faz
-    (içsel tempoyla devam). Vuruş başına milisaniye sapması, kaçırılan vuruş,
-    erken/geç eğilimi ve faz karşılaştırması raporlanır.
-  - *BPM Bulma:* gizli tempoda 8 vuruş dinlenir, 8 vuruşla sürdürülür; tahmin
-    gerçek BPM ile karşılaştırılır (3 tur).
+- **Serbest metronom (v2):** 30–240 BPM, tap tempo, 2/4–7/8 ölçü,
+  **alt bölünmeler** (sekizlik/üçleme/onaltılık), **vuruş başına aksan deseni**
+  (noktaya tıkla: aksan → normal → sessiz), **tempo trainer** (hedefe her N ölçüde
+  ±X BPM), **poliritim** katmanı (2/3/5 : ölçü), **7 sesli kit** (tahta, klik,
+  klaves, inek çanı, davul, bip, Türkçe **sesli sayma**) + seçimde önizleme,
+  ⚡ **flaş modu**, büyük vuruş sayacı, **preset** çipleri, sessiz aralık çalışması.
+  Kısayollar: Boşluk, T, ↑↓.
+- **Protokoller** (skor 0–100, öğrenciye kaydedilir; BAASTA türü görevlerden uyarlama):
+  - *Vuruş Tutturma* — senkronizasyon–devam: sesli + sessiz faz, ms sapma, eğilim.
+  - *BPM Bulma* — tempo yeniden üretme, 3 tur.
+  - *Ritim Okuma* — desen okuyarak sayma-vurma (stüdyo sürümü).
+  - *Spontan Tempo* — serbest 21 vuruş: kişisel doğal tempo (SMT) + CV tutarlılık skoru.
+  - *Aksak Bulma* — anizokroni algısı: 6 vuruşluk dizi düzenli mi aksak mı, 8 tur,
+    %6–15 kayma zorlukları. Motorsuz saf dinleme ölçümü.
 
 Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görünür.
 **Protokol skorları eğitmenin iç izleme aracıdır; veli raporlarına yansıtılmaz.**

@@ -1,8 +1,10 @@
 <?php
 /**
  * Metronom Stüdyosu — gelişmiş metronom + dikkat protokolleri.
- * Müzik çalışırken serbest metronom; testlerde vuruş tutturma ve BPM bulma.
- * Protokol sonuçları öğrenciye kaydedilip haftalık izlenir.
+ * v2: alt bölünmeler, vuruş başına aksan deseni, tempo trainer, poliritim,
+ * genişletilmiş ses kiti (seçimde önizleme), sesli sayma, flaş modu, preset'ler.
+ * Protokoller: Vuruş Tutturma, BPM Bulma, Ritim Okuma, Spontan Tempo,
+ * Aksak Vuruş Algısı (BAASTA türü görevlerden uyarlama).
  */
 define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
@@ -24,10 +26,38 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $ogrenciler = students_list(null, 1);
 $sonKayitlar = protocol_results_recent(12);
 
+/** Öğrenci seçme kutusu (her protokol sekmesinde aynı). */
+function ogrenci_secimi(string $id, array $ogrenciler): string
+{
+    $html = '<select id="' . e($id) . '" class="secim"><option value="">— Seçin (kayıt için) —</option>';
+    foreach ($ogrenciler as $o) {
+        $html .= '<option value="' . (int)$o['id'] . '">' . e($o['kod'])
+               . ($o['grup_ad'] ? ' — ' . e($o['grup_ad']) : '') . '</option>';
+    }
+    return $html . '</select>';
+}
+
+/** Gizli sonuç formu (JS doldurup gönderir). */
+function sonuc_formu(string $onek, string $protokol): string
+{
+    return '<form method="post" action="' . e(url('metronom.php')) . '" class="m-kaydet-form" id="' . e($onek) . 'Form">'
+        . csrf_field()
+        . '<input type="hidden" name="islem" value="sonuc_kaydet">'
+        . '<input type="hidden" name="protokol" value="' . e($protokol) . '">'
+        . '<input type="hidden" name="ogrenci_id" id="' . e($onek) . 'FormOgrenci" value="">'
+        . '<input type="hidden" name="bpm" id="' . e($onek) . 'FormBpm" value="">'
+        . '<input type="hidden" name="skor" id="' . e($onek) . 'FormSkor" value="">'
+        . '<input type="hidden" name="detay" id="' . e($onek) . 'FormDetay" value="">'
+        . '<input type="text" name="notlar" class="girdi" maxlength="200" placeholder="Not (isteğe bağlı)" style="max-width:260px">'
+        . '<button type="submit" class="btn btn-birincil">Sonucu Kaydet</button>'
+        . '</form>';
+}
+
 $PAGE_TITLE = 'Metronom Stüdyosu';
 require APP_DIR . '/includes/view/header.php';
 ?>
 <link rel="stylesheet" href="<?= e(asset('css/metronom.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/ev.css')) ?>">
 
 <div class="sayfa-baslik">
   <h1>Metronom Stüdyosu</h1>
@@ -35,10 +65,12 @@ require APP_DIR . '/includes/view/header.php';
 </div>
 
 <!-- ==================== METRONOM ==================== -->
-<div class="kart m-sahne">
+<div class="kart m-sahne" id="mSahne">
+  <div class="m-flas" id="mFlas" aria-hidden="true"></div>
   <div class="m-ust">
     <div class="m-gorsel">
       <div class="m-halka" id="mHalka"></div>
+      <div class="m-sayac" id="mSayac" aria-hidden="true">–</div>
       <svg class="m-metronom" viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="mg2" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/>
@@ -60,14 +92,17 @@ require APP_DIR . '/includes/view/header.php';
         <button type="button" class="m-mini-btn" data-bpm-degistir="-1">−1</button>
         <div class="m-bpm-goster">
           <span id="mBpm">92</span>
-          <small>BPM · <em id="mTempoAdi">Moderato</em></small>
+          <small>BPM · <em id="mTempoAdi">Andante</em></small>
         </div>
         <button type="button" class="m-mini-btn" data-bpm-degistir="1">+1</button>
         <button type="button" class="m-mini-btn" data-bpm-degistir="5">+5</button>
       </div>
       <input type="range" id="mBpmSurgu" min="30" max="240" value="92" step="1" class="m-surgu" aria-label="Tempo">
 
-      <div class="m-nokta-dizi" id="mNoktalar" aria-hidden="true"></div>
+      <div class="m-nokta-dizi" id="mNoktalar" aria-label="Aksan deseni: noktaya tıkla — aksan → normal → sessiz"></div>
+      <p class="alan-ipucu" style="text-align:center;margin:-.3rem 0 .6rem">
+        Noktalara tıkla: <strong>aksan</strong> → normal → sessiz
+      </p>
 
       <div class="m-ayarlar">
         <label class="m-ayar">Ölçü
@@ -75,22 +110,42 @@ require APP_DIR . '/includes/view/header.php';
             <option value="2">2/4</option>
             <option value="3">3/4</option>
             <option value="4" selected>4/4</option>
+            <option value="5">5/4</option>
             <option value="6">6/8</option>
+            <option value="7">7/8</option>
           </select>
         </label>
-        <label class="m-ayar">Ses
+        <label class="m-ayar">Alt bölünme
+          <select id="mAltBolunme" class="secim">
+            <option value="1" selected>♩ Çeyrek</option>
+            <option value="2">♫ Sekizlik</option>
+            <option value="3">③ Üçleme</option>
+            <option value="4">♬ Onaltılık</option>
+          </select>
+        </label>
+        <label class="m-ayar">Ses kiti
           <select id="mSes" class="secim">
-            <option value="tahta" selected>Tahta blok</option>
-            <option value="klik">Dijital klik</option>
-            <option value="bip">Yumuşak bip</option>
+            <option value="tahta" selected>🪵 Tahta blok</option>
+            <option value="klik">💻 Dijital klik</option>
+            <option value="klaves">🥢 Klaves</option>
+            <option value="zil">🔔 İnek çanı</option>
+            <option value="davul">🥁 Davul</option>
+            <option value="bip">🎹 Yumuşak bip</option>
+            <option value="sayma">🗣 Sesli sayma</option>
           </select>
         </label>
         <label class="m-ayar">Ses düzeyi
           <input type="range" id="mSesDuzeyi" min="0" max="100" value="80" class="m-surgu m-surgu-kucuk" aria-label="Ses düzeyi">
         </label>
-        <label class="m-ayar m-ayar-onay">
-          <input type="checkbox" id="mAksan" checked> İlk vuruş vurgulu
+        <label class="m-ayar">Poliritim
+          <select id="mPoliritim" class="secim">
+            <option value="0" selected>Kapalı</option>
+            <option value="2">2 : ölçü</option>
+            <option value="3">3 : ölçü</option>
+            <option value="5">5 : ölçü</option>
+          </select>
         </label>
+        <label class="m-ayar-onay"><input type="checkbox" id="mFlasModu"> ⚡ Flaş modu</label>
       </div>
 
       <div class="m-sessiz-aralik">
@@ -105,11 +160,31 @@ require APP_DIR . '/includes/view/header.php';
         </span>
       </div>
 
+      <div class="m-trainer">
+        <label class="m-ayar-onay"><input type="checkbox" id="mTrainer"> 🚀 Tempo trainer</label>
+        <span class="m-trainer-secim" id="mTrainerSecim" hidden>
+          hedef <input type="number" id="mTrainerHedef" class="girdi m-trainer-girdi" value="120" min="30" max="240"> BPM ·
+          her <select id="mTrainerOlcu" class="secim secim-dar">
+            <option value="1">1</option><option value="2" selected>2</option><option value="4">4</option><option value="8">8</option>
+          </select> ölçüde
+          <select id="mTrainerArtis" class="secim secim-dar">
+            <option value="1">+1</option><option value="2" selected>+2</option><option value="5">+5</option>
+          </select> BPM
+        </span>
+      </div>
+
+      <div class="m-preset-cubugu">
+        <span class="alan-ipucu">Preset:</span>
+        <span id="mPresetler"></span>
+        <button type="button" class="m-mini-btn" id="mPresetKaydet" title="Geçerli ayarları preset olarak sakla">＋ Kaydet</button>
+      </div>
+
       <div class="m-buton-satir">
         <button type="button" class="btn btn-birincil m-baslat" id="mBaslat">▶ Başlat</button>
         <button type="button" class="btn btn-golge" id="mTap">👆 Tap Tempo</button>
       </div>
-      <p class="alan-ipucu">Kısayollar: <kbd>Boşluk</kbd> başlat/durdur · <kbd>T</kbd> tap tempo · <kbd>↑↓</kbd> BPM</p>
+      <p class="alan-ipucu">Kısayollar: <kbd>Boşluk</kbd> başlat/durdur · <kbd>T</kbd> tap tempo · <kbd>↑↓</kbd> BPM
+        · Ses kitini değiştirince kısa önizleme çalar.</p>
     </div>
   </div>
 </div>
@@ -124,6 +199,9 @@ require APP_DIR . '/includes/view/header.php';
   <div class="m-sekmeler" role="tablist">
     <button type="button" class="m-sekme aktif" data-sekme="vurus">🎯 Vuruş Tutturma</button>
     <button type="button" class="m-sekme" data-sekme="bpm">🎧 BPM Bulma</button>
+    <button type="button" class="m-sekme" data-sekme="ritim">🎼 Ritim Okuma</button>
+    <button type="button" class="m-sekme" data-sekme="spontan">🫀 Spontan Tempo</button>
+    <button type="button" class="m-sekme" data-sekme="aksak">🕳 Aksak Bulma</button>
   </div>
 
   <!-- Vuruş Tutturma -->
@@ -132,14 +210,7 @@ require APP_DIR . '/includes/view/header.php';
        metronom susar, <strong>sessiz fazda</strong> içsel tempoyla devam edilir. Her vuruşun milisaniye
        sapması ölçülür.</p>
     <div class="filtre-satir">
-      <label class="form-alan">Öğrenci
-        <select id="vtOgrenci" class="secim">
-          <option value="">— Seçin (kayıt için) —</option>
-          <?php foreach ($ogrenciler as $o): ?>
-          <option value="<?= (int)$o['id'] ?>"><?= e($o['kod']) ?><?= $o['grup_ad'] ? ' — ' . e($o['grup_ad']) : '' ?></option>
-          <?php endforeach; ?>
-        </select>
-      </label>
+      <label class="form-alan">Öğrenci<?= ogrenci_secimi('vtOgrenci', $ogrenciler) ?></label>
       <label class="form-alan">Tempo
         <select id="vtBpm" class="secim">
           <option value="60">60 BPM</option>
@@ -178,18 +249,10 @@ require APP_DIR . '/includes/view/header.php';
         </table>
         <div class="m-sapma-grafik" id="vtGrafik" title="Her vuruşun sapması: yukarı geç, aşağı erken"></div>
         <p class="alan-ipucu" id="vtYorum"></p>
-        <form method="post" action="<?= e(url('metronom.php')) ?>" class="m-kaydet-form" id="vtForm">
-          <?= csrf_field() ?>
-          <input type="hidden" name="islem" value="sonuc_kaydet">
-          <input type="hidden" name="protokol" value="vurus_tutturma">
-          <input type="hidden" name="ogrenci_id" id="vtFormOgrenci" value="">
-          <input type="hidden" name="bpm" id="vtFormBpm" value="">
-          <input type="hidden" name="skor" id="vtFormSkor" value="">
-          <input type="hidden" name="detay" id="vtFormDetay" value="">
-          <input type="text" name="notlar" class="girdi" maxlength="200" placeholder="Not (isteğe bağlı)" style="max-width:280px">
-          <button type="submit" class="btn btn-birincil" id="vtKaydet">Sonucu Kaydet</button>
+        <div class="m-kaydet-satir">
+          <?= sonuc_formu('vt', 'vurus_tutturma') ?>
           <button type="button" class="btn btn-golge" id="vtTekrar">Tekrar Dene</button>
-        </form>
+        </div>
       </div>
     </div>
   </div>
@@ -199,14 +262,7 @@ require APP_DIR . '/includes/view/header.php';
     <p class="alan-ipucu">Sistem gizli bir tempoda 8 vuruş çalar; ardından aynı tempoyu
        <strong>8 vuruşla sen sürdürürsün</strong>. Tahminin gerçek BPM ile karşılaştırılır; 3 tur oynanır.</p>
     <div class="filtre-satir">
-      <label class="form-alan">Öğrenci
-        <select id="bfOgrenci" class="secim">
-          <option value="">— Seçin (kayıt için) —</option>
-          <?php foreach ($ogrenciler as $o): ?>
-          <option value="<?= (int)$o['id'] ?>"><?= e($o['kod']) ?><?= $o['grup_ad'] ? ' — ' . e($o['grup_ad']) : '' ?></option>
-          <?php endforeach; ?>
-        </select>
-      </label>
+      <label class="form-alan">Öğrenci<?= ogrenci_secimi('bfOgrenci', $ogrenciler) ?></label>
       <label class="form-alan">Zorluk
         <select id="bfZorluk" class="secim">
           <option value="kolay" selected>Kolay (60–100 BPM)</option>
@@ -235,18 +291,117 @@ require APP_DIR . '/includes/view/header.php';
                      <th class="sayi">Hata</th><th class="sayi">Skor</th></tr></thead>
           <tbody id="bfTablo"></tbody>
         </table>
-        <form method="post" action="<?= e(url('metronom.php')) ?>" class="m-kaydet-form" id="bfForm">
-          <?= csrf_field() ?>
-          <input type="hidden" name="islem" value="sonuc_kaydet">
-          <input type="hidden" name="protokol" value="bpm_bulma">
-          <input type="hidden" name="ogrenci_id" id="bfFormOgrenci" value="">
-          <input type="hidden" name="bpm" id="bfFormBpm" value="">
-          <input type="hidden" name="skor" id="bfFormSkor" value="">
-          <input type="hidden" name="detay" id="bfFormDetay" value="">
-          <input type="text" name="notlar" class="girdi" maxlength="200" placeholder="Not (isteğe bağlı)" style="max-width:280px">
-          <button type="submit" class="btn btn-birincil" id="bfKaydet">Sonucu Kaydet</button>
+        <div class="m-kaydet-satir">
+          <?= sonuc_formu('bf', 'bpm_bulma') ?>
           <button type="button" class="btn btn-golge" id="bfTekrar">Tekrar Oyna</button>
-        </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ritim Okuma -->
+  <div class="m-sekme-icerik" id="sekme-ritim" hidden>
+    <p class="alan-ipucu">Ekrandaki 2 ölçülük deseni sayarak tam yerinde vur: "1 ve 2 ve", üçlemede "1-le-me".
+       Göz–el eşgüdümü ve nota okumaya ilk adım (ev sayfasındaki modülün stüdyo sürümü).</p>
+    <div class="filtre-satir">
+      <label class="form-alan">Öğrenci<?= ogrenci_secimi('roOgrenci', $ogrenciler) ?></label>
+      <label class="form-alan">Seviye
+        <select id="roSeviye" class="secim">
+          <option value="1" selected>1 — çeyrek + es</option>
+          <option value="2">2 — sekizlikler ("ve")</option>
+          <option value="3">3 — üçlemeler</option>
+        </select>
+      </label>
+      <label class="form-alan">Tempo
+        <select id="roBpm" class="secim">
+          <option value="50">50 BPM</option>
+          <option value="60" selected>60 BPM</option>
+          <option value="72">72 BPM</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-golge" id="roYenile">↻ Yeni desen</button>
+    </div>
+    <div class="ro-kok" id="roKok"></div>
+    <div class="m-kaydet-satir" id="roKaydetSatir" hidden>
+      <?= sonuc_formu('ro', 'ritim_okuma') ?>
+    </div>
+  </div>
+
+  <!-- Spontan Tempo -->
+  <div class="m-sekme-icerik" id="sekme-spontan" hidden>
+    <p class="alan-ipucu">BAASTA türü <strong>serbest (unpaced) tapping</strong>: metronom yok —
+       kendi rahat hızında <strong>21 vuruş</strong> yap. Kişisel doğal tempon (SMT) ve
+       vuruşlarının tutarlılığı ölçülür. Dönem başı/sonu karşılaştırması için birebirdir.</p>
+    <div class="filtre-satir">
+      <label class="form-alan">Öğrenci<?= ogrenci_secimi('stOgrenci', $ogrenciler) ?></label>
+      <button type="button" class="btn btn-birincil" id="stBaslat">Ölçümü Başlat</button>
+    </div>
+
+    <div class="m-test-sahne" id="stSahne" hidden>
+      <div class="m-faz-etiket" id="stFaz">Kendi hızında vur — acele yok</div>
+      <button type="button" class="m-pad" id="stPad">VUR<small>boşluk / dokun</small></button>
+      <div class="m-tur-goster" id="stSayac">0 / 21</div>
+      <button type="button" class="btn btn-golge btn-kucuk" id="stIptal">İptal</button>
+    </div>
+
+    <div class="m-sonuc" id="stSonuc" hidden>
+      <div class="m-skor-kart">
+        <div class="m-skor" id="stSkor">–</div>
+        <div class="m-skor-etiket">TUTARLILIK SKORU<br><small>düşük dalgalanma = yüksek skor</small></div>
+      </div>
+      <div class="m-sonuc-detay">
+        <p id="stOzet" style="font-size:1.05rem"></p>
+        <div class="m-sapma-grafik" id="stGrafik" title="Ardışık vuruş aralıkları (ms)"></div>
+        <p class="alan-ipucu">SMT = spontan motor tempo. Tutarlılık, aralıkların değişim katsayısından (CV) hesaplanır.</p>
+        <div class="m-kaydet-satir">
+          <?= sonuc_formu('st', 'spontan_tempo') ?>
+          <button type="button" class="btn btn-golge" id="stTekrar">Tekrar Ölç</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aksak Bulma -->
+  <div class="m-sekme-icerik" id="sekme-aksak" hidden>
+    <p class="alan-ipucu">BAASTA türü <strong>anizokroni algısı</strong>: 6 vuruşluk dizi çalınır —
+       ya kusursuz düzenlidir ya da bir vuruş hafifçe <em>aksar</em>. Hangisi olduğunu söyle; 8 tur.
+       Motorsuz, saf <strong>dinleme/algı</strong> ölçümüdür.</p>
+    <div class="filtre-satir">
+      <label class="form-alan">Öğrenci<?= ogrenci_secimi('abOgrenci', $ogrenciler) ?></label>
+      <label class="form-alan">Zorluk
+        <select id="abZorluk" class="secim">
+          <option value="kolay" selected>Kolay (%15 kayma)</option>
+          <option value="orta">Orta (%10 kayma)</option>
+          <option value="zor">Zor (%6 kayma)</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-birincil" id="abBaslat">Testi Başlat</button>
+    </div>
+
+    <div class="m-test-sahne" id="abSahne" hidden>
+      <div class="m-faz-etiket" id="abFaz">🎧 Dinle…</div>
+      <div class="ab-cevaplar" id="abCevaplar" hidden>
+        <button type="button" class="btn btn-birincil ab-cevap" data-cevap="duzenli">✓ Düzenliydi</button>
+        <button type="button" class="btn btn-birincil ab-cevap" data-cevap="aksak">⚠ Aksadı</button>
+      </div>
+      <div class="m-tur-goster" id="abTur">Tur 1 / 8</div>
+      <button type="button" class="btn btn-golge btn-kucuk" id="abIptal">İptal</button>
+    </div>
+
+    <div class="m-sonuc" id="abSonuc" hidden>
+      <div class="m-skor-kart">
+        <div class="m-skor" id="abSkor">–</div>
+        <div class="m-skor-etiket">ALGI SKORU<br><small>8 turda doğru oranı</small></div>
+      </div>
+      <div class="m-sonuc-detay">
+        <table class="tablo">
+          <thead><tr><th>Tur</th><th>Dizi</th><th>Cevabın</th><th>Sonuç</th></tr></thead>
+          <tbody id="abTablo"></tbody>
+        </table>
+        <div class="m-kaydet-satir">
+          <?= sonuc_formu('ab', 'aksak_bulma') ?>
+          <button type="button" class="btn btn-golge" id="abTekrar">Tekrar Dene</button>
+        </div>
       </div>
     </div>
   </div>
@@ -260,13 +415,14 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Öğrenci</th><th>Protokol</th><th class="sayi">BPM</th><th class="sayi">Skor</th><th>Not</th><th></th></tr></thead>
+      <thead><tr><th>Tarih</th><th>Öğrenci</th><th>Protokol</th><th>Kaynak</th><th class="sayi">BPM</th><th class="sayi">Skor</th><th>Not</th><th></th></tr></thead>
       <tbody>
         <?php foreach ($sonKayitlar as $k): ?>
         <tr>
           <td><?= e(format_date_tr(substr($k['created_at'], 0, 10))) ?> <?= e(substr($k['created_at'], 11, 5)) ?></td>
           <td><a href="<?= e(url('ogrenci.php?id=' . (int)$k['ogrenci_id'])) ?>"><?= e($k['ogrenci_kod']) ?></a></td>
           <td><?= e(PROTOKOL_LABELS[$k['protokol']] ?? $k['protokol']) ?></td>
+          <td><?= ($k['kaynak'] ?? 'atolye') === 'ev' ? '🏠 Ev' : '🎓 Atölye' ?></td>
           <td class="sayi"><?= $k['bpm'] ? (int)$k['bpm'] : '—' ?></td>
           <td class="sayi"><strong><?= (int)$k['skor'] ?></strong>/100</td>
           <td><?= e(mb_strimwidth((string)$k['notlar'], 0, 40, '…')) ?></td>
@@ -286,5 +442,6 @@ require APP_DIR . '/includes/view/header.php';
   <?php endif; ?>
 </div>
 
+<script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom.js')) ?>"></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

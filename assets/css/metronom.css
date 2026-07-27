@@ -4,6 +4,20 @@
 .m-sahne {
   background: linear-gradient(150deg, #1c1917 0%, #292524 55%, #1c1917 100%);
   color: #f5f5f4; border-color: #292524;
+  position: relative; overflow: hidden;
+}
+.m-sahne .secim { background: #292524; color: #f5f5f4; border-color: #44403c; }
+.m-flas {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0; z-index: 1;
+  background: radial-gradient(circle at 50% 40%, rgba(251, 191, 36, .5), transparent 70%);
+  transition: opacity .08s ease-out;
+}
+.m-flas.flas { opacity: .5; }
+.m-flas.flas-aksan { opacity: .95; }
+.m-sayac {
+  position: absolute; top: .2rem; left: 1rem; font-size: 3rem; font-weight: 800;
+  color: rgba(251, 191, 36, .85); font-variant-numeric: tabular-nums; z-index: 2;
+  text-shadow: 0 0 24px rgba(245, 158, 11, .5);
 }
 .m-ust { display: grid; grid-template-columns: minmax(210px, 300px) 1fr; gap: 2rem; align-items: center; }
 @media (max-width: 760px) { .m-ust { grid-template-columns: 1fr; } }
@@ -34,14 +48,15 @@
 .m-surgu { width: 100%; accent-color: #f59e0b; height: 6px; cursor: pointer; }
 .m-surgu-kucuk { width: 110px; }
 
-.m-nokta-dizi { display: flex; gap: .55rem; justify-content: center; margin: 1rem 0; min-height: 18px; }
+.m-nokta-dizi { display: flex; gap: .6rem; justify-content: center; margin: 1rem 0 .4rem; min-height: 24px; }
 .m-nokta {
-  width: 15px; height: 15px; border-radius: 50%;
-  background: rgba(255, 255, 255, .14); transition: transform .07s, background .07s;
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent;
+  padding: 0; cursor: pointer; transition: transform .07s, background .07s, box-shadow .07s;
 }
-.m-nokta.aktif { background: #f59e0b; transform: scale(1.35); }
-.m-nokta.aktif-aksan { background: #fbbf24; transform: scale(1.6); box-shadow: 0 0 14px rgba(251, 191, 36, .7); }
-.m-nokta.sessiz { background: rgba(255, 255, 255, .05); }
+.m-nokta-aksan { background: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, .55); }
+.m-nokta-normal { background: rgba(245, 158, 11, .45); }
+.m-nokta-sessiz { background: transparent; border-color: rgba(255, 255, 255, .3); }
+.m-nokta.aktif { transform: scale(1.45); box-shadow: 0 0 16px rgba(251, 191, 36, .85); }
 
 .m-ayarlar { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: .8rem; }
 .m-ayar { display: flex; flex-direction: column; gap: .25rem; font-size: .82rem; font-weight: 600; color: #d6d3d1; }
@@ -49,8 +64,33 @@
 .m-ayar-onay { display: flex; flex-direction: row; align-items: center; gap: .45rem; font-size: .88rem; color: #d6d3d1; font-weight: 600; }
 .m-ayar-onay input { width: 17px; height: 17px; accent-color: #f59e0b; }
 
-.m-sessiz-aralik { display: flex; gap: .9rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; color: #d6d3d1; font-size: .9rem; }
+.m-sessiz-aralik { display: flex; gap: .9rem; align-items: center; flex-wrap: wrap; margin-bottom: .6rem; color: #d6d3d1; font-size: .9rem; }
 .secim-dar { width: 62px; display: inline-block; background: #292524; color: #f5f5f4; border-color: #44403c; }
+
+/* ---------- Tempo trainer ---------- */
+.m-trainer { display: flex; gap: .9rem; align-items: center; flex-wrap: wrap; margin-bottom: .6rem; color: #d6d3d1; font-size: .9rem; }
+.m-trainer-secim { display: inline-flex; gap: .45rem; align-items: center; flex-wrap: wrap; }
+.m-trainer-girdi {
+  width: 74px; background: #292524; color: #fbbf24; border: 1px solid #44403c;
+  border-radius: 8px; padding: .35rem .5rem; font-weight: 700; text-align: center;
+}
+
+/* ---------- Preset'ler ---------- */
+.m-preset-cubugu { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.m-preset-chip {
+  background: rgba(245, 158, 11, .14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, .4);
+  border-radius: 999px; padding: .28rem .7rem; font-size: .82rem; cursor: pointer; font-family: inherit;
+}
+.m-preset-chip:hover { background: rgba(245, 158, 11, .28); }
+.m-preset-chip b { font-weight: 800; }
+.m-preset-sil { opacity: .7; margin-left: .3rem; font-weight: 800; }
+.m-preset-sil:hover { opacity: 1; color: #fca5a5; }
+
+/* ---------- Aksak bulma cevapları ---------- */
+.ab-cevaplar { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; flex-wrap: wrap; }
+.ab-cevap { font-size: 1.05rem; padding: .8rem 1.6rem; }
+
+.m-kaydet-satir { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin-top: .6rem; }
 
 .m-buton-satir { display: flex; gap: .7rem; flex-wrap: wrap; }
 .m-baslat { font-size: 1.05rem; padding: .7rem 1.6rem; }

@@ -190,7 +190,8 @@ const KANIT_LABELS = ['guclu' => 'Güçlü', 'orta' => 'Orta', 'zayif' => 'Zayı
 const SEVIYE_LABELS = [1 => 'Başlangıç', 2 => 'Orta', 3 => 'İleri'];
 const KATILIM_LABELS = ['katildi' => 'Katıldı', 'gec' => 'Geç geldi', 'gelmedi' => 'Gelmedi'];
 const PROTOKOL_LABELS = ['vurus_tutturma' => 'Vuruş Tutturma', 'bpm_bulma' => 'BPM Bulma',
-                         'ritim_okuma' => 'Ritim Okuma'];
+                         'ritim_okuma' => 'Ritim Okuma', 'spontan_tempo' => 'Spontan Tempo',
+                         'aksak_bulma' => 'Aksak Vuruş Algısı'];
 const EV_TUR_LABELS = ['serbest' => 'Serbest (işaretlemeli)', 'metronom' => 'Metronomlu süre',
                        'vurus_tutturma' => 'Vuruş Tutturma (mini)', 'ritim_okuma' => 'Ritim Okuma'];
 const KITLE_LABELS = ['cocuk' => 'Çocuk & Genç', 'yetiskin' => 'Yetişkin', 'hepsi' => 'Hepsi'];
