@@ -1,0 +1,15 @@
+# Kişisel veri ve sırlar — ASLA depoya girmez.
+# Uygulama ilk çalıştırmada bunları kendisi oluşturur (bkz. README).
+/storage/ritim.sqlite
+/storage/ritim.sqlite-wal
+/storage/ritim.sqlite-shm
+/storage/gizli.php
+/storage/*.log
+
+# Galeri yüklemeleri (katılımcı fotoğrafları olabilir) — içerik yerelde kalır
+/assets/img/galeri/*
+!/assets/img/galeri/.gitkeep
+
+# Sistem artıkları
+Thumbs.db
+Desktop.ini

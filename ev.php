@@ -1,0 +1,270 @@
+<?php
+/**
+ * Öğrenci Ev Sayfası — erişim koduyla girilir (eğitmen şifresi gerekmez).
+ * Haftalık ev çalışmaları, günlük "yaptım" işaretleme, etkileşimli modüller
+ * (mini metronom, vuruş tutturma, ritim okuma) ve paket durumu.
+ * Dil: teşvik edici, yarışmasız; klinik/sonuç iddiası yok.
+ */
+define('RITIM', 1);
+require __DIR__ . '/includes/bootstrap.php';
+
+$onizle = educator_logged_in() && isset($_GET['onizle']) ? (int)$_GET['onizle'] : 0;
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    csrf_check('ev.php');
+    $islem = (string)($_POST['islem'] ?? '');
+
+    if ($islem === 'giris') {
+        $ogrenci = student_by_code((string)($_POST['kod'] ?? ''));
+        if ($ogrenci) {
+            session_regenerate_id(true);
+            $_SESSION['ev_ogrenci_id'] = (int)$ogrenci['id'];
+            flash_set('basari', 'Hoş geldin ' . $ogrenci['kod'] . '! 🥁');
+        } else {
+            usleep(400000);
+            flash_set('hata', 'Kod bulunamadı. Eğitmeninden aldığın 6 haneli kodu kontrol et.');
+        }
+        redirect('ev.php');
+    }
+    if ($islem === 'cikis') {
+        unset($_SESSION['ev_ogrenci_id']);
+        redirect('ev.php');
+    }
+
+    $evOgrenciId = (int)($_SESSION['ev_ogrenci_id'] ?? 0);
+    if ($evOgrenciId > 0) {
+        if ($islem === 'isaretle') {
+            $odev = assignment_get((int)($_POST['odev_id'] ?? 0));
+            if ($odev && (int)$odev['ogrenci_id'] === $evOgrenciId
+                && $odev['baslangic'] <= today() && $odev['bitis'] >= today()) {
+                $yapildi = completion_toggle((int)$odev['id'], today());
+                flash_set($yapildi ? 'basari' : 'bilgi',
+                    $yapildi ? '“' . $odev['ad'] . '” bugün için işaretlendi. 🎉' : 'İşaret geri alındı.');
+            }
+            redirect('ev.php');
+        }
+        if ($islem === 'modul_sonuc') {
+            $odev = assignment_get((int)($_POST['odev_id'] ?? 0));
+            $protokol = (string)($_POST['protokol'] ?? '');
+            if ($odev && (int)$odev['ogrenci_id'] === $evOgrenciId && isset(PROTOKOL_LABELS[$protokol])) {
+                $skor = max(0, min(100, (int)($_POST['skor'] ?? 0)));
+                protocol_result_save([
+                    'ogrenci_id' => $evOgrenciId,
+                    'protokol'   => $protokol,
+                    'bpm'        => (int)($_POST['bpm'] ?? 0),
+                    'skor'       => $skor,
+                    'detay'      => (string)($_POST['detay'] ?? '{}'),
+                    'notlar'     => 'Ev çalışması: ' . $odev['ad'],
+                    'kaynak'     => 'ev',
+                ]);
+                completion_mark((int)$odev['id'], today(), ['skor' => $skor, 'protokol' => $protokol]);
+                flash_set('basari', 'Skorun kaydedildi: ' . $skor . '/100. Bugün de yapıldı işaretlendi. ⭐');
+            }
+            redirect('ev.php');
+        }
+    }
+    redirect('ev.php');
+}
+
+$evOgrenciId = $onizle ?: (int)($_SESSION['ev_ogrenci_id'] ?? 0);
+$ogrenci = $evOgrenciId ? student_get($evOgrenciId) : null;
+if ($ogrenci && (int)$ogrenci['aktif'] !== 1 && !$onizle) { $ogrenci = null; }
+
+$flashlar = flash_get();
+?>
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ev Çalışmalarım | RitimTerapi</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0c0a09">
+<link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/landing.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/metronom.css')) ?>">
+<link rel="stylesheet" href="<?= e(asset('css/ev.css')) ?>">
+</head>
+<body class="tanitim">
+
+<?php if (!$ogrenci): ?>
+<div class="ev-giris">
+  <div class="t-halka t-halka-1" aria-hidden="true"></div>
+  <div class="ev-giris-kart">
+    <svg class="t-logo" viewBox="0 0 64 64" style="width:56px;height:56px" aria-hidden="true">
+      <defs><linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/>
+      </linearGradient></defs>
+      <path d="M25 5 H39 L52.5 53.5 Q53.8 58 49.2 58 H14.8 Q10.2 58 11.5 53.5 Z" fill="url(#eg)"/>
+      <path d="M29.2 12 H34.8 L40.6 51 H23.4 Z" fill="#1e293b"/>
+      <g class="t-sarkac"><line x1="32" y1="49" x2="32" y2="12.5" stroke="#f8fafc" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="28.3" y="24.2" width="7.4" height="5" rx="1.2" fill="#f59e0b" stroke="#92400e" stroke-width="1"/></g>
+      <circle cx="32" cy="49" r="3" fill="#f8fafc"/><circle cx="32" cy="49" r="1.4" fill="#b45309"/>
+      <rect x="9" y="58" width="46" height="3.2" rx="1.6" fill="#78350f"/>
+    </svg>
+    <h1 style="font-size:1.3rem;margin:.6rem 0 .2rem">Ev Çalışmalarım</h1>
+    <p style="color:var(--t-soluk);font-size:.9rem;margin:0 0 1.2rem">Eğitmeninden aldığın 6 haneli kodu gir.</p>
+    <?php foreach ($flashlar as $f): ?>
+    <div class="ev-flash ev-flash-<?= e($f['type']) ?>"><?= e($f['msg']) ?></div>
+    <?php endforeach; ?>
+    <form method="post" action="<?= e(url('ev.php')) ?>">
+      <?= csrf_field() ?>
+      <input type="hidden" name="islem" value="giris">
+      <input type="text" name="kod" class="ev-kod-girdi" maxlength="8" required autofocus
+             autocomplete="off" placeholder="ABC123">
+      <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk" style="width:100%;margin-top:1rem">Giriş</button>
+    </form>
+    <a href="<?= e(url('index.php')) ?>" style="display:block;margin-top:1rem;color:var(--t-soluk);font-size:.85rem">← Ana sayfa</a>
+  </div>
+</div>
+
+<?php else:
+    $odevler = assignments_active_for_student((int)$ogrenci['id']);
+    [$pzt, $paz] = week_bounds();
+    $harita = completions_map(array_map(fn($o) => (int)$o['id'], $odevler), $pzt, $paz);
+    $seri = streak_for_student((int)$ogrenci['id']);
+    $paket = package_active((int)$ogrenci['id']);
+    $sonrakiOturum = $ogrenci['grup_id'] ? next_session_for_group((int)$ogrenci['grup_id']) : null;
+    $bugun = today();
+?>
+<div class="ev-govde">
+  <div class="ev-ust">
+    <svg class="t-logo" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="eg2" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/>
+      </linearGradient></defs>
+      <path d="M25 5 H39 L52.5 53.5 Q53.8 58 49.2 58 H14.8 Q10.2 58 11.5 53.5 Z" fill="url(#eg2)"/>
+      <path d="M29.2 12 H34.8 L40.6 51 H23.4 Z" fill="#1e293b"/>
+      <g class="t-sarkac"><line x1="32" y1="49" x2="32" y2="12.5" stroke="#f8fafc" stroke-width="2.6" stroke-linecap="round"/>
+      <rect x="28.3" y="24.2" width="7.4" height="5" rx="1.2" fill="#f59e0b" stroke="#92400e" stroke-width="1"/></g>
+      <circle cx="32" cy="49" r="3" fill="#f8fafc"/><circle cx="32" cy="49" r="1.4" fill="#b45309"/>
+      <rect x="9" y="58" width="46" height="3.2" rx="1.6" fill="#78350f"/>
+    </svg>
+    <div>
+      <h1>Ev Çalışmalarım</h1>
+      <div class="ev-kim">Merhaba <strong><?= e($ogrenci['kod']) ?></strong> 👋<?= $onizle ? ' · (eğitmen önizlemesi)' : '' ?></div>
+    </div>
+    <?php if (!$onizle): ?>
+    <form method="post" action="<?= e(url('ev.php')) ?>">
+      <?= csrf_field() ?>
+      <input type="hidden" name="islem" value="cikis">
+      <button type="submit" class="t-btn t-btn-cerceve">Çıkış</button>
+    </form>
+    <?php endif; ?>
+  </div>
+
+  <?php foreach ($flashlar as $f): ?>
+  <div class="ev-flash ev-flash-<?= e($f['type']) ?>"><?= e($f['msg']) ?></div>
+  <?php endforeach; ?>
+
+  <?php if ($seri > 0): ?>
+  <p><span class="ev-seri">🔥 Üst üste <?= $seri ?> gün çalıştın</span></p>
+  <?php endif; ?>
+
+  <?php if (!$odevler): ?>
+  <div class="ev-kart">
+    <h2>Bu hafta atanmış çalışma yok</h2>
+    <p class="aciklama">Eğitmenin yeni çalışmalar atadığında burada görünecek. 🎵</p>
+  </div>
+  <?php endif; ?>
+
+  <?php foreach ($odevler as $odev):
+      $oid = (int)$odev['id'];
+      $buHafta = 0;
+      $bugunYapildi = isset($harita[$oid][$bugun]);
+      foreach ($harita[$oid] ?? [] as $t => $_) { $buHafta++; }
+  ?>
+  <div class="ev-kart" data-gorev="<?= e($odev['tur'] === 'vurus_tutturma' ? 'vurus' : ($odev['tur'] === 'ritim_okuma' ? 'ritim' : $odev['tur'])) ?>"
+       data-bpm="<?= (int)$odev['bpm'] ?>" data-sure="<?= (int)$odev['sure_dk'] ?>"
+       data-seviye="<?= (int)$odev['seviye'] ?>" <?= $bugunYapildi ? 'data-bugun-yapildi="1"' : '' ?>>
+    <h2><?= e($odev['ad']) ?></h2>
+    <div class="ev-etiketler">
+      <span>⏱ <?= (int)$odev['sure_dk'] ?> dk</span>
+      <span>🎯 haftada <?= (int)$odev['hedef_gun'] ?> gün</span>
+      <?php if ($odev['hedef_beceri']): ?><span><?= e($odev['hedef_beceri']) ?></span><?php endif; ?>
+    </div>
+    <p class="aciklama"><?= e($odev['aciklama']) ?></p>
+    <?php if (trim((string)$odev['notlar']) !== ''): ?>
+    <p class="aciklama">📝 Eğitmen notu: <?= e($odev['notlar']) ?></p>
+    <?php endif; ?>
+    <?php if (trim((string)$odev['veli_yonerge']) !== ''): ?>
+    <p class="veli">👨‍👩‍👧 Veliye: <?= e($odev['veli_yonerge']) ?></p>
+    <?php endif; ?>
+
+    <div class="ev-hafta" title="Bu hafta: <?= $buHafta ?>/<?= (int)$odev['hedef_gun'] ?> gün">
+      <?php for ($g = 0; $g < 7; $g++):
+          $t = (new DateTime($pzt))->modify('+' . $g . ' days')->format('Y-m-d'); ?>
+      <span class="ev-gun<?= isset($harita[$oid][$t]) ? ' yapildi' : '' ?><?= $t === $bugun ? ' bugun' : '' ?>">
+        <?= e(GUNLER_KISA[$g + 1]) ?>
+      </span>
+      <?php endfor; ?>
+      <span style="color:var(--t-soluk);font-size:.82rem"><?= $buHafta ?>/<?= (int)$odev['hedef_gun'] ?></span>
+    </div>
+
+    <?php if ($odev['tur'] === 'metronom'): ?>
+    <div class="ev-buton-satir">
+      <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat">▶ Başlat</button>
+      <span class="ev-sayac"></span>
+    </div>
+    <?php elseif ($odev['tur'] === 'vurus_tutturma'): ?>
+    <div class="ev-buton-satir">
+      <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat">▶ Teste Başla</button>
+      <button type="button" class="m-pad ro-pad" hidden>VUR<small>boşluk / dokun</small></button>
+      <span class="ev-sayac"></span>
+    </div>
+    <?php elseif ($odev['tur'] === 'ritim_okuma'): ?>
+    <div class="ro-kok"></div>
+    <?php endif; ?>
+
+    <div class="ev-buton-satir" style="margin-top:.7rem">
+      <form method="post" action="<?= e(url('ev.php')) ?>" class="ev-tamamla-form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="islem" value="isaretle">
+        <input type="hidden" name="odev_id" value="<?= $oid ?>">
+        <button type="submit" class="t-btn <?= $bugunYapildi ? 't-btn-cerceve' : 't-btn-dolu' ?>">
+          <?= $bugunYapildi ? '✓ Bugün yapıldı — geri al' : '✓ Bugün yaptım' ?>
+        </button>
+      </form>
+      <?php if (in_array($odev['tur'], ['vurus_tutturma', 'ritim_okuma'], true)): ?>
+      <form method="post" action="<?= e(url('ev.php')) ?>" class="ev-sonuc-form" hidden>
+        <?= csrf_field() ?>
+        <input type="hidden" name="islem" value="modul_sonuc">
+        <input type="hidden" name="odev_id" value="<?= $oid ?>">
+        <input type="hidden" name="protokol" value="<?= e($odev['tur']) ?>">
+        <input type="hidden" name="skor" value="">
+        <input type="hidden" name="bpm" value="">
+        <input type="hidden" name="detay" value="">
+      </form>
+      <?php endif; ?>
+    </div>
+  </div>
+  <?php endforeach; ?>
+
+  <?php if ($paket): ?>
+  <div class="ev-kart">
+    <h2>🎫 Ders paketim</h2>
+    <p class="aciklama"><?= e($paket['ad']) ?><?= mb_stripos((string)$paket['notlar'], 'moxo') !== false ? ' · 🧠 MOXO ölçümlü' : '' ?>
+       — <?= (int)$paket['kullanilan'] ?>/<?= (int)$paket['toplam_seans'] ?> seans kullanıldı</p>
+    <div class="ev-paket-cubuk">
+      <div class="ev-paket-dolu" style="width:<?= min(100, (int)round(100 * $paket['kullanilan'] / max(1, (int)$paket['toplam_seans']))) ?>%"></div>
+    </div>
+    <p class="aciklama"><?= (int)$paket['kalan'] ?> seans kaldı<?= (int)$paket['kalan'] <= 2 ? ' — yenileme zamanı yaklaşıyor' : '' ?>.</p>
+  </div>
+  <?php endif; ?>
+
+  <?php if ($sonrakiOturum): ?>
+  <div class="ev-kart">
+    <h2>📅 Sonraki atölye</h2>
+    <p class="aciklama"><?= e(format_date_tr($sonrakiOturum['tarih'])) ?> · Hafta <?= (int)$sonrakiOturum['hafta_no'] ?></p>
+  </div>
+  <?php endif; ?>
+
+  <p class="ev-alt-not">Skorlar kişisel gelişim izlemesi içindir; yarışma değildir.
+     Kısa ve düzenli çalışmak, uzun tek seferden daha değerlidir. 🥁</p>
+</div>
+<?php endif; ?>
+
+<script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
+<script src="<?= e(asset('js/ev.js')) ?>"></script>
+</body>
+</html>

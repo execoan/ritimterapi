@@ -1,0 +1,145 @@
+# RitimTerapi — Ritim Atölyesi Yönetim Uygulaması
+
+Ritim/perküsyon atölyesi veren bir eğitmenin kendi işini yönettiği, yerelde çalışan
+tek kullanıcılı web uygulaması. **Eğitim aracıdır; sağlık ürünü değildir** — arayüzde
+ve veliye giden çıktılarda klinik/sonuç dili kullanılmaz (bkz. `CLAUDE.md`).
+
+## Çalıştırma
+
+**En kolay yol:** `start.bat` dosyasına çift tıklayın. XAMPP PHP'sini bulur,
+sunucuyu başlatır ve tarayıcıyı `http://localhost:8590` adresinde açar.
+Pencerede ayrıca telefon/tablet için Wi-Fi adresi yazar (örn. `http://192.168.1.20:8590`)
+— ilk çalıştırmada Windows güvenlik duvarı sorarsa "Özel ağlar" için izin verin.
+
+Alternatif — XAMPP Apache altında: klasörü `C:\xampp\htdocs\RitimTerapi` olarak
+kopyalayın/taşıyın ve `http://localhost/RitimTerapi` adresini açın.
+
+Kurulum adımı yoktur: ilk açılışta veritabanı (`storage/ritim.sqlite`) kendiliğinden
+oluşturulur ve teknik kütüphanesi başlangıç içeriğiyle dolar.
+
+## Site ve giriş
+
+- `http://localhost:8590` → **tanıtım sitesi** (herkese açık, animasyonlu tek sayfa:
+  yöntem, bilimsel dayanak ve atölyedeki yansımaları, protokoller, biz kimiz).
+- Sağ üstteki **Giriş Yap** → eğitmen paneli. Giriş ekranında **⚡ Admin** ve
+  **⚡ Eğitmen** tek-tık hızlı giriş butonları vardır (geliştirme kolaylığı) ve
+  klasik kullanıcı adı + şifre formu (varsayılan: `admin` / `ritim` ve
+  `egitmen` / `ritim`). Hesaplar `storage/gizli.php` içindeki
+  `PANEL_KULLANICILAR` dizisinden yönetilir; **yayına alırken** aynı dosyada
+  `HIZLI_GIRIS` değerini `false` yapın ve şifreleri değiştirin.
+- Ana sayfada **MOXO bölümü**: isteğe bağlı ön/son ölçüm — metinleri Site
+  yönetiminden düzenlenir; testi deneyimli psikologların uyguladığı ve eğitmenin
+  klinik test yorumlamadığı açıkça yazılıdır. Paket başlatırken "🧠 MOXO ön/son
+  ölçüm dahil" kutusu işaretlenirse paket notuna eklenir ve paket kartlarında
+  rozet olarak görünür.
+- Panel, uygulama Wi-Fi'a açık çalıştığı için şifre kapısının arkasındadır;
+  tanıtım sayfası şifresiz gezilir.
+
+## Akademik dayanak (DOI'li kayıt defteri)
+
+- **Teknikler → 📚 Akademik Çalışmalar**: RitimOdak kaynakçasındaki 19 hakemli
+  çalışma DOI'leri ve nötr dilli özetleriyle kayıtlıdır (`calismalar.php`);
+  yeni çalışma eklenebilir/düzenlenebilir.
+- Her tekniğin detayında **Bilimsel dayanak** kartı vardır: bağlı çalışmaların
+  künyesi, tıklanabilir DOI bağlantısı, "ne buldu" özeti ve "bu tekniğe bağı"
+  notu. Eğitmen panelden çalışma bağlayıp kaldırabilir.
+- Dayanağı olmayan teknikte açıkça **"Bu tekniğe bağlı akademik çalışma yok"**
+  yazar (pedagojik gelenek meşrudur; kanıt etiketi buna uygun kalır). Kütüphane
+  listesinde her tekniğin yanında 📚 sayısı ya da "yok" rozeti görünür.
+
+## Site yönetimi (CMS) ve plan şablonları
+
+- **Site** menüsü: tanıtım sayfasının bölümlerini sürükleyerek sırala, göster/gizle,
+  başlıkları ve tüm metinleri (hero, sayı kartları, iletişim, alt uyarı…) düzenle —
+  "Kaydet ve Yayınla" ile site anında güncellenir. Ayrıca:
+  - **Bilim kartları**: makale kartlarını sürükle-sırala, alanlarını düzenle,
+    kanıt rozetini seç, yeni kart ekle/sil — ana sayfadaki Bilim bölümü buradan beslenir.
+  - **Foto galerisi**: JPEG/PNG/WebP yükle (≤4 MB), alt yazı ver, sürükle-sırala,
+    göster/gizle. Görsel yokken ana sayfadaki Galeri bölümü ve menü bağlantısı
+    kendiliğinden gizlenir; görseller tıklanınca büyür (lightbox).
+- **Şablonlar** menüsü: RitimOdak-Ö (çocuk 8–15, 45 dk) ve RitimOdak-Y (yetişkin, 60 dk)
+  12 haftalık hazır programlar. "Şablonu Uygula" ile seçilen gruba haftada 1 (A) veya
+  2 (A+B) oturum, teknik planlarıyla birlikte tek adımda oluşturulur; mevcut tarihlere
+  çakışanlar atlanır. Şablonlar tamamen düzenlenebilir: yeni şablon oluştur, bilgilerini
+  değiştir, oturum ekle/sil ve her oturumun tekniklerini sürükle-bırak editörüyle düzenle.
+
+## Ev Programı ve seans paketleri
+
+- **Ev Programı** menüsü: 27 çalışmalık kütüphane (RitimOdak mikro uygulamaları:
+  çocuk + yetişkin + 3 etkileşimli modül), öğrenciye veya tüm gruba ödev atama
+  (tarih aralığı + haftada X gün hedefi), güncel ödevlerin haftalık takip tablosu.
+  Bilimsel dayanak: `docs/ev-programi-dayanak.md` (kısa-sık pratik, veli katılımı,
+  izleme/streak, sayma sistemleri).
+- **Öğrenci ev sayfası** — `ev.php`: her öğrencinin 6 haneli **erişim kodu** vardır
+  (öğrenci detayında görünür/yenilenir). Öğrenci telefondan girer; haftalık ödev
+  kartları, günlük "✓ Bugün yaptım" işareti, hafta noktaları ve 🔥 seri rozeti.
+  Etkileşimli görevler: **mini metronom** (süre sayaçlı), **Vuruş Tutturma mini**
+  (sesli+sessiz faz, skorlu) ve **Ritim Okuma** ("1 ve 2 ve", üçlemede "1-le-me" —
+  ekrandaki deseni sayarak vurma). Skorlar `kaynak='ev'` olarak protokol
+  sonuçlarına kaydedilir; eğitmen aynı tabloda izler.
+- **Seans paketleri**: öğrenci detayından 8–24 seanslık paket başlatılır; kullanım
+  "katıldı/geç" yoklamalarından otomatik sayılır. Panelde "paketi bitmek üzere"
+  uyarısı (kalan ≤ 2), öğrenci ev sayfasında paket çubuğu görünür.
+- Veli raporuna yalnız olgu eklenir: "Evde yapılan çalışmalar — işaretlenen gün sayısı".
+
+## Metronom Stüdyosu ve dikkat protokolleri
+
+Menüdeki **Metronom** sayfası tek ses motoru üzerinde iki iş görür:
+
+- **Serbest metronom:** 30–240 BPM, tap tempo, 2/4–6/8 ölçü, aksan, üç ses rengi,
+  ses düzeyi, sarkaç + vuruş noktaları görselleştirmesi, sessiz aralık çalışması
+  (N ölçü sesli → M ölçü sessiz). Kısayollar: Boşluk, T, ↑↓.
+- **Protokoller** (skor 0–100, öğrenciye kaydedilir, haftalık izlenir):
+  - *Vuruş Tutturma:* 4 vuruş hazırlık → sesli faz (metronomla vur) → sessiz faz
+    (içsel tempoyla devam). Vuruş başına milisaniye sapması, kaçırılan vuruş,
+    erken/geç eğilimi ve faz karşılaştırması raporlanır.
+  - *BPM Bulma:* gizli tempoda 8 vuruş dinlenir, 8 vuruşla sürdürülür; tahmin
+    gerçek BPM ile karşılaştırılır (3 tur).
+
+Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görünür.
+**Protokol skorları eğitmenin iç izleme aracıdır; veli raporlarına yansıtılmaz.**
+
+## Uygulama olarak kurma (PWA)
+
+Uygulama, optik-kocluk ile aynı PWA yapısını taşır (`manifest.json`, `sw.js`,
+`offline.html`, ikonlar). Menüde beliren **"📲 Uygulamayı Yükle"** butonu ya da
+adres çubuğundaki yükleme simgesiyle:
+
+- **Bilgisayar (Chrome/Edge):** kendi penceresinde, görev çubuğuna
+  sabitlenebilen bir uygulama olarak kurulur.
+- **Telefon/tablet (Android Chrome):** "Ana ekrana ekle" ile metronom simgesiyle
+  ana ekrana yerleşir. Uygulama simgesine uzun basınca Panel, Oturum Planla,
+  Yoklama, Öğrenciler ve Raporlar kısayolları açılır.
+- **iPhone/iPad (Safari):** Paylaş → "Ana Ekrana Ekle".
+
+Not: Tam PWA kurulumu (kendi penceresi) yalnız `localhost` üzerinde sunulur;
+telefon/tabletten Wi-Fi adresiyle girildiğinde site ana ekran kısayolu olarak
+eklenir ve tarayıcıda açılır. Sunucu kapalıyken açılırsa "Sunucuya Ulaşılamıyor"
+sayfası gösterilir.
+
+## Yedekleme
+
+Veritabanı tek dosyadır: `storage/ritim.sqlite` dosyasını kopyalamak tam yedektir.
+(Uygulama açıkken kopyalıyorsanız yanındaki `-wal` ve `-shm` dosyalarını da alın.)
+
+## Yapı
+
+| Bölüm | Dosyalar |
+|---|---|
+| Panel | `index.php` |
+| Gruplar | `gruplar.php`, `grup.php`, `grup-sil.php` |
+| Öğrenciler | `ogrenciler.php`, `ogrenci.php`, `ogrenci-sil.php` |
+| Teknik kütüphanesi | `teknikler.php`, `teknik.php`, `teknik-sil.php` |
+| Ders planı | `plan.php` (sürükle-bırak sıralama, 60 dk hedef uyarısı) |
+| Oturum kaydı | `oturumlar.php`, `oturum.php` (yoklama + işlenen teknikler + notlar) |
+| Raporlar | `raporlar.php`, `rapor-haftalik.php`, `rapor-donemlik.php`, `rapor-veli.php` |
+| Altyapı | `includes/` (bootstrap, db, model, helpers, seed, görünüm), `assets/` |
+
+- Şema göçleri `includes/db.php` içindedir (`PRAGMA user_version` ile izlenir);
+  şema değişikliğinde mevcut göçler değiştirilmez, yeni göç eklenir.
+- Seed verisi `includes/seed.php` dosyasındadır; yalnız kütüphane boşken çalışır,
+  eğitmenin düzenlediği/sildiği kayıtları asla ezmez.
+- Veli raporu şablonu kilitlidir: yalnız yapılanı, katılımı ve gözlemi aktarır.
+  Gözlem notlarında uygunsuz ifade (tanı/sonuç/klinik dil) varsa rapor ekranında
+  eğitmene uyarı gösterilir. Veliye giden çıktıda marka **"Ritim Atölyesi"** olarak
+  geçer; "terapi" sözcüğü hiçbir veli çıktısında yer almaz.

@@ -1,0 +1,93 @@
+/* ================= Öğrenci Ev Sayfası ================= */
+
+.ev-govde { max-width: 780px; margin: 0 auto; padding: 1.2rem 1rem 3rem; }
+
+.ev-ust {
+  display: flex; align-items: center; gap: .7rem; padding: .8rem 0 1.2rem; flex-wrap: wrap;
+}
+.ev-ust .t-logo { width: 40px; height: 40px; }
+.ev-ust h1 { font-size: 1.25rem; margin: 0; color: #fbbf24; }
+.ev-ust .ev-kim { color: var(--t-soluk); font-size: .9rem; }
+.ev-ust form { margin-left: auto; }
+
+.ev-kart {
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 18px; padding: 1.2rem 1.2rem 1rem; margin-bottom: 1rem;
+}
+.ev-kart h2 { font-size: 1.05rem; margin: 0 0 .5rem; }
+.ev-kart .aciklama { color: var(--t-soluk); font-size: .92rem; margin: .2rem 0 .8rem; }
+.ev-kart .veli { color: #fcd34d; font-size: .82rem; margin: .3rem 0 .8rem; }
+.ev-etiketler { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .6rem; }
+.ev-etiketler span {
+  background: rgba(245, 158, 11, .13); color: #fbbf24; border-radius: 999px;
+  padding: .12rem .6rem; font-size: .74rem; font-weight: 700;
+}
+
+/* Hafta noktaları */
+.ev-hafta { display: flex; gap: .45rem; align-items: center; margin: .6rem 0 .8rem; }
+.ev-gun {
+  width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: .68rem; font-weight: 700;
+  background: rgba(255, 255, 255, .07); color: var(--t-soluk);
+  border: 1px solid rgba(255, 255, 255, .12);
+}
+.ev-gun.yapildi { background: #16a34a; color: #fff; border-color: #16a34a; }
+.ev-gun.bugun { outline: 2px solid #fbbf24; outline-offset: 2px; }
+
+.ev-buton-satir { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
+.ev-sayac { font-weight: 700; color: #fbbf24; min-height: 1.3em; }
+
+.ev-seri {
+  display: inline-flex; align-items: center; gap: .4rem;
+  background: rgba(245, 158, 11, .14); border: 1px solid rgba(245, 158, 11, .4);
+  color: #fbbf24; border-radius: 999px; padding: .3rem .9rem; font-weight: 800;
+}
+
+/* Paket çubuğu */
+.ev-paket-cubuk { height: 12px; background: rgba(255, 255, 255, .1); border-radius: 999px; overflow: hidden; margin: .5rem 0; }
+.ev-paket-dolu { height: 100%; background: linear-gradient(90deg, #fbbf24, #d97706); border-radius: 999px; }
+
+/* Kod giriş ekranı */
+.ev-giris {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+}
+.ev-giris-kart {
+  width: 100%; max-width: 380px; background: rgba(28, 25, 23, .9);
+  border: 1px solid rgba(255, 255, 255, .12); border-radius: 22px; padding: 2rem;
+  text-align: center; box-shadow: 0 24px 70px rgba(0, 0, 0, .5);
+}
+.ev-kod-girdi {
+  width: 100%; text-align: center; letter-spacing: .5em; text-transform: uppercase;
+  font-size: 1.5rem; font-weight: 800; padding: .7rem; border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, .2); background: rgba(12, 10, 9, .7); color: #fbbf24;
+  font-family: Consolas, monospace;
+}
+.ev-kod-girdi:focus { outline: 2px solid rgba(245, 158, 11, .55); }
+
+/* Ritim okuma deseni */
+.ro-desen { display: flex; gap: .8rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.ro-olcu {
+  display: flex; gap: .35rem; padding: .5rem; border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 12px; background: rgba(12, 10, 9, .5); flex: 1; min-width: 240px;
+}
+.ro-hucre {
+  flex: 1; text-align: center; border-radius: 9px; padding: .45rem .2rem;
+  background: rgba(255, 255, 255, .05); transition: background .1s, transform .1s;
+}
+.ro-hucre.ro-es { opacity: .45; }
+.ro-hucre.ro-aktif { background: rgba(245, 158, 11, .35); transform: scale(1.06); }
+.ro-sembol { display: block; font-size: 1.5rem; line-height: 1.2; color: #f5f5f4; }
+.ro-sayim { display: block; font-size: .72rem; color: #fbbf24; font-weight: 700; margin-top: .15rem; }
+.ro-durum { color: var(--t-soluk); min-height: 1.4em; margin-bottom: .6rem; }
+.ro-butonlar { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; }
+.ro-pad { width: 130px !important; height: 130px !important; font-size: 1.1rem !important; }
+
+.ev-flash {
+  padding: .7rem 1rem; border-radius: 12px; margin-bottom: .9rem; font-size: .92rem;
+}
+.ev-flash-basari { background: rgba(22, 163, 74, .2); color: #86efac; border: 1px solid rgba(22, 163, 74, .5); }
+.ev-flash-hata { background: rgba(185, 28, 28, .2); color: #fca5a5; border: 1px solid rgba(185, 28, 28, .5); }
+.ev-flash-bilgi { background: rgba(59, 130, 246, .16); color: #93c5fd; border: 1px solid rgba(59, 130, 246, .4); }
+.ev-flash-uyari { background: rgba(245, 158, 11, .16); color: #fcd34d; border: 1px solid rgba(245, 158, 11, .4); }
+
+.ev-alt-not { color: var(--t-soluk); font-size: .8rem; text-align: center; margin-top: 1.6rem; }
