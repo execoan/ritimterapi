@@ -26,6 +26,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
     $res = template_session_save($id, $_POST, $items);
     if ($res['ok']) {
+        // Haftanın ev görevleri şablon + hafta düzeyinde tutulur (A/B ortak)
+        template_home_tasks_set((int)$oturum['sablon_id'],
+            max(1, min(52, (int)($_POST['hafta_no'] ?? $oturum['hafta_no']))),
+            (array)($_POST['ev_gorevleri'] ?? []));
         flash_set('basari', 'Şablon oturumu kaydedildi.');
         redirect('sablonlar.php?id=' . (int)$oturum['sablon_id']);
     }
@@ -35,6 +39,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
 $teknikler = techniques_list(['aktif' => 1]);
 $planli = $oturum['teknikler'];
+$evCalismalari = home_exercises_list(true);
+$haftaGorevleri = template_home_tasks((int)$oturum['sablon_id'])[(int)$oturum['hafta_no']] ?? [];
+$seciliGorevler = array_map('intval', array_column($haftaGorevleri, 'calisma_id'));
 
 $PAGE_TITLE = 'Şablon Oturumu — ' . $oturum['sablon_ad'];
 require APP_DIR . '/includes/view/header.php';
@@ -164,9 +171,38 @@ require APP_DIR . '/includes/view/header.php';
     </template>
   </div>
 
+  <div class="kart">
+    <div class="kart-baslik">
+      <h2>🏠 Haftanın ev görevleri</h2>
+      <span class="alan-ipucu">Haftaya bağlıdır (A/B ortak). Şablon gruba uygulanınca bu görevler
+        o haftanın tarih aralığıyla öğrencilere otomatik ödev atanır.</span>
+    </div>
+    <div class="ev-gorev-secim">
+      <?php foreach ($evCalismalari as $c): ?>
+      <label class="ev-gorev-kutu">
+        <input type="checkbox" name="ev_gorevleri[]" value="<?= (int)$c['id'] ?>"
+               <?= in_array((int)$c['id'], $seciliGorevler, true) ? 'checked' : '' ?>>
+        <span>
+          <?= e($c['ad']) ?>
+          <small class="alan-ipucu"><?= e(EV_TUR_LABELS[$c['tur']] ?? $c['tur']) ?>
+            · <?= e(KITLE_LABELS[$c['kitle']] ?? $c['kitle']) ?><?= $c['hafta_onerisi'] ? ' · öneri H' . (int)$c['hafta_onerisi'] : '' ?></small>
+        </span>
+      </label>
+      <?php endforeach; ?>
+    </div>
+  </div>
+
   <div class="form-butonlar">
     <button type="submit" class="btn btn-birincil">Şablon Oturumunu Kaydet</button>
     <a class="btn btn-golge" href="<?= e(url('sablonlar.php?id=' . (int)$oturum['sablon_id'])) ?>">Vazgeç</a>
   </div>
 </form>
+<style>
+  .ev-gorev-secim { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: .35rem .8rem; }
+  .ev-gorev-kutu { display: flex; gap: .45rem; align-items: flex-start; border: 1px solid var(--cizgi);
+                   border-radius: 8px; padding: .4rem .55rem; background: #fff; cursor: pointer; }
+  .ev-gorev-kutu input { margin-top: .2rem; }
+  .ev-gorev-kutu small { display: block; }
+  .ev-gorev-kutu:has(input:checked) { border-color: var(--amber); background: var(--amber-acik); }
+</style>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

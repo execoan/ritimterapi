@@ -68,6 +68,11 @@ oluşturulur ve teknik kütüphanesi başlangıç içeriğiyle dolar.
 - **Ev Programı** menüsü: 27 çalışmalık kütüphane (RitimOdak mikro uygulamaları:
   çocuk + yetişkin + 3 etkileşimli modül), öğrenciye veya tüm gruba ödev atama
   (tarih aralığı + haftada X gün hedefi), güncel ödevlerin haftalık takip tablosu.
+- **🏠 Ödev otomasyonu**: şablon oturum düzenleyicisinde her haftaya ev görevleri
+  bağlanır (A/B ortak; RitimOdak şablonları hazır eşlenmiş gelir). Şablon gruba
+  uygulanınca o haftaların görevleri, hafta tarih aralığıyla gruptaki aktif
+  öğrencilere **otomatik ödev** atanır (mükerrer atama korunur; sonradan kaydolan
+  öğrenciye elle atanır).
   Bilimsel dayanak: `docs/ev-programi-dayanak.md` (kısa-sık pratik, veli katılımı,
   izleme/streak, sayma sistemleri).
 - **Öğrenci ev sayfası** — `ev.php`: her öğrencinin 6 haneli **erişim kodu** vardır
@@ -116,6 +121,19 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
   Dönemlik grup raporunda **"Protokol gelişimi"** bölümü: protokol başına haftalık
   ortalama skor çubukları ve öğrenci bazlı ilk→son skor tablosu (▲/▼).
 
+- **📏 Standart ölçüm modu**: protokoller kartındaki anahtar, tüm testleri sabit
+  koşullara kilitler (Vuruş 72 BPM · 16+16, BPM Bulma orta, Ritim Okuma S1 · 60,
+  Aksak orta, İçsel 72 · standart profil; Spontan Tempo zaten parametresizdir).
+  📏 işareti kayıtta **gerçekten kullanılan koşullardan** türetilir — elle aynı
+  ayarları seçmek de 📏 sayılır. Sertifika ve dönemlik rapor, ilk→son
+  karşılaştırmasını en az iki 📏 ölçüm varsa **yalnız onlardan** yapar; böylece
+  "80 BPM'de ilk, 110 BPM'de son ölçüm" gibi yanıltıcı kıyaslar önlenir.
+- **🧭 Ders Akışı**: oturum sayfasındaki "Ders Akışını Stüdyoda Başlat" (veya
+  stüdyodaki oturum seçici) plandaki teknikleri sırayla çalıştırır — adım başına
+  geri sayım, bitişte zil + titreşim, otomatik geçiş, ⏮/⏭/duraklat/sıfırla.
+  Sayaç metronomdan bağımsızdır; tempoyu teknik gereksinimine göre serbestçe
+  ayarlarsınız.
+
 Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görünür.
 **Protokol skorları eğitmenin iç izleme aracıdır; veli raporlarına yansıtılmaz.**
 
@@ -123,6 +141,8 @@ Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görün�
 
 Raporlar sayfasından dört yazdırılabilir belge hazırlanır: haftalık eğitmen
 raporu, dönemlik grup raporu, veli raporu ve **Katılım Belgesi (sertifika)**.
+Ayrıca **CSV dışa aktarma** (protokol sonuçları + yoklama; UTF-8 BOM, noktalı
+virgül ayraç — Türkçe Excel ile doğrudan açılır) kendi analizleriniz içindir.
 
 - **Katılım Belgesi** (`sertifika.php`): dönem sonu için şık, çerçeveli ve
   yatay (A4 landscape) belge — marka "Ritim Atölyesi", katılımcı kodu, tarih
@@ -158,8 +178,20 @@ sayfası gösterilir.
 
 ## Yedekleme
 
-Veritabanı tek dosyadır: `storage/ritim.sqlite` dosyasını kopyalamak tam yedektir.
-(Uygulama açıkken kopyalıyorsanız yanındaki `-wal` ve `-shm` dosyalarını da alın.)
+Menüdeki **Yedek** sayfası (`yedek.php`):
+
+- **⬇ Yedeği İndir** — çalışan veritabanının tutarlı kopyasını indirir
+  (`VACUUM INTO`; uygulama açıkken bile WAL içeriği dahildir).
+- **Otomatik yedek** — her gün ilk açılışta `storage/yedek/otomatik-<tarih>.sqlite`
+  alınır; en yeni 10 gün saklanır. Listeden indirilebilir veya "Bu Yedeğe Dön"
+  ile geri yüklenebilir.
+- **Geri yükleme** — indirilmiş bir `.sqlite` dosyası yüklenir; dosya doğrulanır
+  (SQLite imzası + çekirdek tablolar) ve geri yüklemeden hemen önce mevcut durumun
+  **emniyet kopyası** (`oncesi-…`) otomatik alınır.
+
+Elle yedek de hâlâ geçerlidir: `storage/ritim.sqlite` dosyasını kopyalamak tam
+yedektir (uygulama açıkken `-wal`/`-shm` dosyalarını da alın). Otomatik yedekler
+bu bilgisayardadır; arada bir indirip USB/buluta kopyalamanız önerilir.
 
 ## Yapı
 

@@ -78,6 +78,8 @@ require APP_DIR . '/includes/view/header.php';
   <h2 style="margin-top:1.3rem">Protokol gelişimi (iç izleme)</h2>
   <p class="alan-ipucu">Metronom Stüdyosu ve ev çalışması ölçümlerinin haftalık ortalamaları.
      Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansıtılmaz.</p>
+  <p class="alan-ipucu">📏 işaretli satırlarda ilk→son karşılaştırması yalnız standart koşullu ölçümlerden
+     yapılmıştır; işaretsiz satırlarda koşullar (tempo/zorluk) değişmiş olabilir.</p>
   <?php foreach ($protokolRapor['haftalik'] as $pKod => $haftalar):
       ksort($haftalar); ?>
   <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?></h3>
@@ -99,7 +101,7 @@ require APP_DIR . '/includes/view/header.php';
         <?php foreach ($gelisenler as $kod => $v):
             $fark = (int)$v['son'] - (int)$v['ilk']; ?>
         <tr>
-          <td><?= e($kod) ?></td>
+          <td><?= e($kod) ?><?= !empty($v['standart']) ? ' <span title="İlk→son karşılaştırması yalnız standart koşullu (📏) ölçümlerden">📏</span>' : '' ?></td>
           <td class="sayi"><?= (int)$v['ilk'] ?></td>
           <td class="sayi"><strong><?= (int)$v['son'] ?></strong></td>
           <td class="sayi" style="color:<?= $fark > 0 ? 'var(--yesil)' : ($fark < 0 ? 'var(--kirmizi)' : 'inherit') ?>">

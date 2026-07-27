@@ -105,9 +105,11 @@ require APP_DIR . '/includes/view/header.php';
           <tr><th class="sol">Çalışma</th><th>Dönem başı</th><th>Dönem sonu</th></tr>
         </thead>
         <tbody>
-          <?php foreach ($olcumler as $pKod => $v): ?>
+          <?php $karisikVar = false;
+          foreach ($olcumler as $pKod => $v):
+              if (empty($v['standart'])) { $karisikVar = true; } ?>
           <tr>
-            <td class="sol"><?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?></td>
+            <td class="sol"><?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?><?= !empty($v['standart']) ? ' 📏' : '' ?></td>
             <td><?= (int)$v['ilk'] ?> / 100 <span class="olcum-tarih">(<?= e(format_date_tr($v['ilk_tarih'], false)) ?>)</span></td>
             <td><?= (int)$v['son'] ?> / 100 <span class="olcum-tarih">(<?= e(format_date_tr($v['son_tarih'], false)) ?>)</span></td>
           </tr>
@@ -117,6 +119,11 @@ require APP_DIR . '/includes/view/header.php';
       <div class="sertifika-dipnot">
         Metronom çalışmalarında kaydedilen zamanlama ölçümleridir (0–100 iç ölçek).
         Eğitsel izleme amaçlıdır; bir değerlendirme veya tanı aracı değildir.
+        <?php if ($karisikVar): ?>
+        📏 işaretsiz satırlarda ölçüm koşulları (tempo/zorluk) dönem içinde değişmiş olabilir.
+        <?php else: ?>
+        📏: iki ölçüm de aynı standart koşullarda alınmıştır.
+        <?php endif; ?>
       </div>
     </div>
     <?php endif; ?>

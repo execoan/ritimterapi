@@ -102,5 +102,7 @@ seed_site();
 seed_articles();
 seed_templates();
 seed_home_exercises();
+seed_template_home_tasks();
 seed_studies();
 ensure_student_codes();
+auto_backup_daily();

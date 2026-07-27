@@ -191,3 +191,40 @@
 .m-sapma-cubuk.kacik { background: var(--kirmizi); }
 .m-sapma-cubuk.sessizv { background: #8b5cf6; }
 .m-kaydet-form { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
+
+/* ---------- Standart ölçüm modu ---------- */
+.m-standart-satir {
+  display: flex; gap: .7rem; align-items: flex-start; flex-wrap: wrap;
+  border: 1px dashed var(--amber); border-radius: 10px;
+  background: var(--amber-acik); padding: .55rem .8rem; margin-bottom: .9rem;
+}
+.m-standart-satir .m-ayar-onay { white-space: nowrap; }
+.m-standart-satir .alan-ipucu { flex: 1; min-width: 240px; }
+
+/* ---------- Ders akışı ---------- */
+.akis-ust { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-bottom: .8rem; }
+.akis-ust .sag { margin-left: auto; display: flex; gap: .4rem; flex-wrap: wrap; }
+.akis-sahne { display: grid; grid-template-columns: minmax(230px, 320px) 1fr; gap: 1.2rem; align-items: start; }
+.akis-sol { text-align: center; }
+.akis-adim-etiket { font-weight: 700; min-height: 2.2em; }
+.akis-sayac {
+  font-variant-numeric: tabular-nums; font-weight: 800; letter-spacing: .03em;
+  font-size: 3.4rem; line-height: 1.1; color: var(--murekkep); margin: .15rem 0 .4rem;
+}
+.akis-cubuk { margin-bottom: .7rem; }
+.akis-butonlar { display: flex; gap: .5rem; justify-content: center; align-items: center; margin-bottom: .5rem; }
+.akis-liste { list-style: none; margin: 0; padding: 0; counter-reset: akis; }
+.akis-liste li {
+  counter-increment: akis; display: flex; gap: .55rem; align-items: baseline; flex-wrap: wrap;
+  border: 1px solid var(--cizgi); border-radius: 9px; padding: .45rem .65rem; margin-bottom: .4rem;
+  background: #fff; transition: border-color .2s, background .2s;
+}
+.akis-liste li::before { content: counter(akis); font-weight: 700; color: var(--metin-soluk); min-width: 1.2em; }
+.akis-liste li .akis-li-ad { font-weight: 600; }
+.akis-liste li .akis-li-sure { margin-left: auto; color: var(--metin-soluk); font-variant-numeric: tabular-nums; }
+.akis-liste li small { flex-basis: 100%; }
+.akis-liste li.aktif { border-color: var(--amber); background: var(--amber-acik); box-shadow: 0 0 0 2px var(--amber-acik); }
+.akis-liste li.aktif::before { content: "▶"; color: var(--amber); }
+.akis-liste li.tamam { opacity: .55; }
+.akis-liste li.tamam::before { content: "✔"; color: var(--yesil); }
+@media (max-width: 760px) { .akis-sahne { grid-template-columns: 1fr; } }

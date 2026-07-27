@@ -794,22 +794,49 @@ function template_session_delete(int $id): void
     db()->prepare('DELETE FROM sablon_oturumlari WHERE id = ?')->execute([$id]);
 }
 
+/** Şablonun haftalara bağlı ev görevleri: [hafta_no => [satırlar]]. */
+function template_home_tasks(int $sablonId): array
+{
+    $st = db()->prepare('SELECT g.hafta_no, g.calisma_id, c.ad, c.tur, c.sure_dk
+                           FROM sablon_ev_gorevleri g JOIN ev_calismalari c ON c.id = g.calisma_id
+                          WHERE g.sablon_id = ? ORDER BY g.hafta_no, c.ad');
+    $st->execute([$sablonId]);
+    $harita = [];
+    foreach ($st->fetchAll() as $r) { $harita[(int)$r['hafta_no']][] = $r; }
+    return $harita;
+}
+
+/** Bir haftanın ev görev listesini olduğu gibi yazar (A/B oturumları ortaktır). */
+function template_home_tasks_set(int $sablonId, int $haftaNo, array $calismaIds): void
+{
+    $pdo = db();
+    $pdo->prepare('DELETE FROM sablon_ev_gorevleri WHERE sablon_id = ? AND hafta_no = ?')
+        ->execute([$sablonId, $haftaNo]);
+    $ins = $pdo->prepare('INSERT OR IGNORE INTO sablon_ev_gorevleri (sablon_id, hafta_no, calisma_id) VALUES (?, ?, ?)');
+    foreach ($calismaIds as $cid) {
+        $cid = (int)$cid;
+        if ($cid > 0 && home_exercise_get($cid)) { $ins->execute([$sablonId, $haftaNo, $cid]); }
+    }
+}
+
 /**
  * Şablonu bir gruba uygular: her şablon oturumu için gerçek oturum + plan oluşturur.
  * $mod: 'A' (yalnız A oturumları) | 'AB' (ikisi de). $bGunFarki: B oturumunun A'dan kaç gün sonra olduğu.
- * Aynı grup + tarihte oturum varsa atlanır.
- * @return array{olusan:int, atlanan:int}
+ * Aynı grup + tarihte oturum varsa atlanır. Oturum oluşan haftalarda şablonun
+ * ev görevleri gruptaki aktif öğrencilere hafta aralığıyla ödev olarak atanır.
+ * @return array{olusan:int, atlanan:int, odev:int}
  */
 function template_apply(int $sablonId, int $grupId, string $baslangicTarihi, string $mod, int $bGunFarki): array
 {
     $sablon = template_get($sablonId);
     $grup = group_get($grupId);
-    if (!$sablon || !$grup) { return ['olusan' => 0, 'atlanan' => 0]; }
+    if (!$sablon || !$grup) { return ['olusan' => 0, 'atlanan' => 0, 'odev' => 0]; }
     $baslangic = DateTime::createFromFormat('Y-m-d', $baslangicTarihi) ?: new DateTime('now');
     $bGunFarki = max(1, min(6, $bGunFarki));
 
     $olusan = 0;
     $atlanan = 0;
+    $olusanHaftalar = [];
     $varMi = db()->prepare('SELECT id FROM oturumlar WHERE grup_id = ? AND tarih = ?');
     foreach ($sablon['oturumlar'] as $o) {
         if ($mod !== 'AB' && $o['oturum_adi'] !== 'A') { continue; }
@@ -835,9 +862,25 @@ function template_apply(int $sablonId, int $grupId, string $baslangicTarihi, str
             'notlar' => 'Şablon: ' . $sablon['ad'] . ' · Hafta ' . (int)$o['hafta_no'] . $o['oturum_adi']
                       . ' — ' . $o['hedef'],
         ], $items, null);
-        if ($res['ok']) { $olusan++; } else { $atlanan++; }
+        if ($res['ok']) { $olusan++; $olusanHaftalar[(int)$o['hafta_no']] = true; } else { $atlanan++; }
     }
-    return ['olusan' => $olusan, 'atlanan' => $atlanan];
+
+    $odev = 0;
+    $gorevler = template_home_tasks($sablonId);
+    if ($gorevler && $olusanHaftalar) {
+        $ogrenciIds = array_map(fn($o) => (int)$o['id'], students_list($grupId, 1));
+        if ($ogrenciIds) {
+            foreach (array_keys($olusanHaftalar) as $haftaNo) {
+                $bas = (clone $baslangic)->modify('+' . (($haftaNo - 1) * 7) . ' days')->format('Y-m-d');
+                $bit = (clone $baslangic)->modify('+' . (($haftaNo - 1) * 7 + 6) . ' days')->format('Y-m-d');
+                foreach ($gorevler[$haftaNo] ?? [] as $g) {
+                    $odev += assignment_create($ogrenciIds, (int)$g['calisma_id'], $bas, $bit, 5,
+                        'Şablon: ' . $sablon['ad'] . ' · Hafta ' . $haftaNo);
+                }
+            }
+        }
+    }
+    return ['olusan' => $olusan, 'atlanan' => $atlanan, 'odev' => $odev];
 }
 
 /* ======================== PROTOKOL SONUÇLARI ======================== */
@@ -860,10 +903,11 @@ function protocol_result_save(array $d): array
     if (strlen($detay) > 4000) { $detay = '{}'; }
 
     $kaynak = ($d['kaynak'] ?? 'atolye') === 'ev' ? 'ev' : 'atolye';
-    db()->prepare('INSERT INTO protokol_sonuclari (ogrenci_id, protokol, bpm, skor, detay, notlar, kaynak, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    $standart = (int)($d['standart'] ?? 0) === 1 ? 1 : 0;
+    db()->prepare('INSERT INTO protokol_sonuclari (ogrenci_id, protokol, bpm, skor, detay, notlar, kaynak, standart, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([$ogrenciId, $protokol, $bpm, $skor,
-                   $detay, trim((string)($d['notlar'] ?? '')), $kaynak, now_str()]);
+                   $detay, trim((string)($d['notlar'] ?? '')), $kaynak, $standart, now_str()]);
     return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
 }
 
@@ -909,49 +953,65 @@ function protocol_last_scores(): array
  */
 function report_group_protocols(int $grupId, string $from, string $to): array
 {
-    $st = db()->prepare("SELECT p.protokol, p.skor, p.created_at, o.kod
+    $st = db()->prepare("SELECT p.protokol, p.skor, p.standart, p.created_at, o.kod
                            FROM protokol_sonuclari p
                            JOIN ogrenciler o ON o.id = p.ogrenci_id
                           WHERE o.grup_id = ? AND date(p.created_at) BETWEEN ? AND ?
                           ORDER BY p.created_at");
     $st->execute([$grupId, $from, $to]);
     $haftalik = [];
-    $ogrenciler = [];
+    $seriler = []; // [protokol][kod] => ['hepsi' => [skor,…], 'std' => [skor,…]]
     foreach ($st->fetchAll() as $r) {
         [$pzt] = week_bounds(substr($r['created_at'], 0, 10));
         $haftalik[$r['protokol']][$pzt]['toplam'] = ($haftalik[$r['protokol']][$pzt]['toplam'] ?? 0) + (int)$r['skor'];
         $haftalik[$r['protokol']][$pzt]['adet'] = ($haftalik[$r['protokol']][$pzt]['adet'] ?? 0) + 1;
-        if (!isset($ogrenciler[$r['protokol']][$r['kod']])) {
-            $ogrenciler[$r['protokol']][$r['kod']] = ['ilk' => (int)$r['skor'], 'son' => (int)$r['skor'], 'adet' => 0];
+        $seriler[$r['protokol']][$r['kod']]['hepsi'][] = (int)$r['skor'];
+        if ((int)$r['standart'] === 1) { $seriler[$r['protokol']][$r['kod']]['std'][] = (int)$r['skor']; }
+    }
+    // İlk→son karşılaştırması: en az iki STANDART ölçüm varsa yalnız onlardan
+    // (koşullar sabit → karşılaştırma dürüst); yoksa tüm ölçümlerden.
+    $ogrenciler = [];
+    foreach ($seriler as $protokol => $kodlar) {
+        foreach ($kodlar as $kod => $s) {
+            $std = $s['std'] ?? [];
+            $dizi = count($std) >= 2 ? $std : $s['hepsi'];
+            $ogrenciler[$protokol][$kod] = [
+                'ilk' => $dizi[0], 'son' => $dizi[count($dizi) - 1],
+                'adet' => count($dizi), 'standart' => count($std) >= 2 ? 1 : 0,
+            ];
         }
-        $ogrenciler[$r['protokol']][$r['kod']]['son'] = (int)$r['skor'];
-        $ogrenciler[$r['protokol']][$r['kod']]['adet']++;
     }
     return ['haftalik' => $haftalik, 'ogrenciler' => $ogrenciler];
 }
 
 /**
  * Sertifika için tek öğrencinin protokol başına İLK ve SON ölçümü (tarihli).
- * Dönüş: [protokol => ['ilk','ilk_tarih','son','son_tarih','adet']] — yalnız adet>=1.
+ * En az iki STANDART ölçüm varsa karşılaştırma yalnız onlardan yapılır
+ * ('standart' => 1); yoksa tüm ölçümlerden ('standart' => 0).
+ * Dönüş: [protokol => ['ilk','ilk_tarih','son','son_tarih','adet','standart']].
  */
 function student_protocol_first_last(int $ogrenciId, string $from, string $to): array
 {
-    $st = db()->prepare('SELECT protokol, skor, created_at
+    $st = db()->prepare('SELECT protokol, skor, standart, created_at
                            FROM protokol_sonuclari
                           WHERE ogrenci_id = ? AND date(created_at) BETWEEN ? AND ?
                           ORDER BY created_at, id');
     $st->execute([$ogrenciId, $from, $to]);
-    $harita = [];
+    $seriler = [];
     foreach ($st->fetchAll() as $r) {
-        $p = $r['protokol'];
-        $tarih = substr((string)$r['created_at'], 0, 10);
-        if (!isset($harita[$p])) {
-            $harita[$p] = ['ilk' => (int)$r['skor'], 'ilk_tarih' => $tarih,
-                           'son' => (int)$r['skor'], 'son_tarih' => $tarih, 'adet' => 0];
-        }
-        $harita[$p]['son'] = (int)$r['skor'];
-        $harita[$p]['son_tarih'] = $tarih;
-        $harita[$p]['adet']++;
+        $kayit = ['skor' => (int)$r['skor'], 'tarih' => substr((string)$r['created_at'], 0, 10)];
+        $seriler[$r['protokol']]['hepsi'][] = $kayit;
+        if ((int)$r['standart'] === 1) { $seriler[$r['protokol']]['std'][] = $kayit; }
+    }
+    $harita = [];
+    foreach ($seriler as $p => $s) {
+        $std = $s['std'] ?? [];
+        $dizi = count($std) >= 2 ? $std : $s['hepsi'];
+        $ilk = $dizi[0];
+        $son = $dizi[count($dizi) - 1];
+        $harita[$p] = ['ilk' => $ilk['skor'], 'ilk_tarih' => $ilk['tarih'],
+                       'son' => $son['skor'], 'son_tarih' => $son['tarih'],
+                       'adet' => count($dizi), 'standart' => count($std) >= 2 ? 1 : 0];
     }
     uksort($harita, fn($a, $b) => array_search($a, array_keys(PROTOKOL_LABELS)) <=> array_search($b, array_keys(PROTOKOL_LABELS)));
     return $harita;

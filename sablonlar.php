@@ -66,7 +66,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             $sonuc = template_apply($sablonId, $grupId, $tarih, $mod, $bFark);
             flash_set($sonuc['olusan'] > 0 ? 'basari' : 'uyari',
                 $sonuc['olusan'] . ' oturum planlandı' .
-                ($sonuc['atlanan'] > 0 ? '; ' . $sonuc['atlanan'] . ' oturum atlandı (aynı tarihte kayıt vardı).' : '.'));
+                ($sonuc['atlanan'] > 0 ? '; ' . $sonuc['atlanan'] . ' oturum atlandı (aynı tarihte kayıt vardı)' : '') .
+                ($sonuc['odev'] > 0 ? '; ' . $sonuc['odev'] . ' ev ödevi hafta takvimiyle atandı.' : '.'));
             redirect('oturumlar.php?grup_id=' . $grupId);
         }
     }
@@ -76,6 +77,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $sablonlar = templates_list();
 $secili = isset($_GET['id']) ? template_get((int)$_GET['id']) : null;
 $gruplar = groups_list(true);
+$evGorevleri = $secili ? template_home_tasks((int)$secili['id']) : [];
 
 $PAGE_TITLE = 'Plan Şablonları';
 require APP_DIR . '/includes/view/header.php';
@@ -176,7 +178,9 @@ require APP_DIR . '/includes/view/header.php';
   <p class="alan-ipucu"><?= e($secili['aciklama']) ?></p>
 
   <div class="bilgi-kutu">
-    <strong>Gruba uygula:</strong> seçtiğiniz başlangıç tarihinden itibaren her hafta A oturumu
+    <strong>Gruba uygula:</strong> haftalara bağlı 🏠 ev görevleri de gruptaki aktif öğrencilere
+    hafta takvimiyle otomatik ödev olarak atanır (sonradan kaydolan öğrenciye Ev Programı sayfasından elle atayın).
+    Seçtiğiniz başlangıç tarihinden itibaren her hafta A oturumu
     (istenirse +gün farkıyla B oturumu) teknik planlarıyla birlikte oluşturulur. Var olan
     oturumların tarihine denk gelenler atlanır; oluşan planları sonra tek tek düzenleyebilirsiniz.
   </div>
@@ -243,6 +247,10 @@ require APP_DIR . '/includes/view/header.php';
     <summary>
       <strong>Hafta <?= $haftaNo ?></strong> — <?= e($oturumlar[0]['hedef']) ?>
       <span class="rozet rozet-gri"><?= count($oturumlar) ?> oturum</span>
+      <?php if (!empty($evGorevleri[$haftaNo])): ?>
+      <span class="rozet rozet-acik" title="<?= e(implode(' · ', array_column($evGorevleri[$haftaNo], 'ad'))) ?>">
+        🏠 <?= count($evGorevleri[$haftaNo]) ?> ev görevi</span>
+      <?php endif; ?>
     </summary>
     <div class="tablo-sar">
       <table class="tablo">

@@ -5,6 +5,7 @@
 /storage/ritim.sqlite-shm
 /storage/gizli.php
 /storage/*.log
+/storage/yedek/
 
 # Galeri yüklemeleri (katılımcı fotoğrafları olabilir) — içerik yerelde kalır
 /assets/img/galeri/*

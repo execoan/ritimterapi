@@ -276,7 +276,7 @@ require APP_DIR . '/includes/view/header.php';
           <td><?= e(format_date_tr(substr($r['created_at'], 0, 10))) ?> <?= e(substr($r['created_at'], 11, 5)) ?></td>
           <td><?= e(PROTOKOL_LABELS[$r['protokol']] ?? $r['protokol']) ?></td>
           <td class="sayi"><?= $r['bpm'] ? (int)$r['bpm'] : '—' ?></td>
-          <td class="sayi"><strong><?= (int)$r['skor'] ?></strong>/100</td>
+          <td class="sayi"><strong><?= (int)$r['skor'] ?></strong>/100<?= !empty($r['standart']) ? ' <span title="Standart koşullarda ölçüm (📏)">📏</span>' : '' ?></td>
           <td><?= e(mb_strimwidth((string)$r['notlar'], 0, 50, '…')) ?></td>
         </tr>
         <?php endforeach; ?>

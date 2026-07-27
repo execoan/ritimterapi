@@ -4,10 +4,12 @@ if (!defined('RITIM')) { http_response_code(403); exit; }
 /**
  * SQLite bağlantısı (tekil). Veritabanı tek dosyadır: storage/ritim.sqlite —
  * yedeklemek için bu dosyayı kopyalamak yeterlidir.
+ * $sifirla: bağlantıyı kapatır (geri yükleme öncesi dosyayı serbest bırakmak için).
  */
-function db(): PDO
+function db_ref(bool $sifirla = false): ?PDO
 {
     static $pdo = null;
+    if ($sifirla) { $pdo = null; return null; }
     if ($pdo === null) {
         $dizin = APP_DIR . '/storage';
         if (!is_dir($dizin)) { @mkdir($dizin, 0755, true); }
@@ -20,6 +22,55 @@ function db(): PDO
         $pdo->exec('PRAGMA busy_timeout = 3000');
     }
     return $pdo;
+}
+
+function db(): PDO
+{
+    return db_ref();
+}
+
+function db_close(): void
+{
+    db_ref(true);
+}
+
+/* ---------- Yedekleme ---------- */
+
+function backup_dir(): string
+{
+    $dizin = APP_DIR . '/storage/yedek';
+    if (!is_dir($dizin)) { @mkdir($dizin, 0755, true); }
+    return $dizin;
+}
+
+/**
+ * Çalışan veritabanının TUTARLI kopyasını hedefe yazar (WAL dahil).
+ * VACUUM INTO var olan dosyaya yazmaz; kalıntı varsa önce silinir.
+ */
+function backup_snapshot(string $hedef): bool
+{
+    if (is_file($hedef)) { @unlink($hedef); }
+    try {
+        db()->exec("VACUUM INTO '" . str_replace("'", "''", $hedef) . "'");
+        return is_file($hedef);
+    } catch (Throwable $e) {
+        error_log('RitimTerapi yedek hatası: ' . $e->getMessage());
+        return false;
+    }
+}
+
+/** Günde bir otomatik yedek alır; en yeni 10 otomatik yedek tutulur. */
+function auto_backup_daily(): void
+{
+    $dizin = backup_dir();
+    $hedef = $dizin . '/otomatik-' . date('Y-m-d') . '.sqlite';
+    if (is_file($hedef)) { return; }
+    if (!backup_snapshot($hedef)) { return; }
+    $eskiler = glob($dizin . '/otomatik-*.sqlite') ?: [];
+    sort($eskiler); // ad = tarih → kronolojik
+    foreach (array_slice($eskiler, 0, max(0, count($eskiler) - 10)) as $dosya) {
+        @unlink($dosya);
+    }
 }
 
 /**
@@ -278,6 +329,18 @@ function run_migrations(): void
         8 => "
             ALTER TABLE oturumlar ADD COLUMN protokol TEXT NOT NULL DEFAULT '';
             ALTER TABLE sablon_oturumlari ADD COLUMN protokol TEXT NOT NULL DEFAULT '';
+        ",
+
+        // v9 — standart ölçüm işareti (sabit koşullarda alınan protokol sonucu)
+        //      + şablon haftasına bağlı ev görevleri (uygulanınca otomatik ödev)
+        9 => "
+            ALTER TABLE protokol_sonuclari ADD COLUMN standart INTEGER NOT NULL DEFAULT 0;
+            CREATE TABLE sablon_ev_gorevleri (
+                sablon_id  INTEGER NOT NULL REFERENCES plan_sablonlari(id) ON DELETE CASCADE,
+                hafta_no   INTEGER NOT NULL,
+                calisma_id INTEGER NOT NULL REFERENCES ev_calismalari(id) ON DELETE CASCADE,
+                PRIMARY KEY (sablon_id, hafta_no, calisma_id)
+            );
         ",
     ];
 

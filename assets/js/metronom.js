@@ -764,6 +764,7 @@
     byId('vtFormBpm').value = vt.bpm;
     byId('vtFormSkor').value = genel;
     byId('vtFormDetay').value = JSON.stringify({ bpm: vt.bpm, fazVurus: vt.fazVurus, sesli: f1, sessiz: f2 });
+    byId('vtFormStandart').value = (vt.bpm === 72 && vt.fazVurus === 16) ? '1' : '0';
   }
 
   function vtIptalEt() {
@@ -863,7 +864,8 @@
     }).join('');
     byId('bfFormBpm').value = Math.round(ort(bf.sonuclar.map(function (s) { return s.gercek; })));
     byId('bfFormSkor').value = ortSkor;
-    byId('bfFormDetay').value = JSON.stringify({ turlar: bf.sonuclar });
+    byId('bfFormDetay').value = JSON.stringify({ turlar: bf.sonuclar, zorluk: byId('bfZorluk').value });
+    byId('bfFormStandart').value = byId('bfZorluk').value === 'orta' ? '1' : '0';
   }
 
   function bfIptalEt() {
@@ -892,6 +894,8 @@
         byId('roFormBpm').value = sonuc.bpm;
         byId('roFormSkor').value = sonuc.skor;
         byId('roFormDetay').value = JSON.stringify(sonuc);
+        byId('roFormStandart').value =
+          (parseInt(byId('roSeviye').value, 10) === 1 && parseInt(byId('roBpm').value, 10) === 60) ? '1' : '0';
         byId('roKaydetSatir').hidden = false;
       }
     });
@@ -963,6 +967,7 @@
     byId('stFormBpm').value = smt;
     byId('stFormSkor').value = skor;
     byId('stFormDetay').value = JSON.stringify({ smt: smt, ortMs: Math.round(ortMs), cv: Math.round(cv * 1000) / 1000, vurus: st.taplar.length });
+    byId('stFormStandart').value = '1'; // parametresiz ölçüm: koşullar hep aynı
   }
 
   function stIptalEt() {
@@ -1053,6 +1058,7 @@
     byId('abFormBpm').value = 100;
     byId('abFormSkor').value = skor;
     byId('abFormDetay').value = JSON.stringify({ zorluk: byId('abZorluk').value, dogru: ab.dogru, tur: ab.TOPLAM, sonuclar: ab.sonuclar });
+    byId('abFormStandart').value = byId('abZorluk').value === 'orta' ? '1' : '0';
   }
 
   function abIptalEt() {
@@ -1088,6 +1094,7 @@
   byId('irOgrenci').addEventListener('change', function () {
     var oneri = byId('irOneri');
     var oid = this.value;
+    if (stdAcik()) { oneri.textContent = '📏 Standart mod açık — profil sabit (Standart).'; return; }
     var skor = (window.SON_SKORLAR && window.SON_SKORLAR[oid] || {}).icsel_ritim;
     if (skor === undefined) {
       oneri.textContent = oid ? 'İlk ölçüm — Standart profille başlanır.' : 'Öğrenci seçilince son skora göre önerilir.';
@@ -1259,6 +1266,7 @@
     byId('irFormDetay').value = JSON.stringify({
       bpm: ir.bpm, profil: ir.profil, fazlar: fazlar, sesliOrtMs: sesliOrt, sessizOrtMs: sessizOrt
     });
+    byId('irFormStandart').value = (ir.bpm === 72 && ir.profil === 'standart') ? '1' : '0';
   }
 
   function irIptalEt() {
@@ -1280,6 +1288,163 @@
     if (haric !== 'st' && st.aktif) { stIptalEt(); }
     if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
     if (haric !== 'ir' && ir.aktif) { irIptalEt(); }
+  }
+
+  /* ================================================================
+     STANDART ÖLÇÜM MODU — sabit koşullar; toggle yalnız ayarları
+     kilitleyen kolaylıktır. 📏 işareti kayıtta GERÇEK koşullardan
+     türetilir (sonuç dolumlarındaki FormStandart satırları).
+     ================================================================ */
+  var STD_AYAR = {
+    vtBpm: '72', vtVurusSayisi: '16',
+    bfZorluk: 'orta',
+    roSeviye: '1', roBpm: '60',
+    abZorluk: 'orta',
+    irBpm: '72', irProfil: 'standart'
+  };
+  var stdKutu = byId('stdMod');
+  var stdOnceki = {};
+  function stdAcik() { return !!(stdKutu && stdKutu.checked); }
+  if (stdKutu) {
+    stdKutu.addEventListener('change', function () {
+      var roDegisti = false;
+      Object.keys(STD_AYAR).forEach(function (id) {
+        var el = byId(id);
+        if (!el) { return; }
+        if (stdKutu.checked) {
+          stdOnceki[id] = el.value;
+          if (el.value !== STD_AYAR[id]) {
+            el.value = STD_AYAR[id];
+            if (id === 'roSeviye' || id === 'roBpm') { roDegisti = true; }
+          }
+          el.disabled = true;
+        } else {
+          el.disabled = false;
+          if (stdOnceki[id] !== undefined && el.value !== stdOnceki[id]) {
+            el.value = stdOnceki[id];
+            if (id === 'roSeviye' || id === 'roBpm') { roDegisti = true; }
+          }
+        }
+      });
+      if (roDegisti && roKok) { roKur(); }
+    });
+  }
+
+  /* ================================================================
+     DERS AKIŞI — oturum planındaki teknikleri sırayla çalıştırır.
+     Sayaç metronomdan bağımsızdır; adım bitince zil çalar.
+     ================================================================ */
+  function zilCal() {
+    ses.hazirla();
+    var t = ses.ctx.currentTime + 0.02;
+    [659.25, 880].forEach(function (frekans, i) {
+      var o = ses.ctx.createOscillator();
+      var g = ses.ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = frekans;
+      g.gain.setValueAtTime(0.0001, t + i * 0.18);
+      g.gain.exponentialRampToValueAtTime(0.5, t + i * 0.18 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 0.9);
+      o.connect(g); g.connect(ses.master);
+      o.start(t + i * 0.18); o.stop(t + i * 0.18 + 1);
+    });
+    if (navigator.vibrate) { navigator.vibrate([180, 90, 180]); }
+  }
+
+  var akisYukleBtn = byId('akisYukle');
+  if (akisYukleBtn && byId('akisSecim')) {
+    akisYukleBtn.addEventListener('click', function () {
+      window.location = 'metronom.php?akis=' + encodeURIComponent(byId('akisSecim').value);
+    });
+  }
+
+  var akisVeri = window.DERS_AKISI || null;
+  if (akisVeri && byId('akisListe')) {
+    var akis = { idx: 0, kalanSn: 0, calisiyor: false, tik: null, bitti: false };
+    var akisTeknikler = akisVeri.teknikler || [];
+    var akisToplamDk = akisTeknikler.reduce(function (a, t) { return a + t.sure_dk; }, 0);
+
+    var akisCiz = function () {
+      document.querySelectorAll('#akisListe li').forEach(function (li) {
+        var i = parseInt(li.dataset.idx, 10);
+        li.classList.toggle('aktif', i === akis.idx && !akis.bitti);
+        li.classList.toggle('tamam', akis.bitti || i < akis.idx);
+      });
+      byId('akisToplam').textContent = 'Toplam plan: ' + akisToplamDk + ' dk · ' + akisTeknikler.length + ' teknik';
+      if (akis.bitti) {
+        byId('akisAdimEtiket').textContent = '🎉 Ders akışı tamamlandı';
+        byId('akisSayac').textContent = '00:00';
+        byId('akisIlerleme').style.width = '100%';
+        return;
+      }
+      var t = akisTeknikler[akis.idx];
+      byId('akisAdimEtiket').textContent =
+        (akis.idx + 1) + ' / ' + akisTeknikler.length + ' — ' + t.ad + (t.not ? ' · ' + t.not : '');
+      var dk = Math.floor(akis.kalanSn / 60);
+      var sn = akis.kalanSn % 60;
+      byId('akisSayac').textContent = (dk < 10 ? '0' : '') + dk + ':' + (sn < 10 ? '0' : '') + sn;
+      var gecenSn = akisTeknikler.slice(0, akis.idx).reduce(function (a, x) { return a + x.sure_dk * 60; }, 0)
+                  + (t.sure_dk * 60 - akis.kalanSn);
+      byId('akisIlerleme').style.width =
+        Math.min(100, Math.round(100 * gecenSn / Math.max(1, akisToplamDk * 60))) + '%';
+    };
+    var akisAdimYukle = function (i) {
+      akis.bitti = false;
+      akis.idx = Math.max(0, Math.min(akisTeknikler.length - 1, i));
+      akis.kalanSn = akisTeknikler[akis.idx].sure_dk * 60;
+      akisCiz();
+    };
+    var akisDur = function () {
+      clearInterval(akis.tik);
+      akis.tik = null;
+      akis.calisiyor = false;
+    };
+    var akisTikla = function () {
+      akis.kalanSn--;
+      if (akis.kalanSn <= 0) {
+        zilCal();
+        if (akis.idx >= akisTeknikler.length - 1) {
+          akis.bitti = true;
+          akisDur();
+          byId('akisBaslat').textContent = '↺ Yeniden Başlat';
+          akisCiz();
+          return;
+        }
+        akisAdimYukle(akis.idx + 1);
+        return;
+      }
+      akisCiz();
+    };
+    byId('akisBaslat').addEventListener('click', function () {
+      if (akis.calisiyor) {
+        akisDur();
+        byId('akisBaslat').textContent = '▶ Devam';
+        return;
+      }
+      if (akis.bitti) { akisAdimYukle(0); }
+      ses.hazirla(); // zil için kullanıcı hareketiyle ses bağlamını aç
+      akis.calisiyor = true;
+      byId('akisBaslat').textContent = '⏸ Duraklat';
+      akis.tik = setInterval(akisTikla, 1000);
+    });
+    byId('akisSonraki').addEventListener('click', function () {
+      if (akis.idx < akisTeknikler.length - 1) { akisAdimYukle(akis.idx + 1); }
+    });
+    byId('akisOnceki').addEventListener('click', function () { akisAdimYukle(akis.idx - 1); });
+    byId('akisSifirla').addEventListener('click', function () {
+      akisDur();
+      byId('akisBaslat').textContent = '▶ Başlat';
+      akisAdimYukle(0);
+    });
+    var akisProtokolAc = byId('akisProtokolAc');
+    if (akisProtokolAc) {
+      akisProtokolAc.addEventListener('click', function () {
+        var sekmeAdi = PROTOKOL_SEKME[akisProtokolAc.dataset.protokol];
+        var sekme = sekmeAdi && document.querySelector('.m-sekme[data-sekme="' + sekmeAdi + '"]');
+        if (sekme) { sekme.click(); sekme.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      });
+    }
+    akisAdimYukle(0);
   }
 
   /* ================================================================

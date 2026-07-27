@@ -17,6 +17,7 @@ $navLinkler = [
     'oturumlar.php'  => 'Oturumlar',
     'raporlar.php'   => 'Raporlar',
     'site.php'       => 'Site',
+    'yedek.php'      => 'Yedek',
 ];
 // Alt sayfaları üst menü maddesine bağla (grup.php → gruplar.php gibi)
 $navesle = [

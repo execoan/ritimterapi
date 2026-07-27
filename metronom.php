@@ -29,6 +29,33 @@ $sonSkorlar = protocol_last_scores();
 $acilacakProtokol = (string)($_GET['protokol'] ?? '');
 if (!isset(PROTOKOL_LABELS[$acilacakProtokol])) { $acilacakProtokol = ''; }
 
+/* Ders akışı: bir oturumun teknik planını sırayla, süre sayaçlarıyla çalıştır */
+$akisOturum = null;
+$akisId = (int)($_GET['akis'] ?? 0);
+if ($akisId > 0) {
+    $o = session_get($akisId);
+    if ($o) {
+        $akisOturum = [
+            'id' => (int)$o['id'],
+            'grup' => (string)$o['grup_ad'],
+            'tarih' => (string)$o['tarih'],
+            'hafta_no' => (int)$o['hafta_no'],
+            'protokol' => (string)($o['protokol'] ?? ''),
+            'teknikler' => array_map(fn($t) => [
+                'ad' => (string)$t['ad'],
+                'sure_dk' => (int)$t['sure_dk'],
+                'not' => (string)$t['uygulama_notu'],
+            ], session_techniques($akisId)),
+        ];
+        if (!$akisOturum['teknikler']) { $akisOturum = null; }
+    }
+}
+// Akış seçici: son 7 gün + önümüzdeki 21 günün planlı oturumları
+$akisSecenekler = array_reverse(array_values(array_filter(
+    sessions_list(null, now()->modify('-7 days')->format('Y-m-d'), now()->modify('+21 days')->format('Y-m-d')),
+    fn($s) => (int)$s['teknik_sayisi'] > 0
+)));
+
 /** Öğrenci seçme kutusu (her protokol sekmesinde aynı). */
 function ogrenci_secimi(string $id, array $ogrenciler): string
 {
@@ -51,6 +78,7 @@ function sonuc_formu(string $onek, string $protokol): string
         . '<input type="hidden" name="bpm" id="' . e($onek) . 'FormBpm" value="">'
         . '<input type="hidden" name="skor" id="' . e($onek) . 'FormSkor" value="">'
         . '<input type="hidden" name="detay" id="' . e($onek) . 'FormDetay" value="">'
+        . '<input type="hidden" name="standart" id="' . e($onek) . 'FormStandart" value="0">'
         . '<input type="text" name="notlar" class="girdi" maxlength="200" placeholder="Not (isteğe bağlı)" style="max-width:260px">'
         . '<button type="submit" class="btn btn-birincil">Sonucu Kaydet</button>'
         . '</form>';
@@ -227,11 +255,87 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 </div>
 
+<!-- ==================== DERS AKIŞI ==================== -->
+<div class="kart" id="akisKart">
+  <div class="kart-baslik">
+    <h2>🧭 Ders Akışı</h2>
+    <span class="alan-ipucu">Oturum planındaki teknikleri sırayla, süre sayacı ve zille çalıştırır —
+      metronom ayarları serbest kalır.</span>
+  </div>
+
+  <?php if (!$akisOturum): ?>
+  <div class="filtre-satir">
+    <?php if (!$akisSecenekler): ?>
+      <span class="alan-ipucu">Yakın tarihli planlı oturum yok. Önce <a href="<?= e(url('plan.php')) ?>">ders planı</a> oluşturun
+        ya da oturum sayfasındaki "Ders Akışını Stüdyoda Başlat" düğmesini kullanın.</span>
+    <?php else: ?>
+    <label class="form-alan" style="min-width:260px">Oturum seç
+      <select id="akisSecim" class="secim">
+        <?php foreach ($akisSecenekler as $s): ?>
+        <option value="<?= (int)$s['id'] ?>">
+          <?= e(format_date_tr($s['tarih'])) ?> — <?= e($s['grup_ad']) ?> · H<?= (int)$s['hafta_no'] ?>
+          (<?= (int)$s['teknik_sayisi'] ?> teknik, <?= (int)$s['plan_sure'] ?> dk)
+        </option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <button type="button" class="btn btn-birincil" id="akisYukle">Akışı Yükle</button>
+    <?php endif; ?>
+  </div>
+
+  <?php else: ?>
+  <div class="akis-ust">
+    <span class="rozet rozet-acik"><?= e($akisOturum['grup']) ?></span>
+    <span class="rozet rozet-gri"><?= e(format_date_tr($akisOturum['tarih'])) ?> · Hafta <?= (int)$akisOturum['hafta_no'] ?></span>
+    <?php if ($akisOturum['protokol'] && isset(PROTOKOL_LABELS[$akisOturum['protokol']])): ?>
+    <button type="button" class="btn btn-kucuk btn-golge" id="akisProtokolAc"
+            data-protokol="<?= e($akisOturum['protokol']) ?>">🧭 Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?></button>
+    <?php endif; ?>
+    <div class="sag">
+      <a class="btn btn-kucuk btn-golge" href="<?= e(url('oturum.php?id=' . (int)$akisOturum['id'])) ?>">Oturum kaydına git</a>
+      <a class="btn btn-kucuk btn-golge" href="<?= e(url('metronom.php')) ?>">✕ Akışı kapat</a>
+    </div>
+  </div>
+
+  <div class="akis-sahne">
+    <div class="akis-sol">
+      <div class="akis-adim-etiket" id="akisAdimEtiket">Hazır — ▶ ile başlat</div>
+      <div class="akis-sayac" id="akisSayac">--:--</div>
+      <div class="m-ilerleme akis-cubuk"><div class="m-ilerleme-dolu" id="akisIlerleme" style="width:0"></div></div>
+      <div class="akis-butonlar">
+        <button type="button" class="m-mini-btn" id="akisOnceki" title="Önceki teknik">⏮</button>
+        <button type="button" class="btn btn-birincil m-baslat" id="akisBaslat">▶ Başlat</button>
+        <button type="button" class="m-mini-btn" id="akisSonraki" title="Sonraki teknik">⏭</button>
+        <button type="button" class="m-mini-btn" id="akisSifirla" title="Akışı başa sar">↺</button>
+      </div>
+      <div class="alan-ipucu" id="akisToplam"></div>
+    </div>
+    <ol class="akis-liste" id="akisListe">
+      <?php foreach ($akisOturum['teknikler'] as $i => $t): ?>
+      <li data-idx="<?= (int)$i ?>">
+        <span class="akis-li-ad"><?= e($t['ad']) ?></span>
+        <span class="akis-li-sure"><?= (int)$t['sure_dk'] ?> dk</span>
+        <?php if ($t['not'] !== ''): ?><small class="alan-ipucu"><?= e($t['not']) ?></small><?php endif; ?>
+      </li>
+      <?php endforeach; ?>
+    </ol>
+  </div>
+  <?php endif; ?>
+</div>
+
 <!-- ==================== PROTOKOLLER ==================== -->
 <div class="kart">
   <div class="kart-baslik">
     <h2>Dikkat Protokolleri</h2>
     <span class="alan-ipucu">Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansımaz.</span>
+  </div>
+
+  <div class="m-standart-satir">
+    <label class="m-ayar-onay"><input type="checkbox" id="stdMod"> 📏 <strong>Standart ölçüm modu</strong></label>
+    <span class="alan-ipucu">Dönem başı/sonu karşılaştırması için sabit koşullar: Vuruş 72 BPM · 16+16,
+      BPM Bulma orta, Ritim Okuma S1 · 60, Aksak orta, İçsel 72 · standart profil (Spontan Tempo zaten sabittir).
+      Bu koşullarda alınan sonuçlar 📏 işaretlenir; sertifika ve dönemlik rapor ilk→son karşılaştırmasını
+      önce 📏 ölçümlerden yapar.</span>
   </div>
 
   <div class="m-sekmeler" role="tablist" id="mSekmeler" data-acilacak="<?= e($acilacakProtokol) ?>">
@@ -518,7 +622,7 @@ require APP_DIR . '/includes/view/header.php';
           <td><?= e(PROTOKOL_LABELS[$k['protokol']] ?? $k['protokol']) ?></td>
           <td><?= ($k['kaynak'] ?? 'atolye') === 'ev' ? '🏠 Ev' : '🎓 Atölye' ?></td>
           <td class="sayi"><?= $k['bpm'] ? (int)$k['bpm'] : '—' ?></td>
-          <td class="sayi"><strong><?= (int)$k['skor'] ?></strong>/100</td>
+          <td class="sayi"><strong><?= (int)$k['skor'] ?></strong>/100<?= !empty($k['standart']) ? ' <span title="Standart koşullarda ölçüm (📏)">📏</span>' : '' ?></td>
           <td><?= e(mb_strimwidth((string)$k['notlar'], 0, 40, '…')) ?></td>
           <td style="text-align:right">
             <form method="post" action="<?= e(url('metronom.php')) ?>" data-onay="Bu protokol kaydını silmek istiyor musunuz?">
@@ -539,6 +643,8 @@ require APP_DIR . '/includes/view/header.php';
 <script>
 /* Uyarlanan zorluk için: her öğrencinin protokol başına SON skoru */
 window.SON_SKORLAR = <?= json_encode($sonSkorlar, JSON_UNESCAPED_UNICODE) ?>;
+/* Ders akışı: seçili oturumun teknik planı (yoksa null) */
+window.DERS_AKISI = <?= json_encode($akisOturum, JSON_UNESCAPED_UNICODE) ?>;
 </script>
 <script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom.js')) ?>"></script>

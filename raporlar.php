@@ -105,4 +105,14 @@ require APP_DIR . '/includes/view/header.php';
   </form>
   <?php endif; ?>
 </div>
+
+<div class="kart">
+  <h2>Dışa aktarma (CSV)</h2>
+  <p class="alan-ipucu">Kendi analizleriniz için ham veri — Excel/LibreOffice ile açılır
+     (UTF-8, noktalı virgül ayraçlı). Kişisel izleme amaçlıdır; veli çıktısı değildir.</p>
+  <div class="filtre-satir">
+    <a class="btn btn-golge" href="<?= e(url('disa-aktar.php?tur=protokol')) ?>">📊 Protokol sonuçları (CSV)</a>
+    <a class="btn btn-golge" href="<?= e(url('disa-aktar.php?tur=yoklama')) ?>">🗓 Yoklama kayıtları (CSV)</a>
+  </div>
+</div>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

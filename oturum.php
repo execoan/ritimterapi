@@ -68,8 +68,10 @@ require APP_DIR . '/includes/view/header.php';
   <span class="rozet rozet-acik">🧭 <?= e(PROTOKOL_LABELS[$oturum['protokol']]) ?></span>
   <?php endif; ?>
   <div class="sag">
+    <a class="btn btn-birincil" href="<?= e(url('metronom.php?akis=' . $id)) ?>"
+       title="Plandaki teknikleri sırayla, süre sayacı ve zille çalıştır">🧭 Ders Akışını Stüdyoda Başlat</a>
     <?php if (!empty($oturum['protokol']) && isset(PROTOKOL_LABELS[$oturum['protokol']])): ?>
-    <a class="btn btn-birincil" href="<?= e(url('metronom.php?protokol=' . $oturum['protokol'])) ?>">
+    <a class="btn btn-golge" href="<?= e(url('metronom.php?protokol=' . $oturum['protokol'])) ?>">
       🎛 Protokolü Stüdyoda Aç</a>
     <?php endif; ?>
     <a class="btn btn-golge" href="<?= e(url('plan.php?oturum_id=' . $id)) ?>">Planı düzenle</a>

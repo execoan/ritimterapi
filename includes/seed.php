@@ -728,3 +728,27 @@ function seed_templates(): void
         throw $ex;
     }
 }
+
+/**
+ * RitimOdak şablonlarına haftalık ev görevi bağları (BİR KEZ kurulur; eğitmenin
+ * sildiği bağlar dirilmez — işaret site_icerik'te tutulur). Eşleme, ev
+ * çalışmalarının kendi hafta_onerisi + kitle alanlarından türetilir.
+ */
+function seed_template_home_tasks(): void
+{
+    if (site_text('sistem_sablon_ev_seed') === '1') { return; }
+    $pdo = db();
+    $sablonlar = $pdo->query("SELECT id, hedef_kitle FROM plan_sablonlari WHERE ad LIKE 'RitimOdak-%'")->fetchAll();
+    if ($sablonlar) {
+        $ins = $pdo->prepare('INSERT OR IGNORE INTO sablon_ev_gorevleri (sablon_id, hafta_no, calisma_id) VALUES (?, ?, ?)');
+        $sec = $pdo->prepare("SELECT id, hafta_onerisi FROM ev_calismalari
+                               WHERE aktif = 1 AND hafta_onerisi BETWEEN 1 AND 52 AND kitle IN (?, 'hepsi')");
+        foreach ($sablonlar as $s) {
+            $sec->execute([$s['hedef_kitle'] === 'yetiskin' ? 'yetiskin' : 'cocuk']);
+            foreach ($sec->fetchAll() as $c) {
+                $ins->execute([(int)$s['id'], (int)$c['hafta_onerisi'], (int)$c['id']]);
+            }
+        }
+    }
+    site_text_set('sistem_sablon_ev_seed', '1');
+}
