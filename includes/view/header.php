@@ -24,6 +24,7 @@ $navesle = [
     'calismalar.php' => 'teknikler.php',
     'plan.php' => 'oturumlar.php', 'oturum.php' => 'oturumlar.php', 'sablon-oturum.php' => 'sablonlar.php',
     'rapor-haftalik.php' => 'raporlar.php', 'rapor-donemlik.php' => 'raporlar.php', 'rapor-veli.php' => 'raporlar.php',
+    'sertifika.php' => 'raporlar.php',
 ];
 $aktifNav = $navesle[$aktifSayfa] ?? $aktifSayfa;
 ?>

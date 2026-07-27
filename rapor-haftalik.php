@@ -16,11 +16,11 @@ require APP_DIR . '/includes/view/header.php';
   <div class="sag">
     <a class="btn btn-golge" href="<?= e(url('rapor-haftalik.php?tarih=' . (new DateTime($pzt))->modify('-7 days')->format('Y-m-d'))) ?>">← Önceki hafta</a>
     <a class="btn btn-golge" href="<?= e(url('rapor-haftalik.php?tarih=' . (new DateTime($pzt))->modify('+7 days')->format('Y-m-d'))) ?>">Sonraki hafta →</a>
-    <button type="button" class="btn btn-birincil" data-yazdir>🖨 Yazdır</button>
   </div>
 </div>
 
-<div class="kart">
+<?php $BELGE_ETIKET = 'Raporu'; require APP_DIR . '/includes/view/belge-arac-cubugu.php'; ?>
+<div class="kart" data-belge>
   <div class="rapor-baslik">
     <div>
       <div class="rapor-marka">Haftalık Eğitmen Raporu</div>
@@ -65,4 +65,5 @@ require APP_DIR . '/includes/view/header.php';
     <p class="alan-ipucu">✔ işlendi · ✖ atlandı · ▫ kayıt girilmedi</p>
   <?php endif; ?>
 </div>
+<script src="<?= e(asset('js/belge-duzenle.js')) ?>" defer></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

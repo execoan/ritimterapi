@@ -35,7 +35,6 @@ require APP_DIR . '/includes/view/header.php';
   <h1>Veli Raporu</h1>
   <div class="sag">
     <a class="btn btn-golge" href="<?= e(url('ogrenci.php?id=' . $ogrenciId)) ?>">← Öğrenciye dön</a>
-    <button type="button" class="btn btn-birincil" data-yazdir>🖨 Yazdır</button>
   </div>
 </div>
 
@@ -59,7 +58,8 @@ require APP_DIR . '/includes/view/header.php';
   Başlıkta ve metinde sağlık/sonuç çağrışımı yapan ifade kullanılmaz.
 </div>
 
-<div class="kart">
+<?php $BELGE_ETIKET = 'Raporu'; require APP_DIR . '/includes/view/belge-arac-cubugu.php'; ?>
+<div class="kart" data-belge>
   <div class="rapor-baslik">
     <svg class="marka-logo" viewBox="0 0 64 64" aria-hidden="true">
       <defs><linearGradient id="vgov" x1="0" y1="0" x2="0" y2="1">
@@ -163,4 +163,5 @@ require APP_DIR . '/includes/view/header.php';
   .dil-sorunlu { background: var(--kirmizi-acik); border-radius: 6px; padding: .1rem .3rem; }
   @media print { .dil-sorunlu { background: transparent; padding: 0; } }
 </style>
+<script src="<?= e(asset('js/belge-duzenle.js')) ?>" defer></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

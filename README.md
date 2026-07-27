@@ -119,6 +119,25 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
 Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görünür.
 **Protokol skorları eğitmenin iç izleme aracıdır; veli raporlarına yansıtılmaz.**
 
+## Belgeler: raporlar ve katılım sertifikası
+
+Raporlar sayfasından dört yazdırılabilir belge hazırlanır: haftalık eğitmen
+raporu, dönemlik grup raporu, veli raporu ve **Katılım Belgesi (sertifika)**.
+
+- **Katılım Belgesi** (`sertifika.php`): dönem sonu için şık, çerçeveli ve
+  yatay (A4 landscape) belge — marka "Ritim Atölyesi", katılımcı kodu, tarih
+  aralığı, katılım sayısı ve belge numarası. **"İlk/son ölçümleri ekle"**
+  işaretlenirse dönem başı/sonu metronom ölçümleri *yalın sayı* olarak eklenir
+  (en az iki ölçümü olan protokoller); dipnot bunların eğitsel izleme amaçlı
+  olduğunu, değerlendirme/tanı aracı olmadığını belirtir.
+- **Ekranda düzenleme** (optik-kocluk'un belge deseni): her belgenin üstündeki
+  **✏️ Düzenle** düğmesi belgeyi Word gibi serbestçe düzenlenebilir yapar —
+  ör. sertifikada takma kod yerine gerçek adı yazmak, gereksiz satırı silmek.
+  Değişiklikler yalnız o ekran ve yazdırma/PDF çıktısı içindir;
+  **kayıtlı veri hiçbir zaman değişmez** ("Orijinale Dön" ya da sayfa
+  yenileme kayıtlı hâli geri getirir). Ortak parçalar:
+  `includes/view/belge-arac-cubugu.php` + `assets/js/belge-duzenle.js`.
+
 ## Uygulama olarak kurma (PWA)
 
 Uygulama, optik-kocluk ile aynı PWA yapısını taşır (`manifest.json`, `sw.js`,

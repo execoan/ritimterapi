@@ -167,6 +167,12 @@ function week_no_for(?string $grupBaslangic, string $tarih): int
 
 /* ---------- Türkçe sıralama (intl eklentisi olmadan) ---------- */
 
+/** Türkçe kurallarla BÜYÜK harfe çevirir (i→İ, ı→I; mb_strtoupper bunu bilmez). */
+function tr_upper(string $s): string
+{
+    return mb_strtoupper(str_replace(['i', 'ı'], ['İ', 'I'], $s), 'UTF-8');
+}
+
 /** Türk alfabesi sırasına uyan karşılaştırma anahtarı üretir. */
 function tr_sort_key(string $s): string
 {

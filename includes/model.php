@@ -930,6 +930,33 @@ function report_group_protocols(int $grupId, string $from, string $to): array
     return ['haftalik' => $haftalik, 'ogrenciler' => $ogrenciler];
 }
 
+/**
+ * Sertifika için tek öğrencinin protokol başına İLK ve SON ölçümü (tarihli).
+ * Dönüş: [protokol => ['ilk','ilk_tarih','son','son_tarih','adet']] — yalnız adet>=1.
+ */
+function student_protocol_first_last(int $ogrenciId, string $from, string $to): array
+{
+    $st = db()->prepare('SELECT protokol, skor, created_at
+                           FROM protokol_sonuclari
+                          WHERE ogrenci_id = ? AND date(created_at) BETWEEN ? AND ?
+                          ORDER BY created_at, id');
+    $st->execute([$ogrenciId, $from, $to]);
+    $harita = [];
+    foreach ($st->fetchAll() as $r) {
+        $p = $r['protokol'];
+        $tarih = substr((string)$r['created_at'], 0, 10);
+        if (!isset($harita[$p])) {
+            $harita[$p] = ['ilk' => (int)$r['skor'], 'ilk_tarih' => $tarih,
+                           'son' => (int)$r['skor'], 'son_tarih' => $tarih, 'adet' => 0];
+        }
+        $harita[$p]['son'] = (int)$r['skor'];
+        $harita[$p]['son_tarih'] = $tarih;
+        $harita[$p]['adet']++;
+    }
+    uksort($harita, fn($a, $b) => array_search($a, array_keys(PROTOKOL_LABELS)) <=> array_search($b, array_keys(PROTOKOL_LABELS)));
+    return $harita;
+}
+
 /* ======================== EV PROGRAMI ======================== */
 
 /** Karışmayan karakterlerle 6 haneli öğrenci erişim kodu üretir (benzersiz). */

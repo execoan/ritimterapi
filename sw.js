@@ -7,7 +7,7 @@
    Not: CACHE_ADI değişince aktivasyonda eski cache silinir.
    ======================================================= */
 
-var CACHE_ADI   = 'ritim-v3';
+var CACHE_ADI   = 'ritim-v4';
 /* Çevrimdışı sayfası SW'nin kendi konumuna göre çözülür (alt dizin kurulumunda da doğru). */
 var OFFLINE_URL = new URL('offline.html', self.location).pathname;
 
@@ -23,6 +23,7 @@ var KABUK = [
   'assets/js/metronom.js',
   'assets/js/ev.js',
   'assets/js/ritim-okuma.js',
+  'assets/js/belge-duzenle.js',
   'assets/img/favicon.svg',
   'assets/img/icon-192.png',
   'assets/img/icon-512.png',

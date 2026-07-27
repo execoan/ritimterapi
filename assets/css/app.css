@@ -176,6 +176,14 @@ textarea.girdi { resize: vertical; min-height: 64px; }
   text-align: center; color: var(--metin-soluk); margin: .6rem 0;
 }
 
+/* ---------- Belge düzenleme (belge-duzenle.js + belge-arac-cubugu.php) ---------- */
+.gizli { display: none !important; }
+.belge-arac-cubugu { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 .9rem; }
+[data-belge].belge-duzenleniyor {
+  outline: 2px dashed var(--amber); outline-offset: 5px; cursor: text;
+}
+[data-belge].belge-duzenleniyor:focus { outline-style: solid; }
+
 /* ---------- Ders planı ---------- */
 .plan-liste { list-style: none; margin: 0; padding: 0; }
 .plan-liste li {

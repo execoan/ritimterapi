@@ -28,11 +28,11 @@ require APP_DIR . '/includes/view/header.php';
   <h1>Dönemlik Grup Raporu</h1>
   <div class="sag">
     <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>">← Raporlar</a>
-    <button type="button" class="btn btn-birincil" data-yazdir>🖨 Yazdır</button>
   </div>
 </div>
 
-<div class="kart">
+<?php $BELGE_ETIKET = 'Raporu'; require APP_DIR . '/includes/view/belge-arac-cubugu.php'; ?>
+<div class="kart" data-belge>
   <div class="rapor-baslik">
     <div>
       <div class="rapor-marka"><?= e($grup['ad']) ?> — Dönem Raporu</div>
@@ -137,4 +137,5 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <?php endif; ?>
 </div>
+<script src="<?= e(asset('js/belge-duzenle.js')) ?>" defer></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>
