@@ -237,6 +237,7 @@ require APP_DIR . '/includes/view/header.php';
     <button type="button" class="m-sekme" data-sekme="ritim">🎼 Ritim Okuma</button>
     <button type="button" class="m-sekme" data-sekme="spontan">🫀 Spontan Tempo</button>
     <button type="button" class="m-sekme" data-sekme="aksak">🕳 Aksak Bulma</button>
+    <button type="button" class="m-sekme" data-sekme="icsel">🧭 İçsel Ritim</button>
   </div>
 
   <!-- Vuruş Tutturma -->
@@ -436,6 +437,53 @@ require APP_DIR . '/includes/view/header.php';
         <div class="m-kaydet-satir">
           <?= sonuc_formu('ab', 'aksak_bulma') ?>
           <button type="button" class="btn btn-golge" id="abTekrar">Tekrar Dene</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- İçsel Ritim (sessizlik merdiveni) -->
+  <div class="m-sekme-icerik" id="sekme-icsel" hidden>
+    <p class="alan-ipucu">"Rastgele sus" özelliğinin <strong>ölçülen</strong> hâli: metronom
+       kademe kademe susar (<strong>%0 → %25 → %50 → %75</strong>), sen her vuruşta vurmaya
+       devam edersin. Sessiz vuruşlardaki sapma ayrı ölçülür; içsel sayımın dönem boyunca
+       nasıl geliştiği skorla izlenir.</p>
+    <div class="filtre-satir">
+      <label class="form-alan">Öğrenci<?= ogrenci_secimi('irOgrenci', $ogrenciler) ?></label>
+      <label class="form-alan">Tempo
+        <select id="irBpm" class="secim">
+          <option value="60">60 BPM</option>
+          <option value="72" selected>72 BPM</option>
+          <option value="84">84 BPM</option>
+          <option value="100">100 BPM</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-birincil" id="irBaslat">Testi Başlat</button>
+    </div>
+
+    <div class="m-test-sahne" id="irSahne" hidden>
+      <div class="m-faz-etiket" id="irFaz">Hazırlık — dinle</div>
+      <button type="button" class="m-pad" id="irPad">VUR<small>boşluk / dokun</small></button>
+      <div class="m-ilerleme"><div class="m-ilerleme-dolu" id="irIlerleme"></div></div>
+      <button type="button" class="btn btn-golge btn-kucuk" id="irIptal">İptal</button>
+    </div>
+
+    <div class="m-sonuc" id="irSonuc" hidden>
+      <div class="m-skor-kart">
+        <div class="m-skor" id="irSkor">–</div>
+        <div class="m-skor-etiket">İÇSEL RİTİM SKORU<br><small>sessiz fazlar daha ağırlıklı</small></div>
+      </div>
+      <div class="m-sonuc-detay">
+        <table class="tablo">
+          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th>
+                     <th class="sayi">Ort. |sapma|</th><th class="sayi">Skor</th></tr></thead>
+          <tbody id="irTablo"></tbody>
+        </table>
+        <div class="m-sapma-grafik" id="irGrafik" title="Mor çubuklar: metronomun sustuğu vuruşlar"></div>
+        <p class="alan-ipucu" id="irYorum"></p>
+        <div class="m-kaydet-satir">
+          <?= sonuc_formu('ir', 'icsel_ritim') ?>
+          <button type="button" class="btn btn-golge" id="irTekrar">Tekrar Dene</button>
         </div>
       </div>
     </div>

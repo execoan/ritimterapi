@@ -1053,12 +1053,194 @@
   });
   kaydetFormuBagla('ab', 'abOgrenci');
 
+  /* ================================================================
+     G) İÇSEL RİTİM — sessizlik merdiveni (%0 → %25 → %50 → %75)
+     "Rastgele sus"un ölçülen protokol hâli: sessiz vuruş sapması ayrı izlenir.
+     ================================================================ */
+  var ir = {
+    aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
+    vuruslar: [], taplar: [], bpm: 72,
+    FAZ_YUZDE: [0, 25, 50, 75], FAZ_VURUS: 8
+  };
+
+  function irPlanOlustur() {
+    /* 4 hazırlık + 4 faz × 8 vuruş; her fazda tam yüzde kadar vuruş susturulur
+       (fazın ilk vuruşu çapa olarak daima seslidir). */
+    ir.vuruslar = [];
+    for (var h = 0; h < 4; h++) { ir.vuruslar.push({ faz: -1, sessiz: false }); }
+    ir.FAZ_YUZDE.forEach(function (yuzde, fazNo) {
+      var susAdet = Math.round(ir.FAZ_VURUS * yuzde / 100);
+      var adaylar = [];
+      for (var i = 1; i < ir.FAZ_VURUS; i++) { adaylar.push(i); }
+      /* karıştır ve ilk susAdet konumu sustur */
+      for (var k = adaylar.length - 1; k > 0; k--) {
+        var r = Math.floor(Math.random() * (k + 1));
+        var tmp = adaylar[k]; adaylar[k] = adaylar[r]; adaylar[r] = tmp;
+      }
+      var susSet = {};
+      adaylar.slice(0, susAdet).forEach(function (p) { susSet[p] = true; });
+      for (var v = 0; v < ir.FAZ_VURUS; v++) {
+        ir.vuruslar.push({ faz: fazNo, sessiz: !!susSet[v] });
+      }
+    });
+  }
+
+  function irBaslat() {
+    if (m.calisiyor) { metronomDurdur(); }
+    digerleriniIptalEt('ir');
+    ses.hazirla();
+    ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
+    ir.bpm = parseInt(byId('irBpm').value, 10);
+    irPlanOlustur();
+    ir.taplar = [];
+    ir.vurusNo = 0;
+    ir.sonrakiZaman = ses.ctx.currentTime + 0.6;
+    ir.aktif = true;
+    byId('irSahne').hidden = false;
+    byId('irSonuc').hidden = true;
+    byId('irIlerleme').style.width = '0';
+    byId('irFaz').textContent = '🎧 Hazırlık — dinle, sonra her vuruşta vur';
+    ir.zamanlayici = setInterval(irPlanla, 25);
+  }
+
+  function irPlanla() {
+    var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
+    while (ir.aktif && ir.sonrakiZaman < ses.ctx.currentTime + 0.12 && ir.vurusNo < ir.vuruslar.length) {
+      var v = ir.vuruslar[ir.vurusNo];
+      v.zaman = ir.sonrakiZaman;
+      if (!v.sessiz) {
+        ses.vur(ir.sonrakiZaman, ir.vurusNo % 4 === 0, kit);
+      }
+      (function (no, vv) {
+        var gecikme = Math.max(0, (vv.zaman - ses.ctx.currentTime) * 1000);
+        setTimeout(function () {
+          if (!ir.aktif) { return; }
+          if (vv.faz >= 0) {
+            byId('irFaz').textContent = '🥁 Faz ' + (vv.faz + 1) + ' — %' + ir.FAZ_YUZDE[vv.faz] + ' sessiz · vurmaya devam';
+          }
+          byId('irIlerleme').style.width = Math.round(100 * (no + 1) / ir.vuruslar.length) + '%';
+        }, gecikme);
+      })(ir.vurusNo, v);
+      ir.sonrakiZaman += 60 / ir.bpm;
+      ir.vurusNo++;
+    }
+    if (ir.vurusNo >= ir.vuruslar.length) {
+      var bitis = ir.vuruslar[ir.vuruslar.length - 1].zaman + 60 / ir.bpm;
+      if (ses.ctx.currentTime > bitis + 0.3) {
+        clearInterval(ir.zamanlayici);
+        ir.aktif = false;
+        irDegerlendir();
+      }
+    }
+  }
+
+  function irTap() {
+    if (!ir.aktif) { return; }
+    ir.taplar.push(ses.ctx.currentTime);
+    var pad = byId('irPad');
+    pad.classList.add('vurdum');
+    setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
+  }
+
+  function irDegerlendir() {
+    var aralikMs = 60000 / ir.bpm;
+    var fazVeri = ir.FAZ_YUZDE.map(function () { return { sapmalar: [], vurulan: {} }; });
+    var sesliSapma = [], sessizSapma = [];
+    var grafik = [];
+
+    ir.taplar.forEach(function (tap) {
+      var enYakin = null, enKucuk = Infinity, enIdx = -1;
+      ir.vuruslar.forEach(function (v, i) {
+        var fark = Math.abs(tap - v.zaman);
+        if (fark < enKucuk) { enKucuk = fark; enYakin = v; enIdx = i; }
+      });
+      if (!enYakin || enYakin.faz < 0) { return; }
+      var sapmaMs = (tap - enYakin.zaman) * 1000;
+      var kacik = Math.abs(sapmaMs) > aralikMs * 0.45;
+      if (!kacik) {
+        fazVeri[enYakin.faz].sapmalar.push(sapmaMs);
+        fazVeri[enYakin.faz].vurulan[enIdx] = true;
+        (enYakin.sessiz ? sessizSapma : sesliSapma).push(Math.abs(sapmaMs));
+      }
+      grafik.push({ sapma: sapmaMs, sessiz: enYakin.sessiz, kacik: kacik });
+    });
+
+    var AGIRLIK = [0.1, 0.2, 0.3, 0.4];
+    var fazlar = fazVeri.map(function (f, i) {
+      var mutlak = ort(f.sapmalar.map(Math.abs));
+      var vurulanAdet = Object.keys(f.vurulan).length;
+      var hamSkor = f.sapmalar.length ? Math.max(0, 1 - mutlak / (0.30 * aralikMs)) : 0;
+      return {
+        yuzde: ir.FAZ_YUZDE[i], n: f.sapmalar.length,
+        kacirilan: ir.FAZ_VURUS - vurulanAdet,
+        ortMutlak: Math.round(mutlak),
+        skor: Math.round(100 * hamSkor * (vurulanAdet / ir.FAZ_VURUS))
+      };
+    });
+    var genel = Math.round(fazlar.reduce(function (t, f, i) { return t + f.skor * AGIRLIK[i]; }, 0));
+
+    byId('irSahne').hidden = true;
+    byId('irSonuc').hidden = false;
+    byId('irSkor').textContent = genel;
+    byId('irTablo').innerHTML = fazlar.map(function (f, i) {
+      return '<tr><td>Faz ' + (i + 1) + ' — %' + f.yuzde + ' sessiz</td>' +
+        '<td class="sayi">' + f.n + '/' + ir.FAZ_VURUS + '</td>' +
+        '<td class="sayi">' + f.kacirilan + '</td>' +
+        '<td class="sayi">' + f.ortMutlak + ' ms</td>' +
+        '<td class="sayi"><strong>' + f.skor + '</strong></td></tr>';
+    }).join('');
+
+    var g = byId('irGrafik');
+    g.innerHTML = '';
+    grafik.forEach(function (v) {
+      var c = document.createElement('span');
+      var yukseklik = Math.min(40, Math.abs(v.sapma) / (aralikMs * 0.45) * 40);
+      c.className = 'm-sapma-cubuk ' + (v.kacik ? 'kacik' : (v.sessiz ? 'sessizv' : (v.sapma > 15 ? 'gec' : (v.sapma < -15 ? 'erken' : ''))));
+      c.style.height = Math.max(4, Math.round(yukseklik)) + 'px';
+      c.title = (v.sapma > 0 ? '+' : '') + Math.round(v.sapma) + ' ms (' + (v.sessiz ? 'sessiz vuruş' : 'sesli vuruş') + ')';
+      g.appendChild(c);
+    });
+
+    var sesliOrt = Math.round(ort(sesliSapma));
+    var sessizOrt = Math.round(ort(sessizSapma));
+    var yorum;
+    if (!sessizSapma.length) {
+      yorum = 'Sessiz vuruşlarda yeterli veri yok — test yarıda kalmış olabilir.';
+    } else if (sesliOrt > 0 && sessizOrt <= sesliOrt * 1.3) {
+      yorum = 'İçsel sayım güçlü: metronom sussa da sapma neredeyse değişmedi (' + sesliOrt + ' → ' + sessizOrt + ' ms).';
+    } else if (sesliOrt > 0 && sessizOrt <= sesliOrt * 2) {
+      yorum = 'Sessiz vuruşlarda sapma arttı (' + sesliOrt + ' → ' + sessizOrt + ' ms) — içsel sayım gelişmeye açık.';
+    } else {
+      yorum = 'Metronom susunca sapma belirgin arttı (' + sesliOrt + ' → ' + sessizOrt + ' ms) — düşük yüzdelerle çalışmaya devam.';
+    }
+    byId('irYorum').textContent = yorum;
+
+    byId('irFormBpm').value = ir.bpm;
+    byId('irFormSkor').value = genel;
+    byId('irFormDetay').value = JSON.stringify({
+      bpm: ir.bpm, fazlar: fazlar, sesliOrtMs: sesliOrt, sessizOrtMs: sessizOrt
+    });
+  }
+
+  function irIptalEt() {
+    clearInterval(ir.zamanlayici);
+    ir.aktif = false;
+    byId('irSahne').hidden = true;
+  }
+
+  byId('irBaslat').addEventListener('click', irBaslat);
+  byId('irIptal').addEventListener('click', irIptalEt);
+  byId('irTekrar').addEventListener('click', function () { byId('irSonuc').hidden = true; irBaslat(); });
+  byId('irPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); irTap(); });
+  kaydetFormuBagla('ir', 'irOgrenci');
+
   /* Bir test başlarken diğerlerini iptal et */
   function digerleriniIptalEt(haric) {
     if (haric !== 'vt' && vt.aktif) { vtIptalEt(); }
     if (haric !== 'bf' && bf.aktif) { bfIptalEt(); }
     if (haric !== 'st' && st.aktif) { stIptalEt(); }
     if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
+    if (haric !== 'ir' && ir.aktif) { irIptalEt(); }
   }
 
   /* ================================================================
@@ -1072,6 +1254,7 @@
       if (vt.aktif) { vtTap(); }
       else if (bf.aktif) { bfTap(); }
       else if (st.aktif) { stTap(); }
+      else if (ir.aktif) { irTap(); }
       else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(); }
       else if (m.calisiyor) { metronomDurdur(); }
       else { metronomBaslat(); }

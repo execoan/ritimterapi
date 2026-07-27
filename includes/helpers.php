@@ -191,9 +191,10 @@ const SEVIYE_LABELS = [1 => 'Başlangıç', 2 => 'Orta', 3 => 'İleri'];
 const KATILIM_LABELS = ['katildi' => 'Katıldı', 'gec' => 'Geç geldi', 'gelmedi' => 'Gelmedi'];
 const PROTOKOL_LABELS = ['vurus_tutturma' => 'Vuruş Tutturma', 'bpm_bulma' => 'BPM Bulma',
                          'ritim_okuma' => 'Ritim Okuma', 'spontan_tempo' => 'Spontan Tempo',
-                         'aksak_bulma' => 'Aksak Vuruş Algısı'];
+                         'aksak_bulma' => 'Aksak Vuruş Algısı', 'icsel_ritim' => 'İçsel Ritim'];
 const EV_TUR_LABELS = ['serbest' => 'Serbest (işaretlemeli)', 'metronom' => 'Metronomlu süre',
-                       'vurus_tutturma' => 'Vuruş Tutturma (mini)', 'ritim_okuma' => 'Ritim Okuma'];
+                       'vurus_tutturma' => 'Vuruş Tutturma (mini)', 'ritim_okuma' => 'Ritim Okuma',
+                       'icsel_ritim' => 'İçsel Ritim (mini)'];
 const KITLE_LABELS = ['cocuk' => 'Çocuk & Genç', 'yetiskin' => 'Yetişkin', 'hepsi' => 'Hepsi'];
 const CALISMA_TUR_LABELS = [
     'rct' => 'Randomize kontrollü', 'deneysel' => 'Deneysel', 'meta' => 'Meta-analiz',

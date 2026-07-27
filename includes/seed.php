@@ -407,6 +407,18 @@ function seed_home_exercises(): void
 {
     $pdo = db();
     if ((int)$pdo->query('SELECT COUNT(*) FROM ev_calismalari')->fetchColumn() > 0) {
+        // Sonradan eklenen çalışmalar mevcut kuruluma da (bir kez) eklenir; ad
+        // benzersiz olduğundan INSERT OR IGNORE eğitmen düzenlemelerini ezmez.
+        $pdo->prepare("INSERT OR IGNORE INTO ev_calismalari
+                (ad, tur, kitle, hafta_onerisi, sure_dk, bpm, seviye, aciklama, veli_yonerge, hedef_beceri, kanit_notu, aktif, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)")
+            ->execute(['İçsel Ritim (sessizlik merdiveni)', 'icsel_ritim', 'hepsi', 5, 2, 72, 2,
+                'Metronom giderek daha çok susar (%0 → %50 → %75); sen her vuruşta vurmaya devam edersin. '
+                . 'Sessiz vuruşlardaki sapman ölçülür — içsel sayımın fotoğrafı çekilir.',
+                'Haftada 2–3 kez yeterli; skor kişisel izlemedir, yarış değildir.',
+                'İçsel tempo, sessiz sürdürme',
+                'Rastgele susturma Time Guru yaklaşımı; senkronizasyon-devam ölçümü BAASTA ailesi (Puyjarinet 2017).',
+                now_str()]);
         return;
     }
 
@@ -429,6 +441,12 @@ function seed_home_exercises(): void
          'Yüksek ses gerekmez; masa/diz vuruşu yeterli.',
          'Ritim okuma, alt bölünme sayma, göz–el eşgüdümü',
          'Sayma sistemleri (1-e-ve-a, Kodály, Takadimi) köklü pedagojik gelenek; sistemler arası üstünlük kanıtı zayıf belgelenmiş.'],
+
+        ['İçsel Ritim (sessizlik merdiveni)', 'icsel_ritim', 'hepsi', 5, 2, 72, 2,
+         'Metronom giderek daha çok susar (%0 → %50 → %75); sen her vuruşta vurmaya devam edersin. Sessiz vuruşlardaki sapman ölçülür — içsel sayımın fotoğrafı çekilir.',
+         'Haftada 2–3 kez yeterli; skor kişisel izlemedir, yarış değildir.',
+         'İçsel tempo, sessiz sürdürme',
+         'Rastgele susturma Time Guru yaklaşımı; senkronizasyon-devam ölçümü BAASTA ailesi (Puyjarinet 2017).'],
 
         // ---- Çocuk izi mikro uygulamaları (RitimOdak-Ö) ----
         ['Masa Nabzı', 'serbest', 'cocuk', 1, 3, 66, 1,

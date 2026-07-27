@@ -153,6 +153,106 @@
     }
   });
 
+  /* ---------- İçsel Ritim mini (4 hazırlık + %0/%50/%75 × 8 vuruş) ---------- */
+  document.querySelectorAll('[data-gorev="icsel"]').forEach(function (kart) {
+    var bpm = parseInt(kart.dataset.bpm, 10) || 72;
+    var btn = kart.querySelector('.ev-gorev-baslat');
+    var pad = kart.querySelector('.m-pad');
+    var durum = kart.querySelector('.ev-sayac');
+    var FAZLAR = [0, 50, 75];
+    var aktif = false;
+    var vuruslar = [];
+    var taplar = [];
+    var zamanlayici = null;
+
+    function tap() {
+      if (!aktif) { return; }
+      taplar.push(ctx.currentTime);
+      pad.classList.add('vurdum');
+      setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
+    }
+    pad.addEventListener('pointerdown', function (ev) { ev.preventDefault(); tap(); });
+    kart.__tap = tap;
+    kart.__aktifMi = function () { return aktif; };
+
+    btn.addEventListener('click', function () {
+      if (aktif) { return; }
+      sesHazirla();
+      aktif = true;
+      vuruslar = [];
+      taplar = [];
+      pad.hidden = false;
+      btn.hidden = true;
+      var spb = 60 / bpm;
+      var t0 = ctx.currentTime + 0.5;
+      var no = 0;
+      for (var h = 0; h < 4; h++) {
+        vuruslar.push({ zaman: t0 + no * spb, faz: -1, sessiz: false }); no++;
+      }
+      FAZLAR.forEach(function (yuzde, fazNo) {
+        var susAdet = Math.round(8 * yuzde / 100);
+        var adaylar = [1, 2, 3, 4, 5, 6, 7];
+        for (var k = adaylar.length - 1; k > 0; k--) {
+          var r = Math.floor(Math.random() * (k + 1));
+          var tmp = adaylar[k]; adaylar[k] = adaylar[r]; adaylar[r] = tmp;
+        }
+        var sus = {};
+        adaylar.slice(0, susAdet).forEach(function (p) { sus[p] = true; });
+        for (var v = 0; v < 8; v++) {
+          vuruslar.push({ zaman: t0 + no * spb, faz: fazNo, sessiz: !!sus[v] }); no++;
+        }
+      });
+      vuruslar.forEach(function (v, i) {
+        if (!v.sessiz) { klik(v.zaman, i % 4 === 0); }
+      });
+      durum.textContent = '🎧 4 vuruş dinle, sonra her vuruşta vur…';
+      FAZLAR.forEach(function (yuzde, fazNo) {
+        var fazBas = vuruslar[4 + fazNo * 8].zaman;
+        setTimeout(function () {
+          if (aktif) { durum.textContent = '🥁 Faz ' + (fazNo + 1) + ' — %' + yuzde + ' sessiz'; }
+        }, (fazBas - ctx.currentTime) * 1000);
+      });
+      var bitis = vuruslar[vuruslar.length - 1].zaman + spb;
+      zamanlayici = setTimeout(function () { bitir(); }, (bitis + 0.3 - ctx.currentTime) * 1000);
+    });
+
+    function bitir() {
+      aktif = false;
+      pad.hidden = true;
+      btn.hidden = false;
+      btn.textContent = '↻ Tekrar Dene';
+      var spb = 60 / bpm;
+      var fazVeri = FAZLAR.map(function () { return { sapmalar: [], vurulan: {} }; });
+      taplar.forEach(function (t) {
+        var enIyi = null, enKucuk = Infinity, enIdx = -1;
+        vuruslar.forEach(function (v, i) {
+          var f = Math.abs(t - v.zaman);
+          if (f < enKucuk) { enKucuk = f; enIyi = v; enIdx = i; }
+        });
+        if (!enIyi || enIyi.faz < 0 || enKucuk > spb * 0.45) { return; }
+        fazVeri[enIyi.faz].sapmalar.push(Math.abs((t - enIyi.zaman) * 1000));
+        fazVeri[enIyi.faz].vurulan[enIdx] = true;
+      });
+      var AGIRLIK = [0.2, 0.35, 0.45];
+      var fazSkorlar = fazVeri.map(function (f) {
+        if (!f.sapmalar.length) { return 0; }
+        var mutlak = f.sapmalar.reduce(function (a, b) { return a + b; }, 0) / f.sapmalar.length;
+        return Math.round(100 * Math.max(0, 1 - mutlak / (0.3 * spb * 1000)) *
+                          (Object.keys(f.vurulan).length / 8));
+      });
+      var skor = Math.round(fazSkorlar.reduce(function (t, s, i) { return t + s * AGIRLIK[i]; }, 0));
+      durum.innerHTML = '⭐ Skor: <strong>' + skor + '</strong>/100 (fazlar: ' + fazSkorlar.join(' · ') + ')';
+
+      var form = kart.querySelector('form.ev-sonuc-form');
+      if (form) {
+        form.querySelector('[name="skor"]').value = skor;
+        form.querySelector('[name="bpm"]').value = bpm;
+        form.querySelector('[name="detay"]').value = JSON.stringify({ fazlar: fazSkorlar, tap: taplar.length });
+        form.submit();
+      }
+    }
+  });
+
   /* ---------- Ritim Okuma ---------- */
   document.querySelectorAll('[data-gorev="ritim"]').forEach(function (kart) {
     var kok = kart.querySelector('.ro-kok');
@@ -176,7 +276,7 @@
     if (ev.code !== 'Space') { return; }
     var etiket = (ev.target.tagName || '').toLowerCase();
     if (etiket === 'input' || etiket === 'textarea' || etiket === 'button' || etiket === 'select') { return; }
-    var vurusKart = Array.from(document.querySelectorAll('[data-gorev="vurus"]'))
+    var vurusKart = Array.from(document.querySelectorAll('[data-gorev="vurus"], [data-gorev="icsel"]'))
       .find(function (k) { return k.__aktifMi && k.__aktifMi(); });
     if (vurusKart) { ev.preventDefault(); vurusKart.__tap(); return; }
     var roKok = Array.from(document.querySelectorAll('.ro-kok'))

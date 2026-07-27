@@ -53,6 +53,11 @@ Smells Like Teen Spirit 117, So What 136, Take Five 176, Giant Steps 272 — üs
 **Premium eklemeler:**
 - 🎲 **Rastgele sus** (%10–75): vuruşların bir kısmı rastgele susar, görsel akış sürer —
   Time Guru metronomunun ünlü içsel-zamanlama özelliğinin uyarlaması.
+  **v2.2'de ölçülen protokole dönüştü:** 🧭 **İçsel Ritim (sessizlik merdiveni)** —
+  4 faz (%0→%25→%50→%75 sus), faz başına skor, sessiz-vuruş sapması sesliyle
+  karşılaştırılır (mor çubuklar), genel skor sessiz fazlara ağırlıklı (.1/.2/.3/.4).
+  Ev sürümü (3 faz mini) ev programına atanabilir (tur: icsel_ritim, göç v7);
+  gelişim öğrenci detayındaki protokol trendinde izlenir.
 - ⏲ **Çalışma zamanlayıcısı**: 1–10 dk sonunda kendiliğinden durur.
 - 📳 **Titreşim** (mobil): vuruşta Vibration API.
 - ⛶ **Tam ekran sahne**: Fullscreen API; sahne büyür, sayaç 5rem.

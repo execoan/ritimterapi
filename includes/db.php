@@ -247,10 +247,48 @@ function run_migrations(): void
                 PRIMARY KEY (teknik_id, calisma_id)
             );
         ",
+
+        // v7 — ev çalışması türlerine 'icsel_ritim' eklendi (CHECK genişletme:
+        //       SQLite'ta tablo yeniden kurularak yapılır, FK kapalı/işlemsiz)
+        7 => "-- NOTX
+            CREATE TABLE ev_calismalari_v2 (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                ad            TEXT    NOT NULL UNIQUE,
+                tur           TEXT    NOT NULL DEFAULT 'serbest'
+                              CHECK (tur IN ('serbest','metronom','vurus_tutturma','ritim_okuma','icsel_ritim')),
+                kitle         TEXT    NOT NULL DEFAULT 'hepsi'
+                              CHECK (kitle IN ('cocuk','yetiskin','hepsi')),
+                aciklama      TEXT    NOT NULL DEFAULT '',
+                veli_yonerge  TEXT    NOT NULL DEFAULT '',
+                sure_dk       INTEGER NOT NULL DEFAULT 3,
+                bpm           INTEGER NOT NULL DEFAULT 66,
+                seviye        INTEGER NOT NULL DEFAULT 1,
+                hafta_onerisi INTEGER,
+                hedef_beceri  TEXT    NOT NULL DEFAULT '',
+                kanit_notu    TEXT    NOT NULL DEFAULT '',
+                aktif         INTEGER NOT NULL DEFAULT 1,
+                created_at    TEXT    NOT NULL
+            );
+            INSERT INTO ev_calismalari_v2 SELECT * FROM ev_calismalari;
+            DROP TABLE ev_calismalari;
+            ALTER TABLE ev_calismalari_v2 RENAME TO ev_calismalari;
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {
         if ($no <= $surum) { continue; }
+        if (str_starts_with(ltrim($sql), '-- NOTX')) {
+            // Tablo yeniden kurma göçleri: FK kapalı, işlemsiz (SQLite pragma
+            // kısıtı). Sıra güvenli yazılır: yeni tablo → kopya → drop → rename.
+            $pdo->exec('PRAGMA foreign_keys = OFF');
+            try {
+                $pdo->exec($sql);
+                $pdo->exec('PRAGMA user_version = ' . (int)$no);
+            } finally {
+                $pdo->exec('PRAGMA foreign_keys = ON');
+            }
+            continue;
+        }
         $pdo->exec('BEGIN');
         try {
             $pdo->exec($sql);

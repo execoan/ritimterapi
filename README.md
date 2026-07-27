@@ -104,6 +104,10 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
   - *Spontan Tempo* — serbest 21 vuruş: kişisel doğal tempo (SMT) + CV tutarlılık skoru.
   - *Aksak Bulma* — anizokroni algısı: 6 vuruşluk dizi düzenli mi aksak mı, 8 tur,
     %6–15 kayma zorlukları. Motorsuz saf dinleme ölçümü.
+  - *İçsel Ritim (sessizlik merdiveni)* — "rastgele sus"un ölçülen hâli: metronom
+    kademe kademe susar (%0→%25→%50→%75), her vuruşta vurulur; sessiz vuruş sapması
+    ayrı raporlanır (grafikte mor), skor sessiz fazlara ağırlıklıdır. Ev programına
+    mini sürümüyle (3 faz) atanabilir; gelişim öğrenci trendinde izlenir.
 
 Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görünür.
 **Protokol skorları eğitmenin iç izleme aracıdır; veli raporlarına yansıtılmaz.**

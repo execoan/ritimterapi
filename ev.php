@@ -174,7 +174,8 @@ $flashlar = flash_get();
       $bugunYapildi = isset($harita[$oid][$bugun]);
       foreach ($harita[$oid] ?? [] as $t => $_) { $buHafta++; }
   ?>
-  <div class="ev-kart" data-gorev="<?= e($odev['tur'] === 'vurus_tutturma' ? 'vurus' : ($odev['tur'] === 'ritim_okuma' ? 'ritim' : $odev['tur'])) ?>"
+  <div class="ev-kart" data-gorev="<?= e($odev['tur'] === 'vurus_tutturma' ? 'vurus'
+        : ($odev['tur'] === 'ritim_okuma' ? 'ritim' : ($odev['tur'] === 'icsel_ritim' ? 'icsel' : $odev['tur']))) ?>"
        data-bpm="<?= (int)$odev['bpm'] ?>" data-sure="<?= (int)$odev['sure_dk'] ?>"
        data-seviye="<?= (int)$odev['seviye'] ?>" <?= $bugunYapildi ? 'data-bugun-yapildi="1"' : '' ?>>
     <h2><?= e($odev['ad']) ?></h2>
@@ -206,7 +207,7 @@ $flashlar = flash_get();
       <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat">▶ Başlat</button>
       <span class="ev-sayac"></span>
     </div>
-    <?php elseif ($odev['tur'] === 'vurus_tutturma'): ?>
+    <?php elseif ($odev['tur'] === 'vurus_tutturma' || $odev['tur'] === 'icsel_ritim'): ?>
     <div class="ev-buton-satir">
       <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat">▶ Teste Başla</button>
       <button type="button" class="m-pad ro-pad" hidden>VUR<small>boşluk / dokun</small></button>
@@ -225,7 +226,7 @@ $flashlar = flash_get();
           <?= $bugunYapildi ? '✓ Bugün yapıldı — geri al' : '✓ Bugün yaptım' ?>
         </button>
       </form>
-      <?php if (in_array($odev['tur'], ['vurus_tutturma', 'ritim_okuma'], true)): ?>
+      <?php if (in_array($odev['tur'], ['vurus_tutturma', 'ritim_okuma', 'icsel_ritim'], true)): ?>
       <form method="post" action="<?= e(url('ev.php')) ?>" class="ev-sonuc-form" hidden>
         <?= csrf_field() ?>
         <input type="hidden" name="islem" value="modul_sonuc">

@@ -189,4 +189,5 @@
 .m-sapma-cubuk.gec { background: #3b82f6; align-self: flex-start; }
 .m-sapma-cubuk.erken { background: #f59e0b; align-self: flex-end; }
 .m-sapma-cubuk.kacik { background: var(--kirmizi); }
+.m-sapma-cubuk.sessizv { background: #8b5cf6; }
 .m-kaydet-form { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
