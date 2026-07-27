@@ -64,7 +64,14 @@ require APP_DIR . '/includes/view/header.php';
   <?= $kayitliMi
       ? '<span class="rozet rozet-tamam">Yoklama kaydedildi</span>'
       : ($oturum['tarih'] <= today() ? '<span class="rozet rozet-bekliyor">Yoklama bekliyor</span>' : '<span class="rozet rozet-gri">Planlandı</span>') ?>
+  <?php if (!empty($oturum['protokol']) && isset(PROTOKOL_LABELS[$oturum['protokol']])): ?>
+  <span class="rozet rozet-acik">🧭 <?= e(PROTOKOL_LABELS[$oturum['protokol']]) ?></span>
+  <?php endif; ?>
   <div class="sag">
+    <?php if (!empty($oturum['protokol']) && isset(PROTOKOL_LABELS[$oturum['protokol']])): ?>
+    <a class="btn btn-birincil" href="<?= e(url('metronom.php?protokol=' . $oturum['protokol'])) ?>">
+      🎛 Protokolü Stüdyoda Aç</a>
+    <?php endif; ?>
     <a class="btn btn-golge" href="<?= e(url('plan.php?oturum_id=' . $id)) ?>">Planı düzenle</a>
   </div>
 </div>

@@ -25,6 +25,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
 $ogrenciler = students_list(null, 1);
 $sonKayitlar = protocol_results_recent(12);
+$sonSkorlar = protocol_last_scores();
+$acilacakProtokol = (string)($_GET['protokol'] ?? '');
+if (!isset(PROTOKOL_LABELS[$acilacakProtokol])) { $acilacakProtokol = ''; }
 
 /** Öğrenci seçme kutusu (her protokol sekmesinde aynı). */
 function ogrenci_secimi(string $id, array $ogrenciler): string
@@ -231,7 +234,7 @@ require APP_DIR . '/includes/view/header.php';
     <span class="alan-ipucu">Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansımaz.</span>
   </div>
 
-  <div class="m-sekmeler" role="tablist">
+  <div class="m-sekmeler" role="tablist" id="mSekmeler" data-acilacak="<?= e($acilacakProtokol) ?>">
     <button type="button" class="m-sekme aktif" data-sekme="vurus">🎯 Vuruş Tutturma</button>
     <button type="button" class="m-sekme" data-sekme="bpm">🎧 BPM Bulma</button>
     <button type="button" class="m-sekme" data-sekme="ritim">🎼 Ritim Okuma</button>
@@ -458,6 +461,14 @@ require APP_DIR . '/includes/view/header.php';
           <option value="100">100 BPM</option>
         </select>
       </label>
+      <label class="form-alan">Zorluk profili
+        <select id="irProfil" class="secim">
+          <option value="kolay">Kolay (%0→15→25→50)</option>
+          <option value="standart" selected>Standart (%0→25→50→75)</option>
+          <option value="ileri">İleri (%25→50→75→90)</option>
+        </select>
+        <span class="alan-ipucu" id="irOneri">Öğrenci seçilince son skora göre önerilir.</span>
+      </label>
       <button type="button" class="btn btn-birincil" id="irBaslat">Testi Başlat</button>
     </div>
 
@@ -525,6 +536,10 @@ require APP_DIR . '/includes/view/header.php';
   <?php endif; ?>
 </div>
 
+<script>
+/* Uyarlanan zorluk için: her öğrencinin protokol başına SON skoru */
+window.SON_SKORLAR = <?= json_encode($sonSkorlar, JSON_UNESCAPED_UNICODE) ?>;
+</script>
 <script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom.js')) ?>"></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

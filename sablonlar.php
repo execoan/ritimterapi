@@ -250,7 +250,11 @@ require APP_DIR . '/includes/view/header.php';
         <tbody>
           <?php foreach ($oturumlar as $o): ?>
           <tr>
-            <td><strong><?= e($o['oturum_adi']) ?></strong></td>
+            <td><strong><?= e($o['oturum_adi']) ?></strong>
+              <?php if (!empty($o['protokol']) && isset(PROTOKOL_LABELS[$o['protokol']])): ?>
+              <br><span class="rozet rozet-acik" title="Haftanın protokolü">🧭 <?= e(PROTOKOL_LABELS[$o['protokol']]) ?></span>
+              <?php endif; ?>
+            </td>
             <td>
               <?php foreach ($o['teknikler'] as $t): ?>
               <div><?= e($t['ad']) ?> <span class="alan-ipucu">(<?= (int)$t['sure_dk'] ?> dk)</span>

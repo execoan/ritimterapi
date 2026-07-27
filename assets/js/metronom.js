@@ -576,7 +576,7 @@
   presetCiz();
 
   /* ================================================================
-     Sekmeler
+     Sekmeler (+ oturumdan derin bağlantı: ?protokol=…)
      ================================================================ */
   document.querySelectorAll('.m-sekme').forEach(function (s) {
     s.addEventListener('click', function () {
@@ -586,6 +586,22 @@
       byId('sekme-' + s.dataset.sekme).hidden = false;
     });
   });
+
+  var PROTOKOL_SEKME = {
+    vurus_tutturma: 'vurus', bpm_bulma: 'bpm', ritim_okuma: 'ritim',
+    spontan_tempo: 'spontan', aksak_bulma: 'aksak', icsel_ritim: 'icsel'
+  };
+  (function () {
+    var kap = byId('mSekmeler');
+    var acilacak = kap && kap.dataset.acilacak;
+    if (acilacak && PROTOKOL_SEKME[acilacak]) {
+      var sekme = document.querySelector('.m-sekme[data-sekme="' + PROTOKOL_SEKME[acilacak] + '"]');
+      if (sekme) {
+        sekme.click();
+        sekme.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  })();
 
   /* Kaydet formu: öğrenci seçilmeden gönderilmesin */
   function kaydetFormuBagla(onek, ogrenciSelId) {
@@ -1057,11 +1073,32 @@
      G) İÇSEL RİTİM — sessizlik merdiveni (%0 → %25 → %50 → %75)
      "Rastgele sus"un ölçülen protokol hâli: sessiz vuruş sapması ayrı izlenir.
      ================================================================ */
+  var IR_PROFILLER = {
+    kolay: [0, 15, 25, 50],
+    standart: [0, 25, 50, 75],
+    ileri: [25, 50, 75, 90]
+  };
   var ir = {
     aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
-    vuruslar: [], taplar: [], bpm: 72,
-    FAZ_YUZDE: [0, 25, 50, 75], FAZ_VURUS: 8
+    vuruslar: [], taplar: [], bpm: 72, profil: 'standart',
+    FAZ_YUZDE: IR_PROFILLER.standart, FAZ_VURUS: 8
   };
+
+  /* Uyarlanan zorluk: öğrenci seçilince son İçsel Ritim skoruna göre profil öner */
+  byId('irOgrenci').addEventListener('change', function () {
+    var oneri = byId('irOneri');
+    var oid = this.value;
+    var skor = (window.SON_SKORLAR && window.SON_SKORLAR[oid] || {}).icsel_ritim;
+    if (skor === undefined) {
+      oneri.textContent = oid ? 'İlk ölçüm — Standart profille başlanır.' : 'Öğrenci seçilince son skora göre önerilir.';
+      if (oid) { byId('irProfil').value = 'standart'; }
+      return;
+    }
+    var profil = skor >= 80 ? 'ileri' : (skor < 50 ? 'kolay' : 'standart');
+    byId('irProfil').value = profil;
+    oneri.textContent = 'Son skoru ' + skor + ' → ' +
+      (profil === 'ileri' ? 'İleri' : profil === 'kolay' ? 'Kolay' : 'Standart') + ' profil önerildi.';
+  });
 
   function irPlanOlustur() {
     /* 4 hazırlık + 4 faz × 8 vuruş; her fazda tam yüzde kadar vuruş susturulur
@@ -1091,6 +1128,8 @@
     ses.hazirla();
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     ir.bpm = parseInt(byId('irBpm').value, 10);
+    ir.profil = byId('irProfil').value;
+    ir.FAZ_YUZDE = IR_PROFILLER[ir.profil] || IR_PROFILLER.standart;
     irPlanOlustur();
     ir.taplar = [];
     ir.vurusNo = 0;
@@ -1218,7 +1257,7 @@
     byId('irFormBpm').value = ir.bpm;
     byId('irFormSkor').value = genel;
     byId('irFormDetay').value = JSON.stringify({
-      bpm: ir.bpm, fazlar: fazlar, sesliOrtMs: sesliOrt, sessizOrtMs: sessizOrt
+      bpm: ir.bpm, profil: ir.profil, fazlar: fazlar, sesliOrtMs: sesliOrt, sessizOrtMs: sessizOrt
     });
   }
 

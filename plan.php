@@ -90,6 +90,15 @@ require APP_DIR . '/includes/view/header.php';
         <input type="number" id="hedefSure" class="girdi" value="60" min="10" max="180">
         <span class="alan-ipucu">Yalnız uyarı içindir; kaydedilmez.</span>
       </label>
+      <label class="form-alan">Haftanın protokolü
+        <select name="protokol" class="secim">
+          <option value="">— Yok —</option>
+          <?php foreach (PROTOKOL_LABELS as $pKod => $pAd): ?>
+          <option value="<?= e($pKod) ?>" <?= ($oturum['protokol'] ?? '') === $pKod ? 'selected' : '' ?>><?= e($pAd) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <span class="alan-ipucu">Oturum ekranından Stüdyo'ya tek tıkla açılır.</span>
+      </label>
     </div>
   </div>
 

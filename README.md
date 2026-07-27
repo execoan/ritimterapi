@@ -108,6 +108,13 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
     kademe kademe susar (%0→%25→%50→%75), her vuruşta vurulur; sessiz vuruş sapması
     ayrı raporlanır (grafikte mor), skor sessiz fazlara ağırlıklıdır. Ev programına
     mini sürümüyle (3 faz) atanabilir; gelişim öğrenci trendinde izlenir.
+    **Uyarlanan zorluk:** öğrenci seçilince son skora göre Kolay/Standart/İleri
+    profili önerilir (≥80 → İleri, <50 → Kolay).
+- **Haftanın protokolü**: ders planına ve şablon oturumlarına protokol alanı —
+  şablon uygulanınca oturuma taşınır; oturum ekranındaki "🎛 Protokolü Stüdyoda Aç"
+  düğmesi Stüdyo'yu doğru sekmede açar (`metronom.php?protokol=…`).
+  Dönemlik grup raporunda **"Protokol gelişimi"** bölümü: protokol başına haftalık
+  ortalama skor çubukları ve öğrenci bazlı ilk→son skor tablosu (▲/▼).
 
 Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görünür.
 **Protokol skorları eğitmenin iç izleme aracıdır; veli raporlarına yansıtılmaz.**

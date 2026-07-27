@@ -13,6 +13,7 @@ if (!DateTime::createFromFormat('Y-m-d', $from)) { $from = $grup['baslangic_tari
 if (!DateTime::createFromFormat('Y-m-d', $to))   { $to = today(); }
 
 $rapor = report_group_period($grupId, $from, $to);
+$protokolRapor = report_group_protocols($grupId, $from, $to);
 $oturumlar = $rapor['oturumlar'];
 $kayitliOturumlar = array_filter($oturumlar, fn($s) => (int)$s['yoklama_sayisi'] > 0);
 $oranlar = array_map(fn($s) => (int)$s['yoklama_sayisi'] > 0 ? 100 * (int)$s['gelen_sayisi'] / (int)$s['yoklama_sayisi'] : 0, $kayitliOturumlar);
@@ -71,6 +72,46 @@ require APP_DIR . '/includes/view/header.php';
       <span class="cubuk-deger">%<?= $oran ?> (<?= (int)$s['gelen_sayisi'] ?>/<?= (int)$s['yoklama_sayisi'] ?>)</span>
     </div>
     <?php endforeach; ?>
+  <?php endif; ?>
+
+  <?php if ($protokolRapor['haftalik']): ?>
+  <h2 style="margin-top:1.3rem">Protokol gelişimi (iç izleme)</h2>
+  <p class="alan-ipucu">Metronom Stüdyosu ve ev çalışması ölçümlerinin haftalık ortalamaları.
+     Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansıtılmaz.</p>
+  <?php foreach ($protokolRapor['haftalik'] as $pKod => $haftalar):
+      ksort($haftalar); ?>
+  <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?></h3>
+  <?php foreach ($haftalar as $pzt => $veri):
+      $ortalama = (int)round($veri['toplam'] / max(1, $veri['adet'])); ?>
+  <div class="cubuk-satir">
+    <span class="cubuk-etiket"><?= e(format_date_tr($pzt, false)) ?> haftası</span>
+    <div class="cubuk-kanal"><div class="cubuk" style="width:<?= $ortalama ?>%"></div></div>
+    <span class="cubuk-deger"><?= $ortalama ?>/100 (<?= (int)$veri['adet'] ?> ölçüm)</span>
+  </div>
+  <?php endforeach; ?>
+  <?php
+      $gelisenler = array_filter($protokolRapor['ogrenciler'][$pKod] ?? [], fn($v) => $v['adet'] >= 2);
+      if ($gelisenler): ?>
+  <div class="tablo-sar" style="margin:.4rem 0 .8rem">
+    <table class="tablo">
+      <thead><tr><th>Öğrenci</th><th class="sayi">İlk skor</th><th class="sayi">Son skor</th><th class="sayi">Değişim</th><th class="sayi">Ölçüm</th></tr></thead>
+      <tbody>
+        <?php foreach ($gelisenler as $kod => $v):
+            $fark = (int)$v['son'] - (int)$v['ilk']; ?>
+        <tr>
+          <td><?= e($kod) ?></td>
+          <td class="sayi"><?= (int)$v['ilk'] ?></td>
+          <td class="sayi"><strong><?= (int)$v['son'] ?></strong></td>
+          <td class="sayi" style="color:<?= $fark > 0 ? 'var(--yesil)' : ($fark < 0 ? 'var(--kirmizi)' : 'inherit') ?>">
+            <?= $fark > 0 ? '▲ +' . $fark : ($fark < 0 ? '▼ ' . $fark : '—') ?></td>
+          <td class="sayi"><?= (int)$v['adet'] ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
+  <?php endforeach; ?>
   <?php endif; ?>
 
   <h2 style="margin-top:1.3rem">Oturum listesi</h2>

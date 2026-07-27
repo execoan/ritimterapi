@@ -336,17 +336,20 @@ function session_save_plan(array $d, array $items, ?int $id = null): array
     }
     if (!$temiz) { return ['ok' => false, 'error' => 'Plana en az bir teknik ekleyin.', 'id' => null]; }
 
+    $protokol = (string)($d['protokol'] ?? '');
+    if (!isset(PROTOKOL_LABELS[$protokol])) { $protokol = ''; }
+
     $pdo = db();
     $pdo->exec('BEGIN');
     try {
         if ($id === null) {
-            $pdo->prepare('INSERT INTO oturumlar (grup_id, tarih, hafta_no, notlar, created_at) VALUES (?, ?, ?, ?, ?)')
-                ->execute([$grupId, $tarih, $haftaNo, trim((string)($d['notlar'] ?? '')), now_str()]);
+            $pdo->prepare('INSERT INTO oturumlar (grup_id, tarih, hafta_no, notlar, protokol, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+                ->execute([$grupId, $tarih, $haftaNo, trim((string)($d['notlar'] ?? '')), $protokol, now_str()]);
             $id = (int)$pdo->lastInsertId();
             $eskiIslendi = [];
         } else {
-            $pdo->prepare('UPDATE oturumlar SET grup_id = ?, tarih = ?, hafta_no = ? WHERE id = ?')
-                ->execute([$grupId, $tarih, $haftaNo, $id]);
+            $pdo->prepare('UPDATE oturumlar SET grup_id = ?, tarih = ?, hafta_no = ?, protokol = ? WHERE id = ?')
+                ->execute([$grupId, $tarih, $haftaNo, $protokol, $id]);
             $st = $pdo->prepare('SELECT teknik_id, islendi FROM oturum_teknikleri WHERE oturum_id = ?');
             $st->execute([$id]);
             $eskiIslendi = $st->fetchAll(PDO::FETCH_KEY_PAIR);
@@ -737,8 +740,8 @@ function template_session_get(int $id): ?array
 /** Boş şablon oturumu ekler, id döner. */
 function template_session_add(int $sablonId, int $haftaNo, string $oturumAdi): int
 {
-    db()->prepare('INSERT INTO sablon_oturumlari (sablon_id, hafta_no, oturum_adi, hedef) VALUES (?, ?, ?, ?)')
-        ->execute([$sablonId, max(1, min(52, $haftaNo)), mb_substr(trim($oturumAdi) ?: 'A', 0, 3), '']);
+    db()->prepare('INSERT INTO sablon_oturumlari (sablon_id, hafta_no, oturum_adi, hedef, protokol) VALUES (?, ?, ?, ?, ?)')
+        ->execute([$sablonId, max(1, min(52, $haftaNo)), mb_substr(trim($oturumAdi) ?: 'A', 0, 3), '', '']);
     return (int)db()->lastInsertId();
 }
 
@@ -762,13 +765,16 @@ function template_session_save(int $id, array $d, array $items): array
     }
     if (!$temiz) { return ['ok' => false, 'error' => 'Oturuma en az bir teknik ekleyin.']; }
 
+    $protokol = (string)($d['protokol'] ?? '');
+    if (!isset(PROTOKOL_LABELS[$protokol])) { $protokol = ''; }
+
     $pdo = db();
     $pdo->exec('BEGIN');
     try {
-        $pdo->prepare('UPDATE sablon_oturumlari SET hafta_no = ?, oturum_adi = ?, hedef = ? WHERE id = ?')
+        $pdo->prepare('UPDATE sablon_oturumlari SET hafta_no = ?, oturum_adi = ?, hedef = ?, protokol = ? WHERE id = ?')
             ->execute([max(1, min(52, (int)($d['hafta_no'] ?? 1))),
                        mb_substr(trim((string)($d['oturum_adi'] ?? 'A')) ?: 'A', 0, 3),
-                       trim((string)($d['hedef'] ?? '')), $id]);
+                       trim((string)($d['hedef'] ?? '')), $protokol, $id]);
         $pdo->prepare('DELETE FROM sablon_teknikleri WHERE sablon_oturum_id = ?')->execute([$id]);
         $ins = $pdo->prepare('INSERT INTO sablon_teknikleri (sablon_oturum_id, teknik_id, sira, sure_dk, uygulama_notu)
                               VALUES (?, ?, ?, ?, ?)');
@@ -825,6 +831,7 @@ function template_apply(int $sablonId, int $grupId, string $baslangicTarihi, str
             'grup_id' => $grupId,
             'tarih' => $tarihStr,
             'hafta_no' => (int)$o['hafta_no'],
+            'protokol' => (string)($o['protokol'] ?? ''),
             'notlar' => 'Şablon: ' . $sablon['ad'] . ' · Hafta ' . (int)$o['hafta_no'] . $o['oturum_adi']
                       . ' — ' . $o['hedef'],
         ], $items, null);
@@ -879,6 +886,48 @@ function protocol_results_recent(int $limit = 10): array
 function protocol_result_delete(int $id): void
 {
     db()->prepare('DELETE FROM protokol_sonuclari WHERE id = ?')->execute([$id]);
+}
+
+/** Her öğrencinin her protokoldeki SON skoru: [ogrenci_id => [protokol => skor]]. */
+function protocol_last_scores(): array
+{
+    $rows = db()->query('SELECT p.ogrenci_id, p.protokol, p.skor
+                           FROM protokol_sonuclari p
+                           JOIN (SELECT ogrenci_id, protokol, MAX(created_at) AS mx, MAX(id) AS mid
+                                   FROM protokol_sonuclari GROUP BY ogrenci_id, protokol) s
+                             ON s.ogrenci_id = p.ogrenci_id AND s.protokol = p.protokol AND s.mid = p.id')
+                ->fetchAll();
+    $harita = [];
+    foreach ($rows as $r) { $harita[(int)$r['ogrenci_id']][$r['protokol']] = (int)$r['skor']; }
+    return $harita;
+}
+
+/**
+ * Dönemlik rapor için grup protokol gelişimi:
+ * - haftalik: [protokol => [haftaPzt => ['toplam','adet']]]
+ * - ogrenciler: [protokol => [ogrenci_kod => ['ilk','son','adet']]]
+ */
+function report_group_protocols(int $grupId, string $from, string $to): array
+{
+    $st = db()->prepare("SELECT p.protokol, p.skor, p.created_at, o.kod
+                           FROM protokol_sonuclari p
+                           JOIN ogrenciler o ON o.id = p.ogrenci_id
+                          WHERE o.grup_id = ? AND date(p.created_at) BETWEEN ? AND ?
+                          ORDER BY p.created_at");
+    $st->execute([$grupId, $from, $to]);
+    $haftalik = [];
+    $ogrenciler = [];
+    foreach ($st->fetchAll() as $r) {
+        [$pzt] = week_bounds(substr($r['created_at'], 0, 10));
+        $haftalik[$r['protokol']][$pzt]['toplam'] = ($haftalik[$r['protokol']][$pzt]['toplam'] ?? 0) + (int)$r['skor'];
+        $haftalik[$r['protokol']][$pzt]['adet'] = ($haftalik[$r['protokol']][$pzt]['adet'] ?? 0) + 1;
+        if (!isset($ogrenciler[$r['protokol']][$r['kod']])) {
+            $ogrenciler[$r['protokol']][$r['kod']] = ['ilk' => (int)$r['skor'], 'son' => (int)$r['skor'], 'adet' => 0];
+        }
+        $ogrenciler[$r['protokol']][$r['kod']]['son'] = (int)$r['skor'];
+        $ogrenciler[$r['protokol']][$r['kod']]['adet']++;
+    }
+    return ['haftalik' => $haftalik, 'ogrenciler' => $ogrenciler];
 }
 
 /* ======================== EV PROGRAMI ======================== */

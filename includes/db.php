@@ -273,6 +273,12 @@ function run_migrations(): void
             DROP TABLE ev_calismalari;
             ALTER TABLE ev_calismalari_v2 RENAME TO ev_calismalari;
         ",
+
+        // v8 — oturum ve şablon oturumlarına haftanın protokolü alanı
+        8 => "
+            ALTER TABLE oturumlar ADD COLUMN protokol TEXT NOT NULL DEFAULT '';
+            ALTER TABLE sablon_oturumlari ADD COLUMN protokol TEXT NOT NULL DEFAULT '';
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {

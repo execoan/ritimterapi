@@ -695,9 +695,13 @@ function seed_templates(): void
          'yetiskin', 60, $yetiskin],
     ];
 
+    // Haftanın protokolü: A oturumlarında ölçüm önerisi (RitimOdak ölçüm ritmiyle uyumlu)
+    $protokolHaftalari = [1 => 'vurus_tutturma', 3 => 'ritim_okuma', 5 => 'icsel_ritim',
+                          6 => 'aksak_bulma', 9 => 'bpm_bulma', 12 => 'vurus_tutturma'];
+
     $zaman = now_str();
     $si = $pdo->prepare('INSERT INTO plan_sablonlari (ad, aciklama, hedef_kitle, sure_dk, created_at) VALUES (?, ?, ?, ?, ?)');
-    $oi = $pdo->prepare('INSERT INTO sablon_oturumlari (sablon_id, hafta_no, oturum_adi, hedef) VALUES (?, ?, ?, ?)');
+    $oi = $pdo->prepare('INSERT INTO sablon_oturumlari (sablon_id, hafta_no, oturum_adi, hedef, protokol) VALUES (?, ?, ?, ?, ?)');
     $ti = $pdo->prepare('INSERT INTO sablon_teknikleri (sablon_oturum_id, teknik_id, sira, sure_dk, uygulama_notu) VALUES (?, ?, ?, ?, ?)');
 
     $pdo->exec('BEGIN');
@@ -707,7 +711,8 @@ function seed_templates(): void
             $sablonId = (int)$pdo->lastInsertId();
             foreach ($haftalar as $haftaNo => [$hedef, $a, $b]) {
                 foreach (['A' => $a, 'B' => $b] as $oturumAdi => $teknikListe) {
-                    $oi->execute([$sablonId, $haftaNo, $oturumAdi, $hedef]);
+                    $oi->execute([$sablonId, $haftaNo, $oturumAdi, $hedef,
+                                  $oturumAdi === 'A' ? ($protokolHaftalari[$haftaNo] ?? '') : '']);
                     $oturumId = (int)$pdo->lastInsertId();
                     $sira = 1;
                     foreach ($teknikListe as [$teknikAd, $dk, $not]) {

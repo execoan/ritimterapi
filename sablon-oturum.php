@@ -69,6 +69,15 @@ require APP_DIR . '/includes/view/header.php';
         <input type="number" id="hedefSure" class="girdi" value="<?= (int)$oturum['sablon_sure'] ?>" min="10" max="180">
         <span class="alan-ipucu">Şablonun oturum süresi; yalnız uyarı içindir.</span>
       </label>
+      <label class="form-alan">Haftanın protokolü
+        <select name="protokol" class="secim">
+          <option value="">— Yok —</option>
+          <?php foreach (PROTOKOL_LABELS as $pKod => $pAd): ?>
+          <option value="<?= e($pKod) ?>" <?= ($oturum['protokol'] ?? '') === $pKod ? 'selected' : '' ?>><?= e($pAd) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <span class="alan-ipucu">Şablon uygulanınca oturuma taşınır.</span>
+      </label>
       <label class="form-alan form-genis">Haftanın hedefi
         <input type="text" name="hedef" class="girdi" value="<?= e($oturum['hedef']) ?>" maxlength="160"
                placeholder="Örn. Başla–dur, güvenli katılım">
