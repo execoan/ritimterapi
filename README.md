@@ -92,8 +92,11 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
   (noktaya tıkla: aksan → normal → sessiz), **tempo trainer** (hedefe her N ölçüde
   ±X BPM), **poliritim** katmanı (2/3/5 : ölçü), **7 sesli kit** (tahta, klik,
   klaves, inek çanı, davul, bip, Türkçe **sesli sayma**) + seçimde önizleme,
-  ⚡ **flaş modu**, büyük vuruş sayacı, **preset** çipleri, sessiz aralık çalışması.
-  Kısayollar: Boşluk, T, ↑↓.
+  ⚡ **flaş modu**, büyük vuruş sayacı, **preset** çipleri, sessiz aralık çalışması,
+  🎲 **rastgele sus** (Time Guru tarzı içsel zamanlama), ⏲ çalışma zamanlayıcısı,
+  📳 titreşim (mobil), ⛶ tam ekran sahne. **🎵 Şarkı tempo kütüphanesi:** 42 tanıdık
+  parça (metal/rock/pop/jazz) — tıklayınca BPM (+Take Five'ta 5/4 ölçü) ayarlanır ve
+  çalar; arama ve tür filtresi vardır. Kısayollar: Boşluk, T, ↑↓.
 - **Protokoller** (skor 0–100, öğrenciye kaydedilir; BAASTA türü görevlerden uyarlama):
   - *Vuruş Tutturma* — senkronizasyon–devam: sesli + sessiz faz, ms sapma, eğilim.
   - *BPM Bulma* — tempo yeniden üretme, 3 tur.

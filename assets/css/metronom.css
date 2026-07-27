@@ -92,6 +92,48 @@
 
 .m-kaydet-satir { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin-top: .6rem; }
 
+/* ---------- Premium satırı ---------- */
+.m-premium-satir { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; margin-bottom: .8rem; }
+
+/* ---------- Şarkı tempo kütüphanesi ---------- */
+.m-sarki-bolum { border-top: 1px solid rgba(255, 255, 255, .12); margin-top: 1.2rem; padding-top: 1rem; position: relative; z-index: 2; }
+.m-sarki-baslik { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin-bottom: .7rem; }
+.m-sarki-baslik h3 { margin: 0; color: #fbbf24; font-size: 1rem; }
+.m-sarki-ara {
+  margin-left: auto; background: #292524; color: #f5f5f4; border: 1px solid #44403c;
+  border-radius: 999px; padding: .4rem .9rem; min-width: 200px; font-family: inherit;
+}
+.m-sarki-ara:focus { outline: 2px solid rgba(245, 158, 11, .45); }
+.m-sarki-turler { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .7rem; }
+.m-tur-chip {
+  background: rgba(255, 255, 255, .07); color: #d6d3d1; border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px; padding: .3rem .85rem; font-weight: 700; cursor: pointer; font-family: inherit; font-size: .85rem;
+}
+.m-tur-chip.aktif { background: #f59e0b; border-color: #f59e0b; color: #1c1917; }
+.m-sarki-liste {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: .5rem;
+  max-height: 230px; overflow-y: auto; padding-right: .3rem;
+}
+.m-sarki {
+  text-align: left; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 12px; padding: .55rem .7rem; cursor: pointer; font-family: inherit;
+  transition: border-color .15s, background .15s, transform .1s;
+}
+.m-sarki:hover { border-color: rgba(245, 158, 11, .55); transform: translateY(-2px); }
+.m-sarki.secili { background: rgba(245, 158, 11, .2); border-color: #f59e0b; }
+.m-sarki b { display: block; color: #f5f5f4; font-size: .88rem; line-height: 1.25; }
+.m-sarki i { display: block; color: #a8a29e; font-style: normal; font-size: .76rem; }
+.m-sarki span { display: inline-block; margin-top: .25rem; color: #fbbf24; font-weight: 800; font-size: .8rem; }
+
+/* ---------- Tam ekran sahne ---------- */
+.m-sahne:fullscreen {
+  display: flex; flex-direction: column; justify-content: center;
+  border-radius: 0; padding: 3vh 4vw; overflow-y: auto;
+}
+.m-sahne:fullscreen .m-metronom { width: min(300px, 34vh); }
+.m-sahne:fullscreen .m-sayac { font-size: 5rem; }
+.m-sahne:fullscreen .m-sarki-liste { max-height: 26vh; }
+
 .m-buton-satir { display: flex; gap: .7rem; flex-wrap: wrap; }
 .m-baslat { font-size: 1.05rem; padding: .7rem 1.6rem; }
 .m-baslat.calisiyor { background: #b91c1c; }

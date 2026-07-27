@@ -173,6 +173,30 @@ require APP_DIR . '/includes/view/header.php';
         </span>
       </div>
 
+      <div class="m-premium-satir">
+        <label class="m-ayar">🎲 Rastgele sus
+          <select id="mRastgeleSus" class="secim">
+            <option value="0" selected>Kapalı</option>
+            <option value="10">%10</option>
+            <option value="25">%25</option>
+            <option value="50">%50</option>
+            <option value="75">%75</option>
+          </select>
+        </label>
+        <label class="m-ayar">⏲ Zamanlayıcı
+          <select id="mZamanlayici" class="secim">
+            <option value="0" selected>Kapalı</option>
+            <option value="1">1 dk</option>
+            <option value="2">2 dk</option>
+            <option value="3">3 dk</option>
+            <option value="5">5 dk</option>
+            <option value="10">10 dk</option>
+          </select>
+        </label>
+        <label class="m-ayar-onay"><input type="checkbox" id="mTitresim"> 📳 Titreşim</label>
+        <button type="button" class="m-mini-btn" id="mTamEkran" title="Sahneyi tam ekran yap">⛶ Tam ekran</button>
+      </div>
+
       <div class="m-preset-cubugu">
         <span class="alan-ipucu">Preset:</span>
         <span id="mPresetler"></span>
@@ -184,8 +208,19 @@ require APP_DIR . '/includes/view/header.php';
         <button type="button" class="btn btn-golge" id="mTap">👆 Tap Tempo</button>
       </div>
       <p class="alan-ipucu">Kısayollar: <kbd>Boşluk</kbd> başlat/durdur · <kbd>T</kbd> tap tempo · <kbd>↑↓</kbd> BPM
-        · Ses kitini değiştirince kısa önizleme çalar.</p>
+        · Ses kitini değiştirince kısa önizleme çalar. 🎲 Rastgele sus: vuruşların bir kısmı
+        rastgele susarak içsel sayımı çalıştırır.</p>
     </div>
+  </div>
+
+  <div class="m-sarki-bolum">
+    <div class="m-sarki-baslik">
+      <h3>🎵 Şarkı temposu seç</h3>
+      <span class="alan-ipucu">BPM'ler songbpm/tunebat kayıtlarından; kayıt sürümüne göre küçük fark olabilir.</span>
+      <input type="search" id="sarkiAra" class="m-sarki-ara" placeholder="Şarkı veya sanatçı ara…">
+    </div>
+    <div class="m-sarki-turler" id="sarkiTurler"></div>
+    <div class="m-sarki-liste" id="sarkiListe"></div>
   </div>
 </div>
 

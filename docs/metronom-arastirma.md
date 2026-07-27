@@ -42,5 +42,20 @@ ritim temelli değerlendirme önerir. Stüdyodaki karşılıkları:
 Adaptive tapping (tempo değişimine uyum) ileride eklenebilir; motor temeli
 Tempo trainer ile kuruldu.
 
+## 3. Şarkı tempo kütüphanesi ve ek premium özellikler (v2.1)
+
+**Şarkı BPM kütüphanesi:** 42 tanıdık parça (metal/rock/pop/jazz), tıklayınca tempo
+(+ölçü: Take Five 5/4) ayarlanır ve metronom başlar. BPM değerleri getsongbpm.com ve
+tunebat.com kayıtlarından derlendi (örn. Master of Puppets 220, Enter Sandman 123,
+Smells Like Teen Spirit 117, So What 136, Take Five 176, Giant Steps 272 — üst sınır
+240 olduğundan uyarıyla kısılır). Kayıt sürümüne göre küçük farklar olabilir.
+
+**Premium eklemeler:**
+- 🎲 **Rastgele sus** (%10–75): vuruşların bir kısmı rastgele susar, görsel akış sürer —
+  Time Guru metronomunun ünlü içsel-zamanlama özelliğinin uyarlaması.
+- ⏲ **Çalışma zamanlayıcısı**: 1–10 dk sonunda kendiliğinden durur.
+- 📳 **Titreşim** (mobil): vuruşta Vibration API.
+- ⛶ **Tam ekran sahne**: Fullscreen API; sahne büyür, sayaç 5rem.
+
 Not: Bu modüller eğitim/izleme aracıdır; BAASTA'nın klinik norm ve eşik kestirimlerini
 (MLP) birebir uygulamaz, tanı amacı taşımaz.

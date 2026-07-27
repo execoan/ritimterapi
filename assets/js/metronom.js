@@ -177,6 +177,9 @@
       trainer: byId('mTrainer'), trainerSecim: byId('mTrainerSecim'),
       trainerHedef: byId('mTrainerHedef'), trainerOlcu: byId('mTrainerOlcu'),
       trainerArtis: byId('mTrainerArtis'),
+      rastgeleSus: byId('mRastgeleSus'), zamanlayiciSel: byId('mZamanlayici'),
+      titresim: byId('mTitresim'), tamEkran: byId('mTamEkran'),
+      sarkiTurler: byId('sarkiTurler'), sarkiListe: byId('sarkiListe'), sarkiAra: byId('sarkiAra'),
       presetler: byId('mPresetler'), presetKaydet: byId('mPresetKaydet'),
       baslat: byId('mBaslat'), tap: byId('mTap'),
       sarkac: byId('mSarkac'), halka: byId('mHalka')
@@ -253,6 +256,9 @@
           m.el.flas.classList.add(vurgu === 2 ? 'flas-aksan' : 'flas');
           setTimeout(function () { m.el.flas.classList.remove('flas', 'flas-aksan'); }, 90);
         }
+        if (m.el.titresim.checked && navigator.vibrate) {
+          navigator.vibrate(vurgu === 2 ? 40 : 20);
+        }
         if (m.el.ses.value === 'sayma') { konus(SAYILAR_TR[olcuIcindeki] || String(olcuIcindeki + 1)); }
       }
     }, gecikme);
@@ -262,6 +268,13 @@
     var olcuAdedi = parseInt(m.el.olcu.value, 10);
     var alt = parseInt(m.el.altBolunme.value, 10);
     var capraz = parseInt(m.el.poliritim.value, 10);
+
+    /* Çalışma zamanlayıcısı: süre dolunca kendiliğinden dur */
+    if (m.bitisMs && Date.now() >= m.bitisMs) {
+      metronomDurdur();
+      m.el.sayac.textContent = '✓';
+      return;
+    }
 
     while (m.sonrakiZaman < ses.ctx.currentTime + 0.12) {
       var spb = 60 / m.bpm;
@@ -289,10 +302,18 @@
       }
 
       var vurgu = m.aksanDeseni[olcuIcindeki] === undefined ? 1 : m.aksanDeseni[olcuIcindeki];
-      if (sesli && vurgu > 0) {
+
+      /* 🎲 Rastgele sus (Time Guru tarzı): görsel akar, ses o vuruşta susar */
+      var rastgeleSustu = false;
+      var susYuzde = parseInt(m.el.rastgeleSus.value, 10);
+      if (sesli && susYuzde > 0 && Math.random() * 100 < susYuzde) {
+        rastgeleSustu = true;
+      }
+
+      if (sesli && !rastgeleSustu && vurgu > 0) {
         ses.vur(m.sonrakiZaman, vurgu, m.el.ses.value);
       }
-      if (sesli && alt > 1 && m.el.ses.value !== 'sayma') {
+      if (sesli && !rastgeleSustu && alt > 1 && m.el.ses.value !== 'sayma') {
         for (var sb = 1; sb < alt; sb++) {
           ses.vurSub(m.sonrakiZaman + sb * spb / alt);
         }
@@ -314,6 +335,8 @@
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     m.vurusNo = 0;
     m.olcuSayaci = 0;
+    var dk = parseInt(m.el.zamanlayiciSel.value, 10);
+    m.bitisMs = dk > 0 ? Date.now() + dk * 60000 : 0;
     m.sonrakiZaman = ses.ctx.currentTime + 0.08;
     m.zamanlayici = setInterval(planla, 25);
     m.calisiyor = true;
@@ -427,6 +450,126 @@
     presetYaz(liste.slice(0, 12));
     presetCiz();
   });
+
+  /* ---- ⛶ Tam ekran ---- */
+  m.el.tamEkran.addEventListener('click', function () {
+    var sahne = byId('mSahne');
+    if (!document.fullscreenElement) {
+      if (sahne.requestFullscreen) { sahne.requestFullscreen().catch(function () { /* desteklenmiyor */ }); }
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  });
+  document.addEventListener('fullscreenchange', function () {
+    m.el.tamEkran.textContent = document.fullscreenElement ? '⛶ Çık' : '⛶ Tam ekran';
+  });
+
+  /* ================================================================
+     🎵 ŞARKI TEMPO KÜTÜPHANESİ
+     BPM'ler getsongbpm.com / tunebat kayıtlarından (Temmuz 2026);
+     kayıt sürümüne göre küçük farklar olabilir.
+     ================================================================ */
+  var SARKILAR = [
+    /* METAL */
+    { tur: 'metal', ad: 'Master of Puppets', sanatci: 'Metallica', bpm: 220 },
+    { tur: 'metal', ad: 'Enter Sandman', sanatci: 'Metallica', bpm: 123 },
+    { tur: 'metal', ad: 'Paranoid', sanatci: 'Black Sabbath', bpm: 163 },
+    { tur: 'metal', ad: 'Ace of Spades', sanatci: 'Motörhead', bpm: 141 },
+    { tur: 'metal', ad: 'Painkiller', sanatci: 'Judas Priest', bpm: 176 },
+    { tur: 'metal', ad: 'The Trooper', sanatci: 'Iron Maiden', bpm: 161 },
+    { tur: 'metal', ad: 'Chop Suey!', sanatci: 'System of a Down', bpm: 127 },
+    { tur: 'metal', ad: 'Duality', sanatci: 'Slipknot', bpm: 148 },
+    { tur: 'metal', ad: 'Symphony of Destruction', sanatci: 'Megadeth', bpm: 140 },
+    /* ROCK */
+    { tur: 'rock', ad: 'Back in Black', sanatci: 'AC/DC', bpm: 94 },
+    { tur: 'rock', ad: 'Highway to Hell', sanatci: 'AC/DC', bpm: 116 },
+    { tur: 'rock', ad: 'Smoke on the Water', sanatci: 'Deep Purple', bpm: 112 },
+    { tur: 'rock', ad: "Sweet Child O' Mine", sanatci: "Guns N' Roses", bpm: 125 },
+    { tur: 'rock', ad: 'Smells Like Teen Spirit', sanatci: 'Nirvana', bpm: 117 },
+    { tur: 'rock', ad: 'Come As You Are', sanatci: 'Nirvana', bpm: 120 },
+    { tur: 'rock', ad: 'Seven Nation Army', sanatci: 'The White Stripes', bpm: 124 },
+    { tur: 'rock', ad: 'We Will Rock You', sanatci: 'Queen', bpm: 81 },
+    { tur: 'rock', ad: 'Should I Stay or Should I Go', sanatci: 'The Clash', bpm: 113 },
+    { tur: 'rock', ad: '(I Can’t Get No) Satisfaction', sanatci: 'The Rolling Stones', bpm: 136 },
+    { tur: 'rock', ad: 'Hotel California', sanatci: 'Eagles', bpm: 74 },
+    { tur: 'rock', ad: 'Sultans of Swing', sanatci: 'Dire Straits', bpm: 148 },
+    /* POP */
+    { tur: 'pop', ad: 'Billie Jean', sanatci: 'Michael Jackson', bpm: 117 },
+    { tur: 'pop', ad: 'Beat It', sanatci: 'Michael Jackson', bpm: 139 },
+    { tur: 'pop', ad: 'Uptown Funk', sanatci: 'Mark Ronson ft. Bruno Mars', bpm: 115 },
+    { tur: 'pop', ad: 'Blinding Lights', sanatci: 'The Weeknd', bpm: 171 },
+    { tur: 'pop', ad: 'Shape of You', sanatci: 'Ed Sheeran', bpm: 96 },
+    { tur: 'pop', ad: 'bad guy', sanatci: 'Billie Eilish', bpm: 135 },
+    { tur: 'pop', ad: 'Rolling in the Deep', sanatci: 'Adele', bpm: 105 },
+    { tur: 'pop', ad: 'Shake It Off', sanatci: 'Taylor Swift', bpm: 160 },
+    { tur: 'pop', ad: 'Happy', sanatci: 'Pharrell Williams', bpm: 160 },
+    { tur: 'pop', ad: 'Levitating', sanatci: 'Dua Lipa', bpm: 103 },
+    { tur: 'pop', ad: 'Dance Monkey', sanatci: 'Tones and I', bpm: 98 },
+    { tur: 'pop', ad: 'Get Lucky', sanatci: 'Daft Punk', bpm: 116 },
+    /* JAZZ */
+    { tur: 'jazz', ad: 'Take Five', sanatci: 'Dave Brubeck', bpm: 176, olcu: 5 },
+    { tur: 'jazz', ad: 'So What', sanatci: 'Miles Davis', bpm: 136 },
+    { tur: 'jazz', ad: 'Blue in Green', sanatci: 'Miles Davis', bpm: 55 },
+    { tur: 'jazz', ad: 'Giant Steps', sanatci: 'John Coltrane', bpm: 272 },
+    { tur: 'jazz', ad: 'Fly Me to the Moon', sanatci: 'Frank Sinatra', bpm: 116 },
+    { tur: 'jazz', ad: 'Autumn Leaves', sanatci: 'Cannonball Adderley', bpm: 132 },
+    { tur: 'jazz', ad: 'Take the “A” Train', sanatci: 'Duke Ellington', bpm: 160 },
+    { tur: 'jazz', ad: 'Cantaloupe Island', sanatci: 'Herbie Hancock', bpm: 105 },
+    { tur: 'jazz', ad: 'Watermelon Man', sanatci: 'Herbie Hancock', bpm: 120 }
+  ];
+  var TUR_ETIKET = { hepsi: '🎼 Tümü', metal: '🤘 Metal', rock: '🎸 Rock', pop: '🎤 Pop', jazz: '🎷 Jazz' };
+  var seciliTur = 'hepsi';
+
+  function sarkilariCiz() {
+    var arama = tr_kucult(m.el.sarkiAra.value || '');
+    m.el.sarkiListe.innerHTML = '';
+    var gosterilen = 0;
+    SARKILAR.forEach(function (s) {
+      if (seciliTur !== 'hepsi' && s.tur !== seciliTur) { return; }
+      if (arama && tr_kucult(s.ad + ' ' + s.sanatci).indexOf(arama) === -1) { return; }
+      gosterilen++;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'm-sarki';
+      b.innerHTML = '<b>' + s.ad + '</b><i>' + s.sanatci + '</i>'
+        + '<span>' + s.bpm + ' BPM' + (s.olcu ? ' · ' + s.olcu + '/4' : '') + '</span>';
+      b.addEventListener('click', function () {
+        bpmAyarla(s.bpm > 240 ? 240 : s.bpm);
+        if (s.bpm > 240) { window.alert(s.ad + ' aslında ' + s.bpm + ' BPM — metronom üst sınırı 240 olarak ayarlandı.'); }
+        if (s.olcu) { m.el.olcu.value = String(s.olcu); noktalariKur(); }
+        document.querySelectorAll('.m-sarki').forEach(function (x) { x.classList.remove('secili'); });
+        b.classList.add('secili');
+        if (!m.calisiyor) { metronomBaslat(); } /* seçince direkt çalsın */
+      });
+      m.el.sarkiListe.appendChild(b);
+    });
+    if (!gosterilen) {
+      m.el.sarkiListe.innerHTML = '<span class="alan-ipucu">Eşleşen şarkı yok.</span>';
+    }
+  }
+  function tr_kucult(s) {
+    return s.replace(/İ/g, 'i').replace(/I/g, 'ı').toLowerCase();
+  }
+  function turleriCiz() {
+    m.el.sarkiTurler.innerHTML = '';
+    Object.keys(TUR_ETIKET).forEach(function (tur) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'm-tur-chip' + (tur === seciliTur ? ' aktif' : '');
+      b.textContent = TUR_ETIKET[tur];
+      b.addEventListener('click', function () {
+        seciliTur = tur;
+        turleriCiz();
+        sarkilariCiz();
+      });
+      m.el.sarkiTurler.appendChild(b);
+    });
+  }
+  if (m.el.sarkiListe) {
+    turleriCiz();
+    sarkilariCiz();
+    m.el.sarkiAra.addEventListener('input', sarkilariCiz);
+  }
 
   bpmAyarla(92);
   noktalariKur();
