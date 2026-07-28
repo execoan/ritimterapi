@@ -11,7 +11,7 @@ function db_ref(bool $sifirla = false): ?PDO
     static $pdo = null;
     if ($sifirla) { $pdo = null; return null; }
     if ($pdo === null) {
-        $dizin = APP_DIR . '/storage';
+        $dizin = STORAGE_DIR;
         if (!is_dir($dizin)) { @mkdir($dizin, 0755, true); }
         $pdo = new PDO('sqlite:' . $dizin . '/ritim.sqlite', null, null, [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
@@ -38,7 +38,7 @@ function db_close(): void
 
 function backup_dir(): string
 {
-    $dizin = APP_DIR . '/storage/yedek';
+    $dizin = STORAGE_DIR . '/yedek';
     if (!is_dir($dizin)) { @mkdir($dizin, 0755, true); }
     return $dizin;
 }

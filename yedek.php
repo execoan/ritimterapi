@@ -8,7 +8,7 @@ define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
 
 $yedekDizin = backup_dir();
-$dbDosya = APP_DIR . '/storage/ritim.sqlite';
+$dbDosya = STORAGE_DIR . '/ritim.sqlite';
 
 /** storage/yedek içindeki bir dosya adını güvenle doğrular. */
 function yedek_dosya_dogrula(string $ad): ?string
@@ -43,9 +43,9 @@ function yedek_geri_yukle(string $kaynak): ?string
     $emniyet = backup_dir() . '/oncesi-' . date('Ymd-His') . '.sqlite';
     if (!backup_snapshot($emniyet)) { return 'Emniyet yedeği alınamadı; geri yükleme durduruldu.'; }
     db_close();
-    @unlink(APP_DIR . '/storage/ritim.sqlite-wal');
-    @unlink(APP_DIR . '/storage/ritim.sqlite-shm');
-    if (!@copy($kaynak, APP_DIR . '/storage/ritim.sqlite')) {
+    @unlink(STORAGE_DIR . '/ritim.sqlite-wal');
+    @unlink(STORAGE_DIR . '/ritim.sqlite-shm');
+    if (!@copy($kaynak, STORAGE_DIR . '/ritim.sqlite')) {
         return 'Veritabanı dosyası değiştirilemedi (dosya kilitli olabilir).';
     }
     return null;

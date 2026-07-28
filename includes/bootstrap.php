@@ -12,6 +12,15 @@ date_default_timezone_set('Europe/Istanbul');
 mb_internal_encoding('UTF-8');
 
 define('APP_DIR', dirname(__DIR__));
+/*
+ * Depolama dizini. RITIM_STORAGE ortam değişkeni yalnız SÜRECİ BAŞLATAN
+ * tarafından ayarlanabilir (HTTP ile değiştirilemez); duman testi bununla
+ * kendini izole eder ve gerçek veriye asla dokunmaz.
+ */
+$ozelDepo = getenv('RITIM_STORAGE');
+define('STORAGE_DIR', is_string($ozelDepo) && $ozelDepo !== ''
+    ? rtrim($ozelDepo, '/\\')
+    : APP_DIR . '/storage');
 define('APP_NAME', 'RitimTerapi');
 // Veliye giden çıktılarda kullanılan ad — "terapi" sözcüğü geçmez (CLAUDE.md).
 define('REPORT_BRAND', 'Ritim Atölyesi');
@@ -49,9 +58,9 @@ require __DIR__ . '/model.php';
  * varsayılanla oluşturulur). Uygulama Wi-Fi ağına açık çalıştığı için panel
  * hafif bir şifre kapısının arkasındadır; tanıtım sayfası herkese açıktır.
  */
-$gizliDosya = APP_DIR . '/storage/gizli.php';
+$gizliDosya = STORAGE_DIR . '/gizli.php';
 if (!is_file($gizliDosya)) {
-    if (!is_dir(APP_DIR . '/storage')) { @mkdir(APP_DIR . '/storage', 0755, true); }
+    if (!is_dir(STORAGE_DIR)) { @mkdir(STORAGE_DIR, 0755, true); }
     @file_put_contents($gizliDosya,
         "<?php\n// Giriş hesapları: kullanıcı adı => şifre. Düzenleyerek değiştirin.\n"
         . "define('PANEL_KULLANICILAR', ['admin' => 'ritim', 'egitmen' => 'ritim']);\n"

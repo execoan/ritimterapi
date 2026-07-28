@@ -17,6 +17,24 @@ kopyalayın/taşıyın ve `http://localhost/RitimTerapi` adresini açın.
 Kurulum adımı yoktur: ilk açılışta veritabanı (`storage/ritim.sqlite`) kendiliğinden
 oluşturulur ve teknik kütüphanesi başlangıç içeriğiyle dolar.
 
+## Duman testi (smoke test)
+
+`test.bat` (veya `php test/smoke.php`) sistemin sağlığını 57 denetimle sınar ve
+**gerçek veriye asla dokunmaz**: `RITIM_STORAGE` ortam değişkeniyle geçici bir
+depolama dizini kullanan kendi sunucusunu 127.0.0.1'de rastgele portta açar,
+test sonunda her şeyi siler; gerçek veritabanının özeti test öncesi/sonrası
+karşılaştırılarak dokunulmadığı ayrıca kanıtlanır.
+
+Denetimlerin kapsamı: sayfaların hatasız açılması, göç + seed bütünlüğü,
+CRUD + basamaklı silme, sertifika/rapor içerikleri ve **güvenlik** —
+giriş kapısı yönlendirmeleri, CSRF zorunluluğu, XSS kaçışı, `storage/`,
+`includes/`, `.git/`, `test/` erişim engelleri, yol gezinmesi (`..`),
+yedek indirme dosya-adı doğrulaması, giriş deneme kilidi (5 hata → 30 sn)
+ve veli çıktısında kilitli dil (CLAUDE.md §2).
+
+Aynı test her push'ta GitHub Actions'ta da otomatik koşar
+(`.github/workflows/smoke.yml`). Çıkış kodu 0 = hepsi geçti.
+
 ## Site ve giriş
 
 - `http://localhost:8590` → **tanıtım sitesi** (herkese açık, animasyonlu tek sayfa:

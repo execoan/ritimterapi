@@ -1,0 +1,27 @@
+# Her push/PR'da duman testi: izole depoyla sunucu açar, işlev + güvenlik denetler.
+name: Duman testi
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: PHP 8.2 kur
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_sqlite, sqlite3, mbstring
+          coverage: none
+
+      - name: Duman testini çalıştır
+        run: php test/smoke.php

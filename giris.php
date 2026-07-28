@@ -10,29 +10,42 @@ if (!preg_match('/^[a-z0-9-]+\.php(\?[^\s]*)?$/i', $hedef)) { $hedef = 'panel.ph
 if (educator_logged_in()) { redirect($hedef); }
 
 $hataVar = false;
+$hataMesaji = 'Kullanıcı adı veya şifre doğru değil.';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     csrf_check('giris.php');
 
-    // Tek tıkla hızlı giriş (geliştirme kolaylığı; gizli.php'de HIZLI_GIRIS=false ile kapanır)
-    $hizli = (string)($_POST['hizli'] ?? '');
-    if (HIZLI_GIRIS && $hizli !== '' && array_key_exists($hizli, PANEL_KULLANICILAR)) {
-        session_regenerate_id(true);
-        $_SESSION['egitmen'] = 1;
-        $_SESSION['rol'] = $hizli;
-        redirect($hedef);
-    }
+    // Deneme kilidi: 5 başarısız denemeden sonra 30 saniye beklenir
+    $deneme = $_SESSION['giris_deneme'] ?? ['adet' => 0, 'son' => 0];
+    if ($deneme['adet'] >= 5 && time() - (int)$deneme['son'] < 30) {
+        $hataVar = true;
+        $hataMesaji = 'Çok fazla başarısız deneme — 30 saniye bekleyip yeniden deneyin.';
+    } else {
+        if (time() - (int)$deneme['son'] >= 30) { $deneme = ['adet' => 0, 'son' => 0]; }
 
-    $kullanici = strtolower(trim((string)($_POST['kullanici'] ?? '')));
-    $sifre = (string)($_POST['sifre'] ?? '');
-    $beklenen = PANEL_KULLANICILAR[$kullanici] ?? null;
-    if ($beklenen !== null && $sifre !== '' && hash_equals((string)$beklenen, $sifre)) {
-        session_regenerate_id(true);
-        $_SESSION['egitmen'] = 1;
-        $_SESSION['rol'] = $kullanici;
-        redirect($hedef);
+        // Tek tıkla hızlı giriş (geliştirme kolaylığı; gizli.php'de HIZLI_GIRIS=false ile kapanır)
+        $hizli = (string)($_POST['hizli'] ?? '');
+        if (HIZLI_GIRIS && $hizli !== '' && array_key_exists($hizli, PANEL_KULLANICILAR)) {
+            unset($_SESSION['giris_deneme']);
+            session_regenerate_id(true);
+            $_SESSION['egitmen'] = 1;
+            $_SESSION['rol'] = $hizli;
+            redirect($hedef);
+        }
+
+        $kullanici = strtolower(trim((string)($_POST['kullanici'] ?? '')));
+        $sifre = (string)($_POST['sifre'] ?? '');
+        $beklenen = PANEL_KULLANICILAR[$kullanici] ?? null;
+        if ($beklenen !== null && $sifre !== '' && hash_equals((string)$beklenen, $sifre)) {
+            unset($_SESSION['giris_deneme']);
+            session_regenerate_id(true);
+            $_SESSION['egitmen'] = 1;
+            $_SESSION['rol'] = $kullanici;
+            redirect($hedef);
+        }
+        usleep(400000); // kaba deneme yavaşlatma
+        $_SESSION['giris_deneme'] = ['adet' => (int)$deneme['adet'] + 1, 'son' => time()];
+        $hataVar = true;
     }
-    usleep(400000); // kaba deneme yavaşlatma
-    $hataVar = true;
 }
 ?>
 <!doctype html>
@@ -115,7 +128,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <h1>Eğitmen Girişi</h1>
     <p class="alt-yazi">Atölye yönetim paneline hoş geldiniz.</p>
     <?php if ($hataVar): ?>
-    <div class="giris-hata">Kullanıcı adı veya şifre doğru değil.</div>
+    <div class="giris-hata"><?= e($hataMesaji) ?></div>
     <?php endif; ?>
 
     <?php if (HIZLI_GIRIS): ?>
