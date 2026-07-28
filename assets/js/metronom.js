@@ -14,6 +14,31 @@
     return dizi.reduce(function (a, b) { return a + b; }, 0) / dizi.length;
   }
 
+  /* ---------- İlerleme çubuğu ----------
+     Çubuk vuruş vuruş SIÇRAMAZ: tek bir doğrusal geçişle baştan sona akar.
+     Sıçrayan çubuk sessiz fazda görsel metronom işlevi görür — öğrenci
+     vuruşu içinden saymak yerine ekrandan yakalar ve ölçüm bozulur. */
+  function ilerlemeAkit(id, sureSn, gecikmeMs) {
+    var el = byId(id);
+    if (!el) { return; }
+    el.style.transition = 'none';
+    el.style.width = '0';
+    void el.offsetWidth;                       // sıfırlama uygulansın
+    setTimeout(function () {
+      el.style.transition = 'width ' + sureSn.toFixed(2) + 's linear';
+      el.style.width = '100%';
+    }, Math.max(0, gecikmeMs || 0));
+  }
+
+  /** Akışı bulunduğu yerde dondurur (iptal/bitiş). */
+  function ilerlemeDondur(id) {
+    var el = byId(id);
+    if (!el) { return; }
+    var simdiki = window.getComputedStyle(el).width;
+    el.style.transition = 'none';
+    el.style.width = simdiki;
+  }
+
   /* ================================================================
      SES MOTORU — kit sesleri sentezlenir, dosya yok
      ================================================================ */
@@ -31,6 +56,20 @@
       return this.ctx;
     },
     duzey: function (v) { if (this.master) { this.master.gain.value = v; } },
+
+    /* Zamanlanmış TÜM sesleri anında keser.
+       Testler vuruşları ileri tarihli olarak Web Audio'ya yazar (BPM Bulma
+       8 vuruşu tek seferde); yalnız zamanlayıcıyı durdurmak sesi kesmez.
+       Master kazancı yeniden kurmak, çalmayı bekleyen düğümleri çıkıştan
+       kopararak hepsini tek hamlede susturur. */
+    sustur: function () {
+      if (!this.ctx || !this.master) { return; }
+      var duzey = this.master.gain.value;
+      try { this.master.disconnect(); } catch (e) { /* zaten kopuk */ }
+      this.master = this.ctx.createGain();
+      this.master.gain.value = duzey;
+      this.master.connect(this.ctx.destination);
+    },
 
     /* Ana vuruş. vurgu: true/2 = aksan, false/1 = normal (0 çağrılmaz). */
     vur: function (zaman, vurgu, tur) {
@@ -578,8 +617,11 @@
   /* ================================================================
      Sekmeler (+ oturumdan derin bağlantı: ?protokol=…)
      ================================================================ */
+  /* Sekme değişince çalışan testi durdur: aksi hâlde önceki protokolün
+     zamanlanmış sesleri ve sayaçları arka planda sürer. */
   document.querySelectorAll('.m-sekme').forEach(function (s) {
     s.addEventListener('click', function () {
+      if (!s.classList.contains('aktif')) { digerleriniIptalEt(''); }
       document.querySelectorAll('.m-sekme').forEach(function (x) { x.classList.remove('aktif'); });
       s.classList.add('aktif');
       document.querySelectorAll('.m-sekme-icerik').forEach(function (x) { x.hidden = true; });
@@ -623,7 +665,8 @@
      ================================================================ */
   var vt = {
     aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
-    vuruslar: [], taplar: [], bpm: 72, fazVurus: 16, toplamVurus: 0, bitisZamani: 0
+    vuruslar: [], taplar: [], bpm: 72, fazVurus: 16, toplamVurus: 0, bitisZamani: 0,
+    gosterilenFaz: -1
   };
 
   function vtBaslat() {
@@ -638,10 +681,12 @@
     vt.taplar = [];
     vt.vurusNo = 0;
     vt.sonrakiZaman = ses.ctx.currentTime + 0.6;
+    vt.gosterilenFaz = -1;
     vt.aktif = true;
     byId('vtSahne').hidden = false;
     byId('vtSonuc').hidden = true;
-    byId('vtIlerleme').style.width = '0';
+    ilerlemeAkit('vtIlerleme', vt.toplamVurus * 60 / vt.bpm,
+                 (vt.sonrakiZaman - ses.ctx.currentTime) * 1000);
     vtFazEtiketi(0);
     vt.zamanlayici = setInterval(vtPlanla, 25);
   }
@@ -661,14 +706,14 @@
         ses.vur(vt.sonrakiZaman, vt.vurusNo % 4 === 0, m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value);
       }
       vt.vuruslar.push({ zaman: vt.sonrakiZaman, faz: faz });
-      (function (no, f, zamanX) {
+      (function (f, zamanX) {
         var gecikme = Math.max(0, (zamanX - ses.ctx.currentTime) * 1000);
         setTimeout(function () {
-          if (!vt.aktif) { return; }
+          if (!vt.aktif || vt.gosterilenFaz === f) { return; }
+          vt.gosterilenFaz = f;       // etiket yalnız faz değişiminde güncellenir
           vtFazEtiketi(f);
-          byId('vtIlerleme').style.width = Math.round(100 * (no + 1) / vt.toplamVurus) + '%';
         }, gecikme);
-      })(vt.vurusNo, faz, vt.sonrakiZaman);
+      })(faz, vt.sonrakiZaman);
       vt.sonrakiZaman += 60 / vt.bpm;
       vt.vurusNo++;
     }
@@ -770,6 +815,8 @@
   function vtIptalEt() {
     clearInterval(vt.zamanlayici);
     vt.aktif = false;
+    ses.sustur();
+    ilerlemeDondur('vtIlerleme');
     byId('vtSahne').hidden = true;
   }
 
@@ -871,6 +918,7 @@
   function bfIptalEt() {
     clearTimeout(bf.zamanlayici);
     bf.aktif = false;
+    ses.sustur();   // 8 vuruşluk dizi ileri tarihli zamanlanmıştır
     byId('bfSahne').hidden = true;
   }
 
@@ -1064,6 +1112,7 @@
   function abIptalEt() {
     clearTimeout(ab.zamanlayici);
     ab.aktif = false;
+    ses.sustur();   // 6 vuruşluk dizi ileri tarihli zamanlanmıştır
     byId('abSahne').hidden = true;
   }
 
@@ -1087,7 +1136,7 @@
   var ir = {
     aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
     vuruslar: [], taplar: [], bpm: 72, profil: 'standart',
-    FAZ_YUZDE: IR_PROFILLER.standart, FAZ_VURUS: 8
+    FAZ_YUZDE: IR_PROFILLER.standart, FAZ_VURUS: 8, gosterilenFaz: -2
   };
 
   /* Uyarlanan zorluk: öğrenci seçilince son İçsel Ritim skoruna göre profil öner */
@@ -1144,7 +1193,9 @@
     ir.aktif = true;
     byId('irSahne').hidden = false;
     byId('irSonuc').hidden = true;
-    byId('irIlerleme').style.width = '0';
+    ir.gosterilenFaz = -2;
+    ilerlemeAkit('irIlerleme', ir.vuruslar.length * 60 / ir.bpm,
+                 (ir.sonrakiZaman - ses.ctx.currentTime) * 1000);
     byId('irFaz').textContent = '🎧 Hazırlık — dinle, sonra her vuruşta vur';
     ir.zamanlayici = setInterval(irPlanla, 25);
   }
@@ -1157,16 +1208,16 @@
       if (!v.sessiz) {
         ses.vur(ir.sonrakiZaman, ir.vurusNo % 4 === 0, kit);
       }
-      (function (no, vv) {
+      (function (vv) {
         var gecikme = Math.max(0, (vv.zaman - ses.ctx.currentTime) * 1000);
         setTimeout(function () {
-          if (!ir.aktif) { return; }
-          if (vv.faz >= 0) {
-            byId('irFaz').textContent = '🥁 Faz ' + (vv.faz + 1) + ' — %' + ir.FAZ_YUZDE[vv.faz] + ' sessiz · vurmaya devam';
-          }
-          byId('irIlerleme').style.width = Math.round(100 * (no + 1) / ir.vuruslar.length) + '%';
+          // Etiket yalnız faz değişiminde güncellenir: her vuruşta yazmak
+          // sessiz vuruşu ele veren görsel bir işaret olur.
+          if (!ir.aktif || vv.faz < 0 || ir.gosterilenFaz === vv.faz) { return; }
+          ir.gosterilenFaz = vv.faz;
+          byId('irFaz').textContent = '🥁 Faz ' + (vv.faz + 1) + ' — %' + ir.FAZ_YUZDE[vv.faz] + ' sessiz · vurmaya devam';
         }, gecikme);
-      })(ir.vurusNo, v);
+      })(v);
       ir.sonrakiZaman += 60 / ir.bpm;
       ir.vurusNo++;
     }
@@ -1272,6 +1323,8 @@
   function irIptalEt() {
     clearInterval(ir.zamanlayici);
     ir.aktif = false;
+    ses.sustur();
+    ilerlemeDondur('irIlerleme');
     byId('irSahne').hidden = true;
   }
 
@@ -1281,13 +1334,15 @@
   byId('irPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); irTap(); });
   kaydetFormuBagla('ir', 'irOgrenci');
 
-  /* Bir test başlarken diğerlerini iptal et */
+  /* Bir test başlarken (veya sekme değişince) diğerlerini iptal et.
+     haric boş bırakılırsa hepsi durur. */
   function digerleriniIptalEt(haric) {
     if (haric !== 'vt' && vt.aktif) { vtIptalEt(); }
     if (haric !== 'bf' && bf.aktif) { bfIptalEt(); }
     if (haric !== 'st' && st.aktif) { stIptalEt(); }
     if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
     if (haric !== 'ir' && ir.aktif) { irIptalEt(); }
+    if (haric !== 'ro' && roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roIptal(); }
   }
 
   /* ================================================================

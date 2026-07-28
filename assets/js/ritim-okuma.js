@@ -37,6 +37,7 @@ window.RitimOkuma = (function () {
     var spb = 60 / bpm;
 
     var ctx = null;
+    var cikis = null;                    // master kazanç: iptalde sesi kesmek için
     var aktif = false;
     var taplar = [];
     var beklenen = [];                   // {zaman}
@@ -85,7 +86,7 @@ window.RitimOkuma = (function () {
       o.frequency.exponentialRampToValueAtTime(aksan ? 620 : 460, zaman + 0.05);
       g.gain.setValueAtTime((aksan ? 0.6 : 0.4) * (kisik ? 0.55 : 1), zaman);
       g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.07);
-      o.connect(g).connect(ctx.destination);
+      o.connect(g).connect(cikis);
       o.start(zaman); o.stop(zaman + 0.08);
     }
 
@@ -105,6 +106,7 @@ window.RitimOkuma = (function () {
     function calistir() {
       ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
       ctx.resume();
+      if (!cikis) { cikis = ctx.createGain(); cikis.connect(ctx.destination); }
       hucreler = desenUret(seviye);
       ciz();
       taplar = [];
@@ -194,6 +196,15 @@ window.RitimOkuma = (function () {
       aktif = false;
       zamanlayicilar.forEach(clearTimeout);
       zamanlayicilar = [];
+      // Desenin klikleri ileri tarihli zamanlanır; çıkışı koparmadan susmazlar.
+      if (cikis) {
+        try { cikis.disconnect(); } catch (e) { /* zaten kopuk */ }
+        cikis = ctx ? ctx.createGain() : null;
+        if (cikis) { cikis.connect(ctx.destination); }
+      }
+      pad.hidden = true;
+      baslatBtn.hidden = false;
+      hucreEl.forEach(function (h) { h.classList.remove('ro-aktif'); });
     }
 
     baslatBtn.addEventListener('click', calistir);
