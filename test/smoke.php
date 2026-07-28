@@ -272,12 +272,33 @@ dogrula($y['durum'] === 200 && !str_contains($y['govde'], 'Beklenmeyen bir sorun
    ================================================================= */
 bolum('Çekirdek sayfalar (giriş sonrası)');
 $sayfalar = ['gruplar.php', 'ogrenciler.php', 'teknikler.php', 'sablonlar.php', 'ev-programi.php',
-             'metronom.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php'];
+             'metronom.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
+             'plan.php'];
 foreach ($sayfalar as $sayfa) {
     $y = git_($sayfa, $jar);
     dogrula($y['durum'] === 200 && !str_contains($y['govde'], 'Beklenmeyen bir sorun')
         && !str_contains($y['govde'], 'Fatal error'), "{$sayfa} hatasız açılıyor", 'durum ' . $y['durum']);
 }
+
+bolum('Üst menü (kategoriler)');
+$panel = git_('panel.php', $jar)['govde'];
+// Yalnız gerçek <summary> başlıklarını say (sayfa metninde geçen kelimeler değil)
+preg_match_all('#<summary class="nav-link">(.*?)</summary>#s', $panel, $sm);
+$basliklar = array_map(fn($h) => trim(strip_tags($h)), $sm[1] ?? []);
+foreach (['Atölye', 'İçerik', 'Raporlar', 'Yönetim'] as $kategori) {
+    $var = (bool)array_filter($basliklar, fn($b) => str_contains($b, $kategori));
+    dogrula($var, "menüde '{$kategori}' kategorisi var", 'başlıklar: ' . implode(' | ', $basliklar));
+}
+// Menüdeki her hedef gerçekten açılmalı (kırık bağlantı regresyonu)
+preg_match_all('#class="nav-menu-oge[^"]*"\s+href="([^"]+)"#', $panel, $mm);
+$hedefler = array_unique(array_map(fn($h) => ltrim(html_entity_decode($h), '/'), $mm[1] ?? []));
+dogrula(count($hedefler) >= 10, 'menü maddeleri okunabildi', 'bulunan: ' . count($hedefler));
+$kirik = [];
+foreach ($hedefler as $hedef) {
+    $y = git_($hedef, $jar);
+    if ($y['durum'] !== 200) { $kirik[] = $hedef . ' (' . $y['durum'] . ')'; }
+}
+dogrula(!$kirik, 'menüdeki tüm bağlantılar açılıyor', implode(', ', $kirik));
 
 bolum('Göç ve başlangıç verisi');
 try {

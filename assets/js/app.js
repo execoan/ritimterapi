@@ -13,6 +13,36 @@
     });
   }
 
+  /* Kategorili üst menü: aynı anda tek kategori açık; dışarı tıkla/Esc kapatır.
+     <details> kullanıldığı için tıklama ve klavye davranışı tarayıcıdan gelir. */
+  var navGruplar = Array.prototype.slice.call(document.querySelectorAll('.nav-grup'));
+  if (navGruplar.length) {
+    var tumunuKapat = function (haric) {
+      navGruplar.forEach(function (g) { if (g !== haric) { g.open = false; } });
+    };
+    navGruplar.forEach(function (grup) {
+      var ozet = grup.querySelector('summary');
+      // Diğerlerini summary tıklamasında kapat: 'toggle' olayı eşzamansızdır ve
+      // iki menünün bir an birlikte görünmesine yol açar. (Enter/Boşluk da
+      // summary üzerinde click üretir; klavye de bu yolla kapsanır.)
+      if (ozet) {
+        ozet.addEventListener('click', function () { if (!grup.open) { tumunuKapat(grup); } });
+      }
+      grup.addEventListener('toggle', function () { if (grup.open) { tumunuKapat(grup); } });
+    });
+    document.addEventListener('click', function (ev) {
+      if (!ev.target.closest || !ev.target.closest('.nav-grup')) { tumunuKapat(null); }
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') { return; }
+      var acik = navGruplar.filter(function (g) { return g.open; });
+      if (!acik.length) { return; }
+      acik.forEach(function (g) { g.open = false; });
+      var ozet = acik[0].querySelector('summary');
+      if (ozet) { ozet.focus(); }
+    });
+  }
+
   /* Onaylı formlar: <form data-onay="Emin misiniz?"> */
   document.addEventListener('submit', function (ev) {
     var f = ev.target;

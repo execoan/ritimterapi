@@ -6,28 +6,64 @@ if (!defined('RITIM')) { http_response_code(403); exit; }
  */
 $PAGE_TITLE = $PAGE_TITLE ?? 'Panel';
 $aktifSayfa = basename((string)($_SERVER['SCRIPT_NAME'] ?? ''));
-$navLinkler = [
-    'panel.php'      => 'Panel',
-    'gruplar.php'    => 'Gruplar',
-    'ogrenciler.php' => 'Öğrenciler',
-    'teknikler.php'  => 'Teknikler',
-    'sablonlar.php'  => 'Şablonlar',
-    'ev-programi.php' => 'Ev Programı',
-    'metronom.php'   => 'Metronom',
-    'oturumlar.php'  => 'Oturumlar',
-    'raporlar.php'   => 'Raporlar',
-    'site.php'       => 'Site',
-    'yedek.php'      => 'Yedek',
+
+/*
+ * Üst menü kategorileri. 'tek' = doğrudan bağlantı, 'menu' = açılır kategori.
+ * Bir kategori, içindeki maddelerden biri açıkken vurgulanır.
+ */
+$navYapisi = [
+    ['tur' => 'tek', 'dosya' => 'panel.php', 'ikon' => '🏠', 'etiket' => 'Panel'],
+
+    ['tur' => 'menu', 'ikon' => '🥁', 'etiket' => 'Atölye', 'ogeler' => [
+        ['dosya' => 'gruplar.php',    'ikon' => '👥', 'etiket' => 'Gruplar',    'not' => 'Sınıflar, ders günü ve saati'],
+        ['dosya' => 'ogrenciler.php', 'ikon' => '🧒', 'etiket' => 'Öğrenciler', 'not' => 'Katılımcılar, erişim kodları'],
+        ['dosya' => 'oturumlar.php',  'ikon' => '📅', 'etiket' => 'Oturumlar',  'not' => 'Yoklama ve oturum kaydı'],
+        ['dosya' => 'plan.php',       'ikon' => '📝', 'etiket' => 'Ders Planı', 'not' => 'Yeni oturum planla'],
+    ]],
+
+    ['tur' => 'menu', 'ikon' => '📚', 'etiket' => 'İçerik', 'ogeler' => [
+        ['dosya' => 'teknikler.php',   'ikon' => '🎯', 'etiket' => 'Teknik Kütüphanesi',  'not' => 'Ders içerikleri, kanıt düzeyi'],
+        ['dosya' => 'calismalar.php',  'ikon' => '🔬', 'etiket' => 'Bilimsel Çalışmalar', 'not' => 'DOI kayıt defteri'],
+        ['dosya' => 'sablonlar.php',   'ikon' => '🗂', 'etiket' => 'Plan Şablonları',     'not' => '12 haftalık hazır izler'],
+        ['dosya' => 'ev-programi.php', 'ikon' => '🏡', 'etiket' => 'Ev Programı',         'not' => 'Ödevler ve günlük takip'],
+    ]],
+
+    ['tur' => 'tek', 'dosya' => 'metronom.php', 'ikon' => '🎛', 'etiket' => 'Metronom'],
+
+    ['tur' => 'menu', 'ikon' => '📊', 'etiket' => 'Raporlar', 'ogeler' => [
+        ['dosya' => 'raporlar.php',       'ikon' => '📋', 'etiket' => 'Rapor Merkezi',   'not' => 'Veli raporu, sertifika, dönemlik'],
+        ['dosya' => 'rapor-haftalik.php', 'ikon' => '🗓', 'etiket' => 'Haftalık Rapor',  'not' => 'Bu haftanın oturumları'],
+        ['ayrac' => true],
+        ['dosya' => 'disa-aktar.php?tur=protokol', 'ikon' => '📈', 'etiket' => 'Protokol CSV', 'not' => 'Ölçüm sonuçlarını indir'],
+        ['dosya' => 'disa-aktar.php?tur=yoklama',  'ikon' => '📉', 'etiket' => 'Yoklama CSV',  'not' => 'Katılım kayıtlarını indir'],
+    ]],
+
+    ['tur' => 'menu', 'ikon' => '⚙️', 'etiket' => 'Yönetim', 'ogeler' => [
+        ['dosya' => 'site.php',  'ikon' => '🌐', 'etiket' => 'Tanıtım Sitesi', 'not' => 'Metinler, bölümler, galeri'],
+        ['dosya' => 'yedek.php', 'ikon' => '💾', 'etiket' => 'Yedekleme',      'not' => 'İndir, geri yükle'],
+        ['ayrac' => true],
+        ['cikis' => true],
+    ]],
 ];
+
 // Alt sayfaları üst menü maddesine bağla (grup.php → gruplar.php gibi)
 $navesle = [
     'grup.php' => 'gruplar.php', 'ogrenci.php' => 'ogrenciler.php', 'teknik.php' => 'teknikler.php',
-    'calismalar.php' => 'teknikler.php',
-    'plan.php' => 'oturumlar.php', 'oturum.php' => 'oturumlar.php', 'sablon-oturum.php' => 'sablonlar.php',
-    'rapor-haftalik.php' => 'raporlar.php', 'rapor-donemlik.php' => 'raporlar.php', 'rapor-veli.php' => 'raporlar.php',
+    'oturum.php' => 'oturumlar.php', 'sablon-oturum.php' => 'sablonlar.php',
+    'rapor-donemlik.php' => 'raporlar.php', 'rapor-veli.php' => 'raporlar.php',
     'sertifika.php' => 'raporlar.php',
 ];
 $aktifNav = $navesle[$aktifSayfa] ?? $aktifSayfa;
+
+/** Menü maddesinin eşleştiği dosya adı (sorgu dizesi atılır). */
+$navAnahtar = fn(array $oge): string => strtok((string)($oge['dosya'] ?? ''), '?') ?: '';
+/** Kategori, içindeki bir madde açıkken vurgulanır. */
+$navAktifMi = function (array $kategori) use ($aktifNav, $navAnahtar): bool {
+    foreach ($kategori['ogeler'] as $oge) {
+        if (!empty($oge['dosya']) && $navAnahtar($oge) === $aktifNav) { return true; }
+    }
+    return false;
+};
 ?>
 <!doctype html>
 <html lang="tr">
@@ -70,13 +106,43 @@ $aktifNav = $navesle[$aktifSayfa] ?? $aktifSayfa;
             aria-expanded="false" aria-controls="ustNav">☰</button>
     <nav class="ust-nav" id="ustNav">
       <button type="button" class="btn btn-kucuk yukle-btn" id="uygulamaYukleBtn" hidden>📲 Uygulamayı Yükle</button>
-      <?php foreach ($navLinkler as $dosya => $etiket): ?>
-      <a class="nav-link<?= $aktifNav === $dosya ? ' nav-aktif' : '' ?>" href="<?= e(url($dosya)) ?>"><?= e($etiket) ?></a>
+
+      <?php foreach ($navYapisi as $kategori): ?>
+        <?php if ($kategori['tur'] === 'tek'): ?>
+        <a class="nav-link<?= $aktifNav === $kategori['dosya'] ? ' nav-aktif' : '' ?>"
+           href="<?= e(url($kategori['dosya'])) ?>">
+          <span class="nav-ikon" aria-hidden="true"><?= $kategori['ikon'] ?></span><?= e($kategori['etiket']) ?>
+        </a>
+        <?php else: ?>
+        <details class="nav-grup<?= $navAktifMi($kategori) ? ' nav-grup-aktif' : '' ?>">
+          <summary class="nav-link">
+            <span class="nav-ikon" aria-hidden="true"><?= $kategori['ikon'] ?></span><?= e($kategori['etiket']) ?>
+            <span class="nav-ok" aria-hidden="true">▾</span>
+          </summary>
+          <div class="nav-menu">
+            <?php foreach ($kategori['ogeler'] as $oge): ?>
+              <?php if (!empty($oge['ayrac'])): ?>
+              <div class="nav-menu-ayrac" role="separator"></div>
+              <?php elseif (!empty($oge['cikis'])): ?>
+              <form method="post" action="<?= e(url('cikis.php')) ?>" class="nav-cikis-form">
+                <?= csrf_field() ?>
+                <button type="submit" class="nav-menu-oge nav-cikis" title="Oturumu kapat">
+                  <span class="oge-ikon" aria-hidden="true">🚪</span>
+                  <span class="oge-metin"><strong>Çıkış</strong><small>Oturumu kapat</small></span>
+                </button>
+              </form>
+              <?php else: ?>
+              <a class="nav-menu-oge<?= $navAnahtar($oge) === $aktifNav ? ' nav-aktif' : '' ?>"
+                 href="<?= e(url($oge['dosya'])) ?>">
+                <span class="oge-ikon" aria-hidden="true"><?= $oge['ikon'] ?></span>
+                <span class="oge-metin"><strong><?= e($oge['etiket']) ?></strong><small><?= e($oge['not']) ?></small></span>
+              </a>
+              <?php endif; ?>
+            <?php endforeach; ?>
+          </div>
+        </details>
+        <?php endif; ?>
       <?php endforeach; ?>
-      <form method="post" action="<?= e(url('cikis.php')) ?>" class="nav-cikis-form">
-        <?= csrf_field() ?>
-        <button type="submit" class="nav-link nav-cikis" title="Oturumu kapat">Çıkış</button>
-      </form>
     </nav>
   </div>
 </header>
