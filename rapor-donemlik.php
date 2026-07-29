@@ -9,11 +9,16 @@ if (!$grup) { not_found('Grup bulunamadı.'); }
 
 $from = trim((string)($_GET['from'] ?? ''));
 $to   = trim((string)($_GET['to'] ?? ''));
-if (!DateTime::createFromFormat('Y-m-d', $from)) { $from = $grup['baslangic_tarihi'] ?: now()->modify('-8 weeks')->format('Y-m-d'); }
-if (!DateTime::createFromFormat('Y-m-d', $to))   { $to = today(); }
+if (!valid_date_ymd($from)) {
+    $from = valid_date_ymd((string)$grup['baslangic_tarihi'])
+        ? (string)$grup['baslangic_tarihi']
+        : now()->modify('-8 weeks')->format('Y-m-d');
+}
+if (!valid_date_ymd($to)) { $to = today(); }
 
 $rapor = report_group_period($grupId, $from, $to);
 $protokolRapor = report_group_protocols($grupId, $from, $to);
+$pratikDoz = report_group_practice($grupId, $from, $to);
 $oturumlar = $rapor['oturumlar'];
 $kayitliOturumlar = array_filter($oturumlar, fn($s) => (int)$s['yoklama_sayisi'] > 0);
 $oranlar = array_map(fn($s) => (int)$s['yoklama_sayisi'] > 0 ? 100 * (int)$s['gelen_sayisi'] / (int)$s['yoklama_sayisi'] : 0, $kayitliOturumlar);
@@ -79,10 +84,23 @@ require APP_DIR . '/includes/view/header.php';
   <p class="alan-ipucu">Metronom Stüdyosu ve ev çalışması ölçümlerinin haftalık ortalamaları.
      Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansıtılmaz.</p>
   <p class="alan-ipucu">📏 işaretli satırlarda ilk→son karşılaştırması yalnız standart koşullu ölçümlerden
-     yapılmıştır; işaretsiz satırlarda koşullar (tempo/zorluk) değişmiş olabilir.</p>
+     yapılmıştır; işaretsiz satırlarda koşullar (tempo/zorluk) değişmiş olabilir.
+     Uçlardaki tek ölçüm yerine <strong>ilk/son blok medyanı</strong> alınır (ölçüm sayısı yettiğinde 3'er),
+     böylece ilk denemedeki "görevi tanıma" etkisi ve günlük dalgalanma azalır.
+     <strong>Gürültü bandı</strong>, öğrencinin kendi ölçüm dalgalanmasından hesaplanır: farkın bu bandın
+     altında kalması "değişim yok" demek değildir — <em>ölçümle ayırt edilemiyor</em> demektir.</p>
   <?php foreach ($protokolRapor['haftalik'] as $pKod => $haftalar):
       ksort($haftalar); ?>
-  <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?></h3>
+  <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?>
+    <?php if ($pKod === 'aksak_bulma'): ?>
+    <span class="rozet rozet-gri" title="Ev programında çalışılmayan, saf dinleme ölçümü">eğitilmeyen sonda</span>
+    <?php endif; ?>
+  </h3>
+  <?php if ($pKod === 'aksak_bulma'): ?>
+  <p class="alan-ipucu">Bu protokol ev programında <strong>çalışılmıyor</strong>; kasten eğitilmeyen kontrol ölçümüdür.
+     Eğitilen protokollerle birlikte bu da benzer oranda yükseliyorsa, tabloda görülen büyük olasılıkla
+     genel alışma/test tekrarı etkisidir. Yalnız eğitilenler yükseliyorsa değişim daha özgüldür.</p>
+  <?php endif; ?>
   <?php foreach ($haftalar as $pzt => $veri):
       $ortalama = (int)round($veri['toplam'] / max(1, $veri['adet'])); ?>
   <div class="cubuk-satir">
@@ -96,23 +114,55 @@ require APP_DIR . '/includes/view/header.php';
       if ($gelisenler): ?>
   <div class="tablo-sar" style="margin:.4rem 0 .8rem">
     <table class="tablo">
-      <thead><tr><th>Öğrenci</th><th class="sayi">İlk skor</th><th class="sayi">Son skor</th><th class="sayi">Değişim</th><th class="sayi">Ölçüm</th></tr></thead>
+      <thead><tr><th>Öğrenci</th><th class="sayi">Dönem başı</th><th class="sayi">Dönem sonu</th>
+                 <th class="sayi">Değişim</th><th>Yorum</th><th class="sayi">Ölçüm</th></tr></thead>
       <tbody>
         <?php foreach ($gelisenler as $kod => $v):
-            $fark = (int)$v['son'] - (int)$v['ilk']; ?>
+            $fark = (int)$v['fark'];
+            $mdc = $v['mdc'] ?? null;
+            // Gürültünün üstünde olmayan farkı renklendirmeyiz: renk "gerçek değişim" izlenimi verir
+            $belirgin = $v['anlamli'] === true; ?>
         <tr>
-          <td><?= e($kod) ?><?= !empty($v['standart']) ? ' <span title="İlk→son karşılaştırması yalnız standart koşullu (📏) ölçümlerden">📏</span>' : '' ?></td>
+          <td><?= e($kod) ?><?= !empty($v['standart']) ? ' <span title="Karşılaştırma yalnız standart koşullu (📏) ölçümlerden">📏</span>' : '' ?>
+            <?php if (!empty($v['supheli_olcum'])): ?>
+            <span title="<?= (int)$v['supheli_olcum'] ?> ölçüm kalibrasyonsuz/şüpheli kalibrasyonla alınmış">⚠</span>
+            <?php endif; ?>
+          </td>
           <td class="sayi"><?= (int)$v['ilk'] ?></td>
           <td class="sayi"><strong><?= (int)$v['son'] ?></strong></td>
-          <td class="sayi" style="color:<?= $fark > 0 ? 'var(--yesil)' : ($fark < 0 ? 'var(--kirmizi)' : 'inherit') ?>">
+          <td class="sayi" style="color:<?= $belirgin ? ($fark > 0 ? 'var(--yesil)' : 'var(--kirmizi)') : 'inherit' ?>">
             <?= $fark > 0 ? '▲ +' . $fark : ($fark < 0 ? '▼ ' . $fark : '—') ?></td>
-          <td class="sayi"><?= (int)$v['adet'] ?></td>
+          <td>
+            <?php if ($v['anlamli'] === null): ?>
+              <span class="alan-ipucu">gürültü bandı için en az 3 ölçüm gerekir</span>
+            <?php elseif ($belirgin): ?>
+              gürültü bandının (±<?= (int)$mdc ?>) <strong>üstünde</strong>
+            <?php else: ?>
+              <span class="alan-ipucu">gürültü bandı (±<?= (int)$mdc ?>) içinde — ölçümle ayırt edilemiyor</span>
+            <?php endif; ?>
+          </td>
+          <td class="sayi"><?= (int)$v['adet'] ?><?= (int)$v['blok'] > 1 ? ' <span class="alan-ipucu" title="Uçlardan ' . (int)$v['blok'] . '\'er ölçümün medyanı">(medyan ' . (int)$v['blok'] . ')</span>' : '' ?></td>
         </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
   </div>
   <?php endif; ?>
+  <?php endforeach; ?>
+  <?php endif; ?>
+
+  <?php if ($pratikDoz): ?>
+  <h2 style="margin-top:1.3rem">Ev pratiği dozu</h2>
+  <p class="alan-ipucu">Hafta başına işaretlenen pratik günü (aynı gün birden çok çalışma bir gün sayılır).
+     Protokol trendiyle birlikte okunur: skorlardaki değişim pratiğin yoğun olduğu haftalarla birlikte
+     gidiyor mu? Bu bir nedensellik kanıtı değildir, yalnız tutarlılık kontrolüdür.</p>
+  <?php $enYuksekDoz = max(array_map(fn($v) => (int)$v['gun'], $pratikDoz)); ?>
+  <?php foreach ($pratikDoz as $pzt => $v): ?>
+  <div class="cubuk-satir">
+    <span class="cubuk-etiket"><?= e(format_date_tr($pzt, false)) ?> haftası</span>
+    <div class="cubuk-kanal"><div class="cubuk yesil" style="width:<?= $enYuksekDoz > 0 ? (int)round(100 * (int)$v['gun'] / $enYuksekDoz) : 0 ?>%"></div></div>
+    <span class="cubuk-deger"><?= (int)$v['gun'] ?> gün · <?= (int)$v['ogrenci'] ?> öğrenci</span>
+  </div>
   <?php endforeach; ?>
   <?php endif; ?>
 

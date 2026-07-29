@@ -342,6 +342,133 @@ function run_migrations(): void
                 PRIMARY KEY (sablon_id, hafta_no, calisma_id)
             );
         ",
+
+        // v10 — profesyonel metronom çalışma setleri ve otomatik çalışma günlüğü
+        10 => "
+            CREATE TABLE metronom_setleri (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                kullanici  TEXT    NOT NULL,
+                ad         TEXT    NOT NULL,
+                aciklama   TEXT    NOT NULL DEFAULT '',
+                adimlar    TEXT    NOT NULL DEFAULT '[]',
+                created_at TEXT    NOT NULL,
+                updated_at TEXT    NOT NULL
+            );
+            CREATE INDEX ix_metronom_set_kullanici
+                ON metronom_setleri(kullanici, updated_at DESC);
+
+            CREATE TABLE metronom_calisma_kayitlari (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                kullanici  TEXT    NOT NULL,
+                set_id     INTEGER REFERENCES metronom_setleri(id) ON DELETE SET NULL,
+                tur        TEXT    NOT NULL CHECK (tur IN ('serbest','setlist')),
+                baslik     TEXT    NOT NULL DEFAULT '',
+                sure_sn    INTEGER NOT NULL CHECK (sure_sn BETWEEN 1 AND 43200),
+                bpm_min    INTEGER,
+                bpm_max    INTEGER,
+                detay      TEXT    NOT NULL DEFAULT '{}',
+                created_at TEXT    NOT NULL
+            );
+            CREATE INDEX ix_metronom_calisma_kullanici
+                ON metronom_calisma_kayitlari(kullanici, created_at DESC);
+
+            CREATE TABLE metronom_hedefleri (
+                kullanici   TEXT PRIMARY KEY,
+                gunluk_dk   INTEGER NOT NULL DEFAULT 20 CHECK (gunluk_dk BETWEEN 1 AND 480),
+                haftalik_gun INTEGER NOT NULL DEFAULT 5 CHECK (haftalik_gun BETWEEN 1 AND 7),
+                updated_at  TEXT NOT NULL
+            );
+        ",
+
+        // v11 — uzman kontrollü iki el motor koordinasyon protokolleri
+        11 => "
+            CREATE TABLE motor_protokolleri (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                kullanici       TEXT    NOT NULL,
+                ad              TEXT    NOT NULL,
+                hedef           TEXT    NOT NULL DEFAULT '',
+                desen           TEXT    NOT NULL DEFAULT 'donusumlu'
+                                        CHECK (desen IN ('donusumlu','ikiserli','capraz','eszamanli','karma')),
+                bpm             INTEGER NOT NULL DEFAULT 60 CHECK (bpm BETWEEN 30 AND 180),
+                sure_sn         INTEGER NOT NULL DEFAULT 30 CHECK (sure_sn BETWEEN 15 AND 600),
+                hazirlik_vurus  INTEGER NOT NULL DEFAULT 4 CHECK (hazirlik_vurus BETWEEN 2 AND 16),
+                tolerans_ms     INTEGER NOT NULL DEFAULT 140 CHECK (tolerans_ms BETWEEN 60 AND 300),
+                created_at      TEXT    NOT NULL,
+                updated_at      TEXT    NOT NULL
+            );
+            CREATE INDEX ix_motor_protokol_kullanici
+                ON motor_protokolleri(kullanici, updated_at DESC);
+
+            CREATE TABLE motor_sonuclari (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                kullanici    TEXT    NOT NULL,
+                protokol_id  INTEGER REFERENCES motor_protokolleri(id) ON DELETE SET NULL,
+                ogrenci_id   INTEGER REFERENCES ogrenciler(id) ON DELETE SET NULL,
+                durum        TEXT    NOT NULL DEFAULT 'tamamlandi'
+                                     CHECK (durum IN ('tamamlandi','erken_durduruldu','guvenlik')),
+                skor         INTEGER,
+                dogruluk     INTEGER,
+                detay        TEXT    NOT NULL DEFAULT '{}',
+                notlar       TEXT    NOT NULL DEFAULT '',
+                created_at   TEXT    NOT NULL
+            );
+            CREATE INDEX ix_motor_sonuc_kullanici
+                ON motor_sonuclari(kullanici, created_at DESC);
+            CREATE INDEX ix_motor_sonuc_ogrenci
+                ON motor_sonuclari(ogrenci_id, created_at DESC);
+        ",
+
+        // v12 — bir katılımcının birden fazla özel/grup dersine üyeliği.
+        // Eski ogrenciler.grup_id alanı uyumluluk için korunur ve ilk aktif üyeliği gösterir.
+        12 => "
+            ALTER TABLE gruplar ADD COLUMN tur TEXT NOT NULL DEFAULT 'grup'
+                CHECK (tur IN ('grup','ozel'));
+
+            CREATE TABLE grup_uyelikleri (
+                grup_id          INTEGER NOT NULL REFERENCES gruplar(id) ON DELETE CASCADE,
+                ogrenci_id       INTEGER NOT NULL REFERENCES ogrenciler(id) ON DELETE CASCADE,
+                aktif            INTEGER NOT NULL DEFAULT 1,
+                baslangic_tarihi TEXT    NOT NULL,
+                bitis_tarihi     TEXT,
+                created_at       TEXT    NOT NULL,
+                PRIMARY KEY (grup_id, ogrenci_id)
+            );
+            CREATE INDEX ix_grup_uyelik_ogrenci
+                ON grup_uyelikleri(ogrenci_id, aktif);
+            CREATE INDEX ix_grup_uyelik_grup
+                ON grup_uyelikleri(grup_id, aktif);
+
+            INSERT OR IGNORE INTO grup_uyelikleri
+                (grup_id, ogrenci_id, aktif, baslangic_tarihi, bitis_tarihi, created_at)
+            SELECT grup_id, id, 1, kayit_tarihi, NULL, kayit_tarihi
+              FROM ogrenciler
+             WHERE grup_id IS NOT NULL;
+        ",
+
+        // v13 — ders/grup duyuruları. Katılımcı portalı yalnız yayın aralığındaki
+        // aktif duyuruları gösterir; kişisel öğrenci notlarıyla hiçbir bağı yoktur.
+        13 => "
+            CREATE TABLE grup_duyurulari (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                grup_id       INTEGER NOT NULL REFERENCES gruplar(id) ON DELETE CASCADE,
+                baslik        TEXT    NOT NULL,
+                mesaj         TEXT    NOT NULL DEFAULT '',
+                yayin_tarihi  TEXT    NOT NULL,
+                bitis_tarihi  TEXT,
+                aktif         INTEGER NOT NULL DEFAULT 1,
+                created_at    TEXT    NOT NULL
+            );
+            CREATE INDEX ix_grup_duyuru_gorunum
+                ON grup_duyurulari(grup_id, aktif, yayin_tarihi, bitis_tarihi);
+        ",
+
+        // v14 — ölçüm kalitesi: asenkroni standart sapması (kararlılık) ve
+        //       ölçüm anındaki kalibrasyon kalitesi. Skor tek başına sabit
+        //       kayma ile kararlılığı karıştırır; trend SD'den okunmalıdır.
+        14 => "
+            ALTER TABLE protokol_sonuclari ADD COLUMN sd_ms INTEGER;
+            ALTER TABLE protokol_sonuclari ADD COLUMN kalite TEXT NOT NULL DEFAULT '';
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {

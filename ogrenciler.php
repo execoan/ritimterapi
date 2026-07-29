@@ -57,7 +57,7 @@ require APP_DIR . '/includes/view/header.php';
         <tr>
           <td><a href="<?= e(url('ogrenci.php?id=' . (int)$o['id'])) ?>"><?= e($o['kod']) ?></a></td>
           <td><?= $o['dogum_yili'] ? (int)$o['dogum_yili'] : '—' ?></td>
-          <td><?= $o['grup_ad'] ? e($o['grup_ad']) : '<span class="rozet rozet-gri">Grupsuz</span>' ?></td>
+          <td><?= $o['grup_adlari'] ? e($o['grup_adlari']) : '<span class="rozet rozet-gri">Grupsuz</span>' ?></td>
           <td><?= e(mb_strimwidth((string)$o['veli_notu'], 0, 60, '…')) ?></td>
           <td><?= e(format_date_tr($o['kayit_tarihi'], false)) ?></td>
           <td><?= (int)$o['aktif'] === 1 ? '<span class="rozet rozet-tamam">Aktif</span>' : '<span class="rozet rozet-gri">Pasif</span>' ?></td>
@@ -83,13 +83,15 @@ require APP_DIR . '/includes/view/header.php';
         <input type="number" name="dogum_yili" class="girdi" value="<?= e(old('dogum_yili')) ?>"
                min="1920" max="<?= (int)now()->format('Y') ?>" placeholder="Örn. 2015">
       </label>
-      <label class="form-alan">Grup
+      <label class="form-alan">İlk ders / grup
         <select name="grup_id" class="secim">
-          <option value="">Grupsuz</option>
+          <option value="">Daha sonra seç</option>
           <?php foreach ($gruplar as $g): if ((int)$g['aktif'] !== 1) continue; ?>
-          <option value="<?= (int)$g['id'] ?>" <?= (string)old('grup_id', (string)($grupFiltre ?? '')) === (string)$g['id'] ? 'selected' : '' ?>><?= e($g['ad']) ?></option>
+          <?php if (($g['tur'] ?? 'grup') === 'ozel' && (int)$g['uyelik_sayisi'] >= 1) continue; ?>
+          <option value="<?= (int)$g['id'] ?>" <?= (string)old('grup_id', (string)($grupFiltre ?? '')) === (string)$g['id'] ? 'selected' : '' ?>><?= e($g['ad']) ?> — <?= e(GRUP_TUR_LABELS[$g['tur'] ?? 'grup']) ?></option>
           <?php endforeach; ?>
         </select>
+        <span class="alan-ipucu">Kaydettikten sonra kişiyi başka özel veya grup derslerine de ekleyebilirsiniz.</span>
       </label>
       <label class="form-alan form-genis">Veli notu
         <textarea name="veli_notu" class="girdi" maxlength="500"

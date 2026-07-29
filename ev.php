@@ -46,7 +46,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         if ($islem === 'modul_sonuc') {
             $odev = assignment_get((int)($_POST['odev_id'] ?? 0));
             $protokol = (string)($_POST['protokol'] ?? '');
-            if ($odev && (int)$odev['ogrenci_id'] === $evOgrenciId && isset(PROTOKOL_LABELS[$protokol])) {
+            $puanliTurler = ['vurus_tutturma', 'ritim_okuma', 'icsel_ritim'];
+            if ($odev
+                && (int)$odev['ogrenci_id'] === $evOgrenciId
+                && $odev['baslangic'] <= today() && $odev['bitis'] >= today()
+                && in_array($protokol, $puanliTurler, true)
+                && (string)$odev['tur'] === $protokol) {
                 $skor = max(0, min(100, (int)($_POST['skor'] ?? 0)));
                 protocol_result_save([
                     'ogrenci_id' => $evOgrenciId,
@@ -56,6 +61,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                     'detay'      => (string)($_POST['detay'] ?? '{}'),
                     'notlar'     => 'Ev çalışması: ' . $odev['ad'],
                     'kaynak'     => 'ev',
+                    'sd_ms'      => $_POST['sd_ms'] ?? null,
+                    'kalite'     => (string)($_POST['kalite'] ?? ''),
                 ]);
                 completion_mark((int)$odev['id'], today(), ['skor' => $skor, 'protokol' => $protokol]);
                 flash_set('basari', 'Skorun kaydedildi: ' . $skor . '/100. Bugün de yapıldı işaretlendi. ⭐');
@@ -120,11 +127,14 @@ $flashlar = flash_get();
 
 <?php else:
     $odevler = assignments_active_for_student((int)$ogrenci['id']);
+    $zamanlamaOdeviVar = array_reduce($odevler, static function (bool $var, array $odev): bool {
+        return $var || in_array((string)$odev['tur'], ['vurus_tutturma', 'ritim_okuma', 'icsel_ritim'], true);
+    }, false);
     [$pzt, $paz] = week_bounds();
     $harita = completions_map(array_map(fn($o) => (int)$o['id'], $odevler), $pzt, $paz);
     $seri = streak_for_student((int)$ogrenci['id']);
     $paket = package_active((int)$ogrenci['id']);
-    $sonrakiOturum = $ogrenci['grup_id'] ? next_session_for_group((int)$ogrenci['grup_id']) : null;
+    $grupProgramlari = student_group_programs((int)$ogrenci['id']);
     $bugun = today();
 ?>
 <div class="ev-govde">
@@ -159,6 +169,89 @@ $flashlar = flash_get();
 
   <?php if ($seri > 0): ?>
   <p><span class="ev-seri">🔥 Üst üste <?= $seri ?> gün çalıştın</span></p>
+  <?php endif; ?>
+
+  <?php if ($grupProgramlari): ?>
+  <section class="ev-kart ev-program-karti">
+    <div class="ev-program-baslik">
+      <div>
+        <h2>📅 Derslerim ve grup programım</h2>
+        <p class="aciklama">Ders saatlerini, yaklaşan çalışmaları ve grup arkadaşlarının takma adlarını burada görebilirsin.</p>
+      </div>
+      <span class="ev-program-sayi"><?= count($grupProgramlari) ?> ders</span>
+    </div>
+    <div class="ev-program-listesi">
+    <?php foreach ($grupProgramlari as $ders): ?>
+      <article class="ev-program-ders">
+        <div class="ev-program-ders-ust">
+          <div>
+            <strong><?= e($ders['ad']) ?></strong>
+            <span><?= e(GRUP_TUR_LABELS[$ders['tur'] ?? 'grup']) ?></span>
+          </div>
+          <time><?= e(GUNLER[(int)$ders['gun']] ?? '') ?><?= $ders['saat'] ? ' · ' . e($ders['saat']) : '' ?></time>
+        </div>
+        <div class="ev-uyeler" aria-label="Grup üyeleri">
+          <small><?= ($ders['tur'] ?? 'grup') === 'ozel' ? 'Katılımcı' : 'Grup üyeleri' ?></small>
+          <?php foreach ($ders['uyeler'] as $uye): ?>
+            <span class="<?= (int)$uye['kendisi'] === 1 ? 'kendisi' : '' ?>">
+              <?= e($uye['kod']) ?><?= (int)$uye['kendisi'] === 1 ? ' · sen' : '' ?>
+            </span>
+          <?php endforeach; ?>
+        </div>
+        <?php if (!empty($ders['duyurular'])): ?>
+          <div class="ev-duyurular" aria-label="Grup duyuruları">
+            <small>📣 Duyurular</small>
+            <?php foreach ($ders['duyurular'] as $duyuru): ?>
+              <aside class="ev-duyuru">
+                <strong><?= e($duyuru['baslik']) ?></strong>
+                <?php if ($duyuru['mesaj']): ?><p><?= nl2br(e($duyuru['mesaj'])) ?></p><?php endif; ?>
+              </aside>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+        <?php if (!$ders['program']): ?>
+          <p class="ev-program-bos">Henüz yaklaşan bir oturum planlanmamış.</p>
+        <?php else: ?>
+          <ol class="ev-oturum-programi">
+          <?php foreach ($ders['program'] as $oturum): ?>
+            <li>
+              <div>
+                <time><?= e(format_date_tr($oturum['tarih'])) ?></time>
+                <small>Hafta <?= (int)$oturum['hafta_no'] ?><?= (int)$oturum['sure_dk'] > 0 ? ' · ' . (int)$oturum['sure_dk'] . ' dk' : '' ?></small>
+              </div>
+              <span><?= e($oturum['teknikler'] ?: 'İçerik yakında eklenecek') ?></span>
+            </li>
+          <?php endforeach; ?>
+          </ol>
+        <?php endif; ?>
+      </article>
+    <?php endforeach; ?>
+    </div>
+    <p class="ev-mahremiyet">🔒 Grup arkadaşların yalnızca takma adını görür. Kişisel notların, yaş bilgin, gözlemlerin ve skorların paylaşılmaz.</p>
+  </section>
+  <?php endif; ?>
+
+  <?php if ($zamanlamaOdeviVar): ?>
+  <section class="ev-kart ev-zaman-kalite" id="evZamanKalite">
+    <div class="ev-zaman-ust">
+      <div>
+        <h2>⏱ Cihaz zamanlama ayarı</h2>
+        <p class="aciklama">Bu ayar bütün vuruş çalışmalarının aynı ve adil ölçülmesini sağlar.</p>
+      </div>
+      <span class="ev-zaman-rozet" id="evZkRozet">Kontrol ediliyor</span>
+    </div>
+    <p class="ev-zaman-ozet" id="evZkOzet">Kalibrasyon bilgisi okunuyor…</p>
+    <div class="ev-buton-satir">
+      <button type="button" class="t-btn t-btn-dolu" id="evZkKalibre">🎧 Kalibre et</button>
+      <button type="button" class="t-btn t-btn-cerceve" id="evZkSifirla">Sıfırla</button>
+    </div>
+    <div class="ev-zaman-sahne" id="evZkSahne" hidden>
+      <strong id="evZkSayac">Hazırlan…</strong>
+      <small id="evZkIlerleme">0/12</small>
+      <button type="button" class="m-pad ro-pad" id="evZkPad">VUR<small>duyduğun her klikte</small></button>
+      <button type="button" class="t-btn t-btn-cerceve" id="evZkIptal">İptal</button>
+    </div>
+  </section>
   <?php endif; ?>
 
   <?php if (!$odevler): ?>
@@ -235,6 +328,8 @@ $flashlar = flash_get();
         <input type="hidden" name="skor" value="">
         <input type="hidden" name="bpm" value="">
         <input type="hidden" name="detay" value="">
+        <input type="hidden" name="sd_ms" value="">
+        <input type="hidden" name="kalite" value="">
       </form>
       <?php endif; ?>
     </div>
@@ -253,18 +348,14 @@ $flashlar = flash_get();
   </div>
   <?php endif; ?>
 
-  <?php if ($sonrakiOturum): ?>
-  <div class="ev-kart">
-    <h2>📅 Sonraki atölye</h2>
-    <p class="aciklama"><?= e(format_date_tr($sonrakiOturum['tarih'])) ?> · Hafta <?= (int)$sonrakiOturum['hafta_no'] ?></p>
-  </div>
-  <?php endif; ?>
-
   <p class="ev-alt-not">Skorlar kişisel gelişim izlemesi içindir; yarışma değildir.
      Kısa ve düzenli çalışmak, uzun tek seferden daha değerlidir. 🥁</p>
 </div>
 <?php endif; ?>
 
+<script src="<?= e(asset('js/zamanlama-cekirdegi.js')) ?>"></script>
+<script src="<?= e(asset('js/ritim-ogrenme.js')) ?>"></script>
+<script src="<?= e(asset('vendor/abcjs/abcjs-basic-min.js')) ?>"></script>
 <script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/ev.js')) ?>"></script>
 </body>

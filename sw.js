@@ -1,5 +1,5 @@
 /* =======================================================
-   RitimTerapi — Service Worker v1
+   RitimTerapi — Service Worker v19
    Cache stratejisi (optik-kocluk deseniyle aynı):
    - Statik varlıklar (CSS, JS, ikon, görsel) → Stale-While-Revalidate
    - PHP sayfaları → YALNIZCA ağ (dinamik veri asla cache'lenmez),
@@ -7,7 +7,7 @@
    Not: CACHE_ADI değişince aktivasyonda eski cache silinir.
    ======================================================= */
 
-var CACHE_ADI   = 'ritim-v7';
+var CACHE_ADI   = 'ritim-v19';
 /* Çevrimdışı sayfası SW'nin kendi konumuna göre çözülür (alt dizin kurulumunda da doğru). */
 var OFFLINE_URL = new URL('offline.html', self.location).pathname;
 
@@ -17,12 +17,23 @@ var KABUK = [
   'assets/css/app.css',
   'assets/css/landing.css',
   'assets/css/metronom.css',
+  'assets/css/motor.css',
+  'assets/css/grup-atolyesi.css',
   'assets/css/ev.css',
   'assets/js/app.js',
   'assets/js/landing.js',
   'assets/js/metronom.js',
   'assets/js/ev.js',
+  'assets/js/zamanlama-cekirdegi.js',
+  'assets/js/ritim-ogrenme.js',
+  'assets/js/metronom-cekirdegi.js',
+  'assets/js/metronom-setlist.js',
+  'assets/js/motor-koordinasyon.js',
+  'assets/js/motor-studyo.js',
+  'assets/js/grup-atolyesi-cekirdegi.js',
+  'assets/js/grup-atolyesi.js',
   'assets/js/ritim-okuma.js',
+  'assets/vendor/abcjs/abcjs-basic-min.js',
   'assets/js/belge-duzenle.js',
   'assets/img/favicon.svg',
   'assets/img/icon-192.png',

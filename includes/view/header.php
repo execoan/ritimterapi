@@ -19,6 +19,8 @@ $navYapisi = [
         ['dosya' => 'ogrenciler.php', 'ikon' => '🧒', 'etiket' => 'Öğrenciler', 'not' => 'Katılımcılar, erişim kodları'],
         ['dosya' => 'oturumlar.php',  'ikon' => '📅', 'etiket' => 'Oturumlar',  'not' => 'Yoklama ve oturum kaydı'],
         ['dosya' => 'plan.php',       'ikon' => '📝', 'etiket' => 'Ders Planı', 'not' => 'Yeni oturum planla'],
+        ['dosya' => 'grup-atolyesi.php','ikon' => '🫶', 'etiket' => 'Grup Atölyesi', 'not' => 'Güvenli ve kanıt çerçeveli grup akışları'],
+        ['dosya' => 'motor-studyo.php','ikon' => '👐', 'etiket' => 'Motor Koordinasyon', 'not' => 'İki el ritim ve zamanlama çalışması'],
     ]],
 
     ['tur' => 'menu', 'ikon' => '📚', 'etiket' => 'İçerik', 'ogeler' => [

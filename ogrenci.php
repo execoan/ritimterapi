@@ -28,6 +28,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } elseif ($islem === 'paket_kapat') {
         package_close((int)($_POST['paket_id'] ?? 0));
         flash_set('basari', 'Paket kapatıldı.');
+    } elseif ($islem === 'grup_ekle') {
+        $res = group_member_add((int)($_POST['grup_id'] ?? 0), $id);
+        flash_set($res['ok'] ? 'basari' : 'hata',
+            $res['ok'] ? 'Kişi derse/gruba eklendi.' : $res['error']);
+    } elseif ($islem === 'grup_cikar') {
+        $tamam = group_member_remove((int)($_POST['grup_id'] ?? 0), $id);
+        flash_set($tamam ? 'basari' : 'hata',
+            $tamam ? 'Ders üyeliği kaldırıldı; geçmiş kayıtları korundu.' : 'Aktif üyelik bulunamadı.');
     } else {
         $res = student_save($_POST, $id);
         flash_set($res['ok'] ? 'basari' : 'hata', $res['ok'] ? 'Öğrenci güncellendi.' : $res['error']);
@@ -38,6 +46,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 $istatistik = student_stats($id);
 $gecmis = student_timeline($id);
 $gruplar = groups_list();
+$uyelikler = student_groups($id);
+$uyeGrupIdleri = array_map(static fn(array $g): int => (int)$g['id'], $uyelikler);
+$eklenebilirGruplar = array_values(array_filter($gruplar, static function (array $g) use ($uyeGrupIdleri): bool {
+    if ((int)$g['aktif'] !== 1 || in_array((int)$g['id'], $uyeGrupIdleri, true)) { return false; }
+    return ($g['tur'] ?? 'grup') !== 'ozel' || (int)$g['uyelik_sayisi'] === 0;
+}));
 $protokolSonuclari = protocol_results_for_student($id);
 $evOdevleri = assignments_active_for_student($id);
 [$haftaPzt, $haftaPaz] = week_bounds();
@@ -52,9 +66,9 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik">
   <h1><?= e($ogrenci['kod']) ?></h1>
   <?= (int)$ogrenci['aktif'] === 1 ? '<span class="rozet rozet-tamam">Aktif</span>' : '<span class="rozet rozet-gri">Pasif</span>' ?>
-  <?php if ($ogrenci['grup_ad']): ?>
-    <span class="rozet rozet-acik"><?= e($ogrenci['grup_ad']) ?></span>
-  <?php endif; ?>
+  <?php foreach ($uyelikler as $uyelik): ?>
+    <span class="rozet rozet-acik"><?= e($uyelik['ad']) ?></span>
+  <?php endforeach; ?>
   <div class="sag">
     <a class="btn btn-birincil" href="<?= e(url('rapor-veli.php?ogrenci_id=' . $id)) ?>">Veli raporu hazırla</a>
   </div>
@@ -83,14 +97,6 @@ require APP_DIR . '/includes/view/header.php';
         <input type="number" name="dogum_yili" class="girdi" value="<?= e((string)$ogrenci['dogum_yili']) ?>"
                min="1920" max="<?= (int)now()->format('Y') ?>">
       </label>
-      <label class="form-alan">Grup
-        <select name="grup_id" class="secim">
-          <option value="">Grupsuz</option>
-          <?php foreach ($gruplar as $g): ?>
-          <option value="<?= (int)$g['id'] ?>" <?= (int)$ogrenci['grup_id'] === (int)$g['id'] ? 'selected' : '' ?>><?= e($g['ad']) ?></option>
-          <?php endforeach; ?>
-        </select>
-      </label>
       <label class="form-alan">Durum
         <input type="hidden" name="aktif" value="0">
         <span class="onay-kutu"><input type="checkbox" name="aktif" value="1" <?= (int)$ogrenci['aktif'] === 1 ? 'checked' : '' ?>> Öğrenci aktif</span>
@@ -103,6 +109,59 @@ require APP_DIR . '/includes/view/header.php';
       <button type="submit" class="btn btn-birincil">Kaydet</button>
     </div>
   </form>
+</div>
+
+<div class="kart">
+  <div class="kart-baslik">
+    <h2>Özel ve grup dersleri</h2>
+    <span class="rozet rozet-acik"><?= count($uyelikler) ?> aktif üyelik</span>
+  </div>
+  <p class="alan-ipucu">Aynı kişi bir özel dersin yanında birden fazla grup dersine katılabilir. Üyeliği kaldırmak geçmiş oturum ve yoklama kayıtlarını silmez.</p>
+  <?php if ($eklenebilirGruplar): ?>
+  <form method="post" action="<?= e(url('ogrenci.php?id=' . $id)) ?>" class="filtre-satir">
+    <?= csrf_field() ?>
+    <input type="hidden" name="id" value="<?= $id ?>">
+    <input type="hidden" name="islem" value="grup_ekle">
+    <label class="form-alan">Ders / grup
+      <select name="grup_id" class="secim" required>
+        <option value="">Ders seçin</option>
+        <?php foreach ($eklenebilirGruplar as $g): ?>
+        <option value="<?= (int)$g['id'] ?>"><?= e($g['ad']) ?> — <?= e(GRUP_TUR_LABELS[$g['tur'] ?? 'grup']) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <button type="submit" class="btn btn-birincil">Derse ekle</button>
+  </form>
+  <?php endif; ?>
+  <?php if (!$uyelikler): ?>
+    <div class="bos-durum">Bu kişi henüz bir derse veya gruba eklenmemiş.</div>
+  <?php else: ?>
+  <div class="tablo-sar" style="margin-top:1rem">
+    <table class="tablo">
+      <thead><tr><th>Ders / grup</th><th>Tür</th><th>Program</th><th>Üyelik başlangıcı</th><th></th></tr></thead>
+      <tbody>
+      <?php foreach ($uyelikler as $g): ?>
+        <tr>
+          <td><a href="<?= e(url('grup.php?id=' . (int)$g['id'])) ?>"><?= e($g['ad']) ?></a></td>
+          <td><?= e(GRUP_TUR_LABELS[$g['tur'] ?? 'grup']) ?></td>
+          <td><?= e(GUNLER[(int)$g['gun']] ?? '') ?><?= $g['saat'] ? ' ' . e($g['saat']) : '' ?></td>
+          <td><?= e(format_date_tr($g['uyelik_baslangic'], false)) ?></td>
+          <td class="sayi">
+            <form method="post" action="<?= e(url('ogrenci.php?id=' . $id)) ?>"
+                  data-onay="<?= e($g['ad']) ?> üyeliği kaldırılsın mı? Geçmiş kayıtlar korunur.">
+              <?= csrf_field() ?>
+              <input type="hidden" name="id" value="<?= $id ?>">
+              <input type="hidden" name="islem" value="grup_cikar">
+              <input type="hidden" name="grup_id" value="<?= (int)$g['id'] ?>">
+              <button type="submit" class="btn btn-kucuk btn-golge">Üyeliği kaldır</button>
+            </form>
+          </td>
+        </tr>
+      <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php endif; ?>
 </div>
 
 <div class="kart">

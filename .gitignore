@@ -7,6 +7,10 @@
 /storage/*.log
 /storage/yedek/
 
+# İnceleme ve tarayıcı testlerinin yeniden üretilebilir geçici çıktıları
+/tmp/pdfs/
+/tmp/browser-grup/
+
 # Galeri yüklemeleri (katılımcı fotoğrafları olabilir) — içerik yerelde kalır
 /assets/img/galeri/*
 !/assets/img/galeri/.gitkeep

@@ -1,8 +1,9 @@
 <?php
 /**
  * Metronom Stüdyosu — gelişmiş metronom + dikkat protokolleri.
- * v2: alt bölünmeler, vuruş başına aksan deseni, tempo trainer, poliritim,
- * genişletilmiş ses kiti (seçimde önizleme), sesli sayma, flaş modu, preset'ler.
+ * v4: swing/shuffle, 12/8'e kadar ölçü grupları, sayarak giriş, alt bölünmeler,
+ * vuruş başına aksan deseni, tempo trainer, görsel poliritim, genişletilmiş
+ * ses kiti (seçimde önizleme), flaş modu, preset'ler.
  * Protokoller: Vuruş Tutturma, BPM Bulma, Ritim Okuma, Spontan Tempo,
  * Aksak Vuruş Algısı (BAASTA türü görevlerden uyarlama).
  */
@@ -56,6 +57,11 @@ $akisSecenekler = array_reverse(array_values(array_filter(
     fn($s) => (int)$s['teknik_sayisi'] > 0
 )));
 
+/* Hesaba bağlı setlistler ve otomatik çalışma günlüğü */
+$metronomKullanici = metronom_kullanici_anahtari();
+$metronomSetleri = metronom_setleri_listele($metronomKullanici);
+$metronomOzet = metronom_calisma_ozeti($metronomKullanici);
+
 /** Öğrenci seçme kutusu (her protokol sekmesinde aynı). */
 function ogrenci_secimi(string $id, array $ogrenciler): string
 {
@@ -79,6 +85,8 @@ function sonuc_formu(string $onek, string $protokol): string
         . '<input type="hidden" name="skor" id="' . e($onek) . 'FormSkor" value="">'
         . '<input type="hidden" name="detay" id="' . e($onek) . 'FormDetay" value="">'
         . '<input type="hidden" name="standart" id="' . e($onek) . 'FormStandart" value="0">'
+        . '<input type="hidden" name="sd_ms" id="' . e($onek) . 'FormSd" value="">'
+        . '<input type="hidden" name="kalite" id="' . e($onek) . 'FormKalite" value="">'
         . '<input type="text" name="notlar" class="girdi" maxlength="200" placeholder="Not (isteğe bağlı)" style="max-width:260px">'
         . '<button type="submit" class="btn btn-birincil">Sonucu Kaydet</button>'
         . '</form>';
@@ -98,6 +106,10 @@ require APP_DIR . '/includes/view/header.php';
 <!-- ==================== METRONOM ==================== -->
 <div class="kart m-sahne" id="mSahne">
   <div class="m-flas" id="mFlas" aria-hidden="true"></div>
+  <div class="m-durum" id="mDurum" role="status" aria-live="polite">
+    <span class="m-durum-nokta" aria-hidden="true"></span>
+    <span id="mDurumMetin">Hazır · ayarlar bu cihazda hatırlanır</span>
+  </div>
   <div class="m-ust">
     <div class="m-gorsel">
       <div class="m-halka" id="mHalka"></div>
@@ -123,7 +135,7 @@ require APP_DIR . '/includes/view/header.php';
         <button type="button" class="m-mini-btn" data-bpm-degistir="-1">−1</button>
         <div class="m-bpm-goster">
           <span id="mBpm">92</span>
-          <small>BPM · <em id="mTempoAdi">Andante</em></small>
+          <small><b id="mBirimSembol">♩</b> BPM · <em id="mTempoAdi">Andante</em></small>
         </div>
         <button type="button" class="m-mini-btn" data-bpm-degistir="1">+1</button>
         <button type="button" class="m-mini-btn" data-bpm-degistir="5">+5</button>
@@ -134,17 +146,32 @@ require APP_DIR . '/includes/view/header.php';
       <p class="alan-ipucu" style="text-align:center;margin:-.3rem 0 .6rem">
         Noktalara tıkla: <strong>aksan</strong> → normal → sessiz
       </p>
+      <div class="m-poli-satir" id="mPoliSatir" hidden>
+        <span class="m-poli-etiket" id="mPoliEtiket">3:4</span>
+        <div class="m-poli-noktalar" id="mPoliNoktalar" aria-label="Poliritim katmanı"></div>
+        <label class="m-poli-duzey">Katman
+          <input type="range" id="mPoliDuzey" min="10" max="100" value="55"
+                 aria-label="Poliritim ses düzeyi">
+        </label>
+      </div>
 
       <div class="m-ayarlar">
         <label class="m-ayar">Ölçü
           <select id="mOlcu" class="secim">
-            <option value="2">2/4</option>
-            <option value="3">3/4</option>
-            <option value="4" selected>4/4</option>
-            <option value="5">5/4</option>
-            <option value="6">6/8</option>
-            <option value="7">7/8</option>
+            <option value="2" data-payda="4">2/4</option>
+            <option value="3" data-payda="4">3/4</option>
+            <option value="4" data-payda="4" selected>4/4</option>
+            <option value="5" data-payda="4">5/4</option>
+            <option value="6" data-payda="8">6/8</option>
+            <option value="7" data-payda="8">7/8</option>
+            <option value="8" data-payda="8">8/8</option>
+            <option value="9" data-payda="8">9/8</option>
+            <option value="11" data-payda="8">11/8</option>
+            <option value="12" data-payda="8">12/8</option>
           </select>
+        </label>
+        <label class="m-ayar">Vuruş grubu
+          <select id="mGruplama" class="secim" aria-label="Ölçü içi vuruş gruplaması"></select>
         </label>
         <label class="m-ayar">Alt bölünme
           <select id="mAltBolunme" class="secim">
@@ -152,6 +179,16 @@ require APP_DIR . '/includes/view/header.php';
             <option value="2">♫ Sekizlik</option>
             <option value="3">③ Üçleme</option>
             <option value="4">♬ Onaltılık</option>
+          </select>
+        </label>
+        <label class="m-ayar">Swing / shuffle
+          <select id="mSwing" class="secim">
+            <option value="50" selected>Düz · %50</option>
+            <option value="55">Hafif · %55</option>
+            <option value="60">Orta · %60</option>
+            <option value="66.6667">Üçleme · %66,7</option>
+            <option value="70">Yoğun · %70</option>
+            <option value="75">Sert · %75</option>
           </select>
         </label>
         <label class="m-ayar">Ses kiti
@@ -162,7 +199,6 @@ require APP_DIR . '/includes/view/header.php';
             <option value="zil">🔔 İnek çanı</option>
             <option value="davul">🥁 Davul</option>
             <option value="bip">🎹 Yumuşak bip</option>
-            <option value="sayma">🗣 Sesli sayma</option>
           </select>
         </label>
         <label class="m-ayar">Ses düzeyi
@@ -171,9 +207,25 @@ require APP_DIR . '/includes/view/header.php';
         <label class="m-ayar">Poliritim
           <select id="mPoliritim" class="secim">
             <option value="0" selected>Kapalı</option>
-            <option value="2">2 : ölçü</option>
-            <option value="3">3 : ölçü</option>
-            <option value="5">5 : ölçü</option>
+            <option value="2">2 vuruş / ölçü</option>
+            <option value="3">3 vuruş / ölçü</option>
+            <option value="4">4 vuruş / ölçü</option>
+            <option value="5">5 vuruş / ölçü</option>
+            <option value="6">6 vuruş / ölçü</option>
+            <option value="7">7 vuruş / ölçü</option>
+            <option value="8">8 vuruş / ölçü</option>
+            <option value="9">9 vuruş / ölçü</option>
+            <option value="10">10 vuruş / ölçü</option>
+            <option value="11">11 vuruş / ölçü</option>
+            <option value="12">12 vuruş / ölçü</option>
+          </select>
+        </label>
+        <label class="m-ayar">Sayarak giriş
+          <select id="mGirisOlcu" class="secim">
+            <option value="0" selected>Kapalı</option>
+            <option value="1">1 ölçü</option>
+            <option value="2">2 ölçü</option>
+            <option value="4">4 ölçü</option>
           </select>
         </label>
         <label class="m-ayar-onay"><input type="checkbox" id="mFlasModu"> ⚡ Flaş modu</label>
@@ -232,15 +284,21 @@ require APP_DIR . '/includes/view/header.php';
         <span class="alan-ipucu">Preset:</span>
         <span id="mPresetler"></span>
         <button type="button" class="m-mini-btn" id="mPresetKaydet" title="Geçerli ayarları preset olarak sakla">＋ Kaydet</button>
+        <span class="m-preset-form" id="mPresetForm" hidden>
+          <input type="text" class="m-preset-ad" id="mPresetAdi" maxlength="18"
+                 placeholder="Preset adı" aria-label="Preset adı">
+          <button type="button" class="m-mini-btn m-preset-onay" id="mPresetOnay">Kaydet</button>
+          <button type="button" class="m-mini-btn" id="mPresetIptal" aria-label="Preset kaydını iptal et">İptal</button>
+        </span>
       </div>
 
       <div class="m-buton-satir">
-        <button type="button" class="btn btn-birincil m-baslat" id="mBaslat">▶ Başlat</button>
+        <button type="button" class="btn btn-birincil m-baslat" id="mBaslat" aria-pressed="false">▶ Başlat</button>
         <button type="button" class="btn btn-golge" id="mTap">👆 Tap Tempo</button>
       </div>
       <p class="alan-ipucu">Kısayollar: <kbd>Boşluk</kbd> başlat/durdur · <kbd>T</kbd> tap tempo · <kbd>↑↓</kbd> BPM
-        · Ses kitini değiştirince kısa önizleme çalar. 🎲 Rastgele sus: vuruşların bir kısmı
-        rastgele susarak içsel sayımı çalıştırır.</p>
+        · Swing sekizlik ve onaltılık ikililerine uygulanır. Sayarak giriş yalnız klik ve görsel sayaçla çalışır;
+        sesli sayma kullanmaz. 🎲 Rastgele sus: vuruşların bir kısmı rastgele susarak içsel sayımı çalıştırır.</p>
     </div>
   </div>
 
@@ -253,6 +311,105 @@ require APP_DIR . '/includes/view/header.php';
     <div class="m-sarki-turler" id="sarkiTurler"></div>
     <div class="m-sarki-liste" id="sarkiListe"></div>
   </div>
+</div>
+
+<!-- ==================== ÇALIŞMA MERKEZİ ==================== -->
+<div class="kart m-calisma-merkezi" id="mCalismaMerkezi">
+  <div class="kart-baslik m-cm-baslik">
+    <div>
+      <h2>🎛 Çalışma Merkezi</h2>
+      <span class="alan-ipucu">Şarkı, repertuvar veya teknik çalışma akışını hazırla; metronom adımları sırayla uygulasın ve süreyi günlüğe yazsın.</span>
+    </div>
+    <span class="m-cm-kayit-durum" id="mCmKayitDurum" role="status" aria-live="polite">Hazır</span>
+  </div>
+
+  <div class="m-cm-grid">
+    <section class="m-cm-set" aria-labelledby="mCmSetBaslik">
+      <div class="m-cm-bolum-baslik">
+        <div>
+          <h3 id="mCmSetBaslik">Setlist oluşturucu</h3>
+          <small id="mSetToplam">0 adım · 00:00</small>
+        </div>
+        <div class="m-cm-butonlar">
+          <button type="button" class="btn btn-kucuk btn-golge" id="mSetYeni">＋ Yeni</button>
+          <button type="button" class="btn btn-kucuk btn-birincil" id="mSetKaydet">Kaydet</button>
+          <button type="button" class="btn btn-kucuk btn-golge" id="mSetCalistir">▶ Çalıştır</button>
+          <button type="button" class="btn btn-kucuk btn-tehlike" id="mSetSil" disabled>Sil</button>
+        </div>
+      </div>
+
+      <div class="m-cm-set-ust">
+        <label class="form-alan">Kayıtlı setlist
+          <select id="mSetSec" class="secim">
+            <option value="">— Yeni setlist —</option>
+          </select>
+        </label>
+        <label class="form-alan">Setlist adı
+          <input type="text" class="girdi" id="mSetAd" maxlength="80" placeholder="Örn. Konser repertuvarı">
+        </label>
+        <label class="form-alan m-cm-aciklama">Not
+          <input type="text" class="girdi" id="mSetAciklama" maxlength="300" placeholder="Amaç, repertuvar veya çalışma notu">
+        </label>
+      </div>
+
+      <div class="m-set-ekle-satir">
+        <button type="button" class="btn btn-golge" id="mSetAdimEkle">＋ Geçerli metronom ayarını adım olarak ekle</button>
+        <span class="alan-ipucu">BPM, ölçü, gruplama, swing, poliritim ve sayarak giriş birlikte alınır.</span>
+      </div>
+      <div class="m-set-adimlar" id="mSetAdimlar" aria-live="polite"></div>
+      <div class="m-set-bos" id="mSetBos">Henüz adım yok. Metronomu istediğin ayara getirip yukarıdaki düğmeyle ilk adımı ekle.</div>
+    </section>
+
+    <aside class="m-cm-gunluk" aria-labelledby="mGunlukBaslik">
+      <div class="m-cm-bolum-baslik">
+        <div>
+          <h3 id="mGunlukBaslik">Çalışma günlüğü</h3>
+          <small>10 saniyeden uzun çalışmalar otomatik kaydedilir.</small>
+        </div>
+        <span class="m-seri-rozet" id="mGunlukSeri">0 gün seri</span>
+      </div>
+      <div class="m-gunluk-ozet">
+        <div class="m-gunluk-hedef-halka" id="mGunlukHalka" style="--oran:0%">
+          <strong id="mGunlukBugun">0 dk</strong><small>bugün</small>
+        </div>
+        <div>
+          <strong id="mGunlukHedefMetin">20 dk hedef</strong>
+          <div class="m-gunluk-hedef-cubuk"><span id="mGunlukHedefCubuk"></span></div>
+          <small id="mGunlukHaftaMetin">Bu hafta 0 / 5 gün</small>
+        </div>
+      </div>
+      <div class="m-gunluk-grafik" id="mGunlukGrafik" aria-label="Son yedi günlük çalışma grafiği"></div>
+      <div class="m-hedef-form">
+        <label>Günlük hedef
+          <span><input type="number" class="girdi" id="mHedefDk" min="1" max="480" value="20"> dk</span>
+        </label>
+        <label>Haftalık
+          <span><input type="number" class="girdi" id="mHedefGun" min="1" max="7" value="5"> gün</span>
+        </label>
+        <button type="button" class="btn btn-kucuk btn-golge" id="mHedefKaydet">Hedefi kaydet</button>
+      </div>
+      <h4 class="m-son-calisma-baslik">Son çalışmalar</h4>
+      <div class="m-son-calismalar" id="mSonCalismalar"></div>
+    </aside>
+  </div>
+
+  <section class="m-set-oynatici" id="mSetOynatici" hidden aria-labelledby="mSetOynaticiBaslik">
+    <div class="m-set-oynatici-bilgi">
+      <span class="m-set-canli">SETLIST</span>
+      <div>
+        <strong id="mSetOynaticiBaslik">Hazır</strong>
+        <small id="mSetOynaticiAlt">Adım seçilmedi</small>
+      </div>
+    </div>
+    <div class="m-set-sayac" id="mSetSayac">00:00</div>
+    <div class="m-set-oynatici-cubuk"><span id="mSetIlerleme"></span></div>
+    <div class="m-cm-butonlar">
+      <button type="button" class="m-mini-btn" id="mSetOnceki" title="Önceki adım">⏮</button>
+      <button type="button" class="btn btn-birincil" id="mSetBaslat">▶ Setlisti Başlat</button>
+      <button type="button" class="m-mini-btn" id="mSetSonraki" title="Sonraki adım">⏭</button>
+      <button type="button" class="btn btn-kucuk btn-golge" id="mSetBitir">Bitir</button>
+    </div>
+  </section>
 </div>
 
 <!-- ==================== DERS AKIŞI ==================== -->
@@ -338,13 +495,46 @@ require APP_DIR . '/includes/view/header.php';
       önce 📏 ölçümlerden yapar.</span>
   </div>
 
+  <section class="m-zaman-kalite" id="zamanKalitePanel" aria-labelledby="zamanKaliteBaslik">
+    <div class="m-zaman-kalite-ust">
+      <div>
+        <strong id="zamanKaliteBaslik">⏱ Profesyonel ölçüm sistemi</strong>
+        <small>Bütün zamanlama protokolleri aynı cihaz telafisini ve eşleştirme motorunu kullanır.</small>
+      </div>
+      <span class="m-zaman-rozet" id="zkRozet">Ses motoru bekleniyor</span>
+    </div>
+    <div class="m-zaman-metrikler">
+      <span><b id="zkTelafi">—</b><small>cihaz telafisi</small></span>
+      <span><b id="zkDagilim">—</b><small>vuruş dağılımı</small></span>
+      <span><b id="zkTarayici">—</b><small>tarayıcı çıkışı</small></span>
+      <span><b id="zkOrnekleme">—</b><small>örnekleme</small></span>
+      <span><b id="zkTarih">—</b><small>son kalibrasyon</small></span>
+    </div>
+    <p class="alan-ipucu" id="zkAciklama">
+      Mutlak senkronizasyon ölçümleri için kulaklıkla veya kullanacağın hoparlörle bir kez kalibre et.
+    </p>
+    <div class="m-zaman-butonlar">
+      <button type="button" class="btn btn-birincil btn-kucuk" id="zkKalibre">🎧 Kalibre et</button>
+      <button type="button" class="btn btn-golge btn-kucuk" id="zkYenile">Durumu yenile</button>
+      <button type="button" class="btn btn-golge btn-kucuk" id="zkSifirla">Kalibrasyonu sıfırla</button>
+    </div>
+    <div class="m-zaman-kalibrasyon" id="zkSahne" hidden>
+      <div>
+        <strong id="zkSayac">Hazırlan…</strong>
+        <small id="zkIlerleme">0/12</small>
+      </div>
+      <button type="button" class="m-pad m-pad-kucuk" id="zkPad">VUR<small>duyduğun her klikte</small></button>
+      <button type="button" class="btn btn-golge btn-kucuk" id="zkIptal">İptal</button>
+    </div>
+  </section>
+
   <div class="m-sekmeler" role="tablist" id="mSekmeler" data-acilacak="<?= e($acilacakProtokol) ?>">
-    <button type="button" class="m-sekme aktif" data-sekme="vurus">🎯 Vuruş Tutturma</button>
-    <button type="button" class="m-sekme" data-sekme="bpm">🎧 BPM Bulma</button>
-    <button type="button" class="m-sekme" data-sekme="ritim">🎼 Ritim Okuma</button>
-    <button type="button" class="m-sekme" data-sekme="spontan">🫀 Spontan Tempo</button>
-    <button type="button" class="m-sekme" data-sekme="aksak">🕳 Aksak Bulma</button>
-    <button type="button" class="m-sekme" data-sekme="icsel">🧭 İçsel Ritim</button>
+    <button type="button" class="m-sekme aktif" role="tab" aria-selected="true" data-sekme="vurus">🎯 Vuruş Tutturma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="bpm">🎧 BPM Bulma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="ritim">🎼 Ritim Okuma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="spontan">🫀 Spontan Tempo</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="aksak">🕳 Aksak Bulma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="icsel">🧭 İçsel Ritim</button>
   </div>
 
   <!-- Vuruş Tutturma -->
@@ -386,7 +576,7 @@ require APP_DIR . '/includes/view/header.php';
       </div>
       <div class="m-sonuc-detay">
         <table class="tablo">
-          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th>
+          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th><th class="sayi">Fazla</th>
                      <th class="sayi">Ort. sapma</th><th class="sayi">Ort. |sapma|</th><th class="sayi">Skor</th></tr></thead>
           <tbody id="vtTablo"></tbody>
         </table>
@@ -444,15 +634,15 @@ require APP_DIR . '/includes/view/header.php';
 
   <!-- Ritim Okuma -->
   <div class="m-sekme-icerik" id="sekme-ritim" hidden>
-    <p class="alan-ipucu">Ekrandaki 2 ölçülük deseni sayarak tam yerinde vur: "1 ve 2 ve", üçlemede "1-le-me".
-       Göz–el eşgüdümü ve nota okumaya ilk adım (ev sayfasındaki modülün stüdyo sürümü).</p>
+    <p class="alan-ipucu">Yüzlerce kademeli alıştırmada ritmi önce gerçekten dinle, sonra sayarak ve notada yazıldığı
+       zamanlarda vur. Kolay → Orta → Zor müfredatı dörtlüklerden senkop, onaltılık ve üçlemelere ilerler.</p>
     <div class="filtre-satir">
       <label class="form-alan">Öğrenci<?= ogrenci_secimi('roOgrenci', $ogrenciler) ?></label>
       <label class="form-alan">Seviye
         <select id="roSeviye" class="secim">
-          <option value="1" selected>1 — çeyrek + es</option>
-          <option value="2">2 — sekizlikler ("ve")</option>
-          <option value="3">3 — üçlemeler</option>
+          <option value="1" selected>Kolay — temel değerler</option>
+          <option value="2">Orta — onaltılık ve senkop</option>
+          <option value="3">Zor — üçleme ve karma deşifre</option>
         </select>
       </label>
       <label class="form-alan">Tempo
@@ -460,9 +650,19 @@ require APP_DIR . '/includes/view/header.php';
           <option value="50">50 BPM</option>
           <option value="60" selected>60 BPM</option>
           <option value="72">72 BPM</option>
+          <option value="84">84 BPM</option>
+          <option value="96">96 BPM</option>
+          <option value="112">112 BPM</option>
         </select>
       </label>
-      <button type="button" class="btn btn-golge" id="roYenile">↻ Yeni desen</button>
+      <label class="form-alan">Kılavuz
+        <select id="roRehber" class="secim">
+          <option value="tam">Her vuruş</option>
+          <option value="olcu">Yalnız ölçü başı</option>
+          <option value="sessiz">Sessiz deşifre</option>
+        </select>
+      </label>
+      <button type="button" class="btn btn-golge" id="roYenile">Sonraki örnek →</button>
     </div>
     <div class="ro-kok" id="roKok"></div>
     <div class="m-kaydet-satir" id="roKaydetSatir" hidden>
@@ -590,7 +790,7 @@ require APP_DIR . '/includes/view/header.php';
       </div>
       <div class="m-sonuc-detay">
         <table class="tablo">
-          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th>
+          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th><th class="sayi">Fazla</th>
                      <th class="sayi">Ort. |sapma|</th><th class="sayi">Skor</th></tr></thead>
           <tbody id="irTablo"></tbody>
         </table>
@@ -645,7 +845,19 @@ require APP_DIR . '/includes/view/header.php';
 window.SON_SKORLAR = <?= json_encode($sonSkorlar, JSON_UNESCAPED_UNICODE) ?>;
 /* Ders akışı: seçili oturumun teknik planı (yoksa null) */
 window.DERS_AKISI = <?= json_encode($akisOturum, JSON_UNESCAPED_UNICODE) ?>;
+/* Hesaba bağlı çalışma merkezi başlangıç verisi */
+window.METRONOM_CALISMA_VERI = <?= json_encode([
+    'api' => url('metronom-api.php'),
+    'csrfToken' => csrf_token(),
+    'setler' => $metronomSetleri,
+    'ozet' => $metronomOzet,
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
+<script src="<?= e(asset('js/zamanlama-cekirdegi.js')) ?>"></script>
+<script src="<?= e(asset('js/ritim-ogrenme.js')) ?>"></script>
+<script src="<?= e(asset('js/metronom-cekirdegi.js')) ?>"></script>
+<script src="<?= e(asset('js/metronom-setlist.js')) ?>"></script>
+<script src="<?= e(asset('vendor/abcjs/abcjs-basic-min.js')) ?>"></script>
 <script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom.js')) ?>"></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

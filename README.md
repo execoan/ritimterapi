@@ -19,11 +19,23 @@ oluşturulur ve teknik kütüphanesi başlangıç içeriğiyle dolar.
 
 ## Duman testi (smoke test)
 
-`test.bat` (veya `php test/smoke.php`) sistemin sağlığını 57 denetimle sınar ve
+`test.bat`, ortak zamanlama/puanlama, adaptif öğrenme, profesyonel metronom,
+setlist, iki el motor koordinasyon ve grup atölyesi çekirdeklerinin toplam
+61 deterministik JavaScript testini ve 79 denetimli PHP duman testini birlikte çalıştırır. Testler
 **gerçek veriye asla dokunmaz**: `RITIM_STORAGE` ortam değişkeniyle geçici bir
 depolama dizini kullanan kendi sunucusunu 127.0.0.1'de rastgele portta açar,
 test sonunda her şeyi siler; gerçek veritabanının özeti test öncesi/sonrası
 karşılaştırılarak dokunulmadığı ayrıca kanıtlanır.
+
+```powershell
+node test/zamanlama.test.js
+node test/ritim-ogrenme.test.js
+node test/metronom-cekirdegi.test.js
+node test/metronom-setlist.test.js
+node test/motor-koordinasyon.test.js
+node test/grup-atolyesi.test.js
+C:\xampp\php\php.exe test\smoke.php
+```
 
 Denetimlerin kapsamı: sayfaların hatasız açılması, göç + seed bütünlüğü,
 CRUD + basamaklı silme, sertifika/rapor içerikleri ve **güvenlik** —
@@ -110,20 +122,78 @@ Aynı test her push'ta GitHub Actions'ta da otomatik koşar
 Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
 (özellik araştırması: `docs/metronom-arastirma.md`):
 
-- **Serbest metronom (v2):** 30–240 BPM, tap tempo, 2/4–7/8 ölçü,
+- **Özel ders + çoklu grup üyeliği:** Kayıtlı bir kişi özel dersinin yanında bir
+  veya daha fazla grup dersine eklenebilir. Özel dersler sunucu tarafında tek aktif
+  katılımcıyla sınırlandırılır. Üyelik kaldırıldığında oturum ve yoklama geçmişi
+  korunur. Aynı kişinin aynı gün ve saatte iki derse yazılması; ayrıca mevcut ders
+  saatinin üyelerde çakışma yaratacak biçimde değiştirilmesi engellenir. Eğitmen,
+  yayın ve bitiş tarihi belirlenebilen grup duyuruları paylaşabilir. Katılımcı
+  koduyla açılan ev ekranında ders günü/saatini, yaklaşan programı, aktif duyuruları
+  ve grup arkadaşlarının yalnızca takma adlarını görür; doğum yılı, veli/eğitmen
+  notları, gözlemler ve kişisel skorlar diğer üyelere gösterilmez.
+
+- **Serbest metronom (v4):** 30–240 BPM, tap tempo, 2/4–12/8 ölçü,
   **alt bölünmeler** (sekizlik/üçleme/onaltılık), **vuruş başına aksan deseni**
-  (noktaya tıkla: aksan → normal → sessiz), **tempo trainer** (hedefe her N ölçüde
-  ±X BPM), **poliritim** katmanı (2/3/5 : ölçü), **7 sesli kit** (tahta, klik,
-  klaves, inek çanı, davul, bip, Türkçe **sesli sayma**) + seçimde önizleme,
+  (noktaya tıkla: aksan → normal → sessiz), 5/4–12/8 için müzikal
+  **vuruş grupları**, sekizlik ve onaltılık ikililerinde %50–75
+  **swing/shuffle**, sesli sayma kullanmadan 1/2/4 ölçülük **sayarak giriş**,
+  **tempo trainer** (hedefe her N ölçüde
+  ±X BPM), ayrı ses düzeyi ve mavi vuruş ışıkları bulunan **poliritim** katmanı
+  (2–12 vuruş : ölçü; ilk çapraz vuruş aksanlı), **6 sesli kit** (tahta, klik, klaves, inek çanı, davul,
+  yumuşak bip) + seçimde önizleme,
   ⚡ **flaş modu**, büyük vuruş sayacı, **preset** çipleri, sessiz aralık çalışması,
   🎲 **rastgele sus** (Time Guru tarzı içsel zamanlama), ⏲ çalışma zamanlayıcısı,
   📳 titreşim (mobil), ⛶ tam ekran sahne. **🎵 Şarkı tempo kütüphanesi:** 42 tanıdık
   parça (metal/rock/pop/jazz) — tıklayınca BPM (+Take Five'ta 5/4 ölçü) ayarlanır ve
-  çalar; arama ve tür filtresi vardır. Kısayollar: Boşluk, T, ↑↓.
+  çalar; arama ve tür filtresi vardır. Son ayarlar cihazda hatırlanır, çalışırken
+  desteklenen cihazlarda ekran açık tutulur; paydası 8 olan ölçülerde vuruş birimi
+  sekizlik nota olarak hesaplanır. Kısayollar: Boşluk, T, ↑↓.
+- **Çalışma Merkezi:** Hesaba bağlı setlistlerde BPM, ölçü, gruplama, swing,
+  poliritim, alt bölünme, sayarak giriş ve süre adım başına saklanır. Adımlar
+  otomatik geçebilir veya müzisyeni bekleyebilir; duraklatma süresi çalışmaya
+  eklenmez. Serbest metronom ve setlist oturumları 10 saniyeden sonra otomatik
+  günlüğe yazılır. Günlük hedef, son 7 gün grafiği, çalışma serisi ve son
+  oturumlar aynı panelden izlenir.
+- **İki El Motor Koordinasyon Stüdyosu:** Uzman protokol oluşturucu ile
+  dönüşümlü, ikişerli, çapraz, eşzamanlı ve karma sağ/sol el desenleri hazırlanır.
+  Dokunmatik ekran, F/J tuşları ve Web MIDI desteklenir. Ortak cihaz
+  kalibrasyonundan sonra her el için doğruluk, zamanlama sapması, fazla/kaçırılan
+  vuruş, MIDI şiddeti, sağ–sol asimetrisi, eşzamanlılık ve oturum sonu performans
+  eğilimi ölçülür. Güvenlik durdurmaları skor üretilmeden ayrıca kaydedilir.
+  Modül eğitim ve uzman destek aracıdır; tanı veya bağımsız tedavi sunmaz.
+- **Grup Atölyesi:** Yerel eğitim arşivindeki 16 PDF/169 sayfanın içerik ve
+  bilimsel dayanak taramasından türetilen beş özgün grup akışı: Ortak Nabız
+  Çemberi, İki Tını Orkestrası, Ritim Tamamlama Çemberi, Katman Değiş-Takas ve
+  Uyarlanmış Ritimli Hareket. Her akışta dört maddelik güvenlik kilidi, katılım
+  ve mola seçimi, oturarak eşdeğer, dört hazırlık vuruşu, Web Audio zamanlamalı
+  kılavuz, adım sayacı ve sesi kesin kesen duraklatma vardır. Yerel dosyalar
+  bilimsel yayın olarak gösterilmez; bağımsız çalışmalar ve sınırlılıkları
+  ekranda birlikte sunulur. Ayrıntılı inceleme:
+  `docs/kaynak-inceleme-grup-atolyesi.md`.
 - **Protokoller** (skor 0–100, öğrenciye kaydedilir; BAASTA türü görevlerden uyarlama):
   - *Vuruş Tutturma* — senkronizasyon–devam: sesli + sessiz faz, ms sapma, eğilim.
   - *BPM Bulma* — tempo yeniden üretme, 3 tur.
-  - *Ritim Okuma* — desen okuyarak sayma-vurma (stüdyo sürümü).
+  - *Ritim Okuma* — 3 seviye, 24 ders ve 384 kademeli örnek; yazılan notanın
+    gerçek başlangıçlarını çalan dinleme modu, **abcjs 6.6.3 ile standart porteli
+    nota**, `1-e-ve-a` / `1-le-me` sayımı,
+    ölçü veya vuruş kılavuzu ve ayrıntılı isabet–sapma değerlendirmesi.
+    Puanlı çalışma öncesi 12 vuruşluk **cihaz/kişisel gecikme kalibrasyonu**
+    gerekir; ölçülen ms telafisi bu cihazda saklanır. Öğrenme, Dengeli, Arcade,
+    Profesyonel ve kolay/orta/zor için ayrı 60–300 ms girilebilen Özel
+    değerlendirme profilleri vardır. Sıralı eşleştirme hızlı notalarda vuruşların
+    yanlışlıkla komşu notaya kaymasını önler. Başlangıçta büyük **4‑3‑2‑1 / ŞİMDİ**
+    göstergesi ve önceden hazır görünen vuruş pedi kullanılır; yalnız ilk notaya
+    verilen ek 80 ms başlangıç payı, ilk vuruşun arayüz geçişi yüzünden kaçmasını önler.
+    `zamanlama-cekirdegi.js` bütün senkronizasyon protokollerinde olayın gerçek
+    zaman damgasını, ortak cihaz telafisini ve kronolojik bire bir eşleştirmeyi
+    uygular. Pencere dışındaki fazla dokunuşlar da kaybolmadan raporlanır.
+    **Akıllı çalışma** katmanı her örneğin deneme sayısını, hareketli puanını,
+    kalıcı ustalık güvenini ve ritim türü isabetlerini saklar. Başarısız örnekler
+    oturum içinde 2 çalışma, gelişen örnekler 4 çalışma sonra yeniden önerilir;
+    temiz okumalar 1–3–7–14–30 günlük aralıklarla kalıcılık kontrolüne girer.
+    Tek bir yüksek puan “ustalaşıldı” sayılmaz; bunun için en az iki güvenilir
+    okuma gerekir. Kullanıcı isterse tek düğmeyle klasik sıralı moda dönebilir.
+
   - *Spontan Tempo* — serbest 21 vuruş: kişisel doğal tempo (SMT) + CV tutarlılık skoru.
   - *Aksak Bulma* — anizokroni algısı: 6 vuruşluk dizi düzenli mi aksak mı, 8 tur,
     %6–15 kayma zorlukları. Motorsuz saf dinleme ölçümü.
@@ -133,6 +203,16 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
     mini sürümüyle (3 faz) atanabilir; gelişim öğrenci trendinde izlenir.
     **Uyarlanan zorluk:** öğrenci seçilince son skora göre Kolay/Standart/İleri
     profili önerilir (≥80 → İleri, <50 → Kolay).
+
+- **Profesyonel ölçüm sistemi:** Stüdyoda ve öğrenci ev ekranında ortak cihaz
+  kalite paneli bulunur. 4 hazırlık + 12 ölçüm vuruşuyla hesaplanan medyan telafi,
+  dağılım, tarayıcı çıkış gecikmesi, örnekleme hızı ve kalibrasyon tarihi gösterilir.
+  Ses cihazı değiştiğinde veya ölçüm dağılımı yükseldiğinde yenileme önerilir.
+
+Üçüncü taraf istemci kütüphanesi `assets/vendor/abcjs/` altında yerel tutulur;
+MIT lisansı aynı klasördeki `LICENSE.md` dosyasındadır. CDN kullanılmadığı için
+nota görünümü CSP ve çevrimdışı PWA çalışma düzeniyle uyumludur.
+
 - **Haftanın protokolü**: ders planına ve şablon oturumlarına protokol alanı —
   şablon uygulanınca oturuma taşınır; oturum ekranındaki "🎛 Protokolü Stüdyoda Aç"
   düğmesi Stüdyo'yu doğru sekmede açar (`metronom.php?protokol=…`).
@@ -146,6 +226,26 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
   ayarları seçmek de 📏 sayılır. Sertifika ve dönemlik rapor, ilk→son
   karşılaştırmasını en az iki 📏 ölçüm varsa **yalnız onlardan** yapar; böylece
   "80 BPM'de ilk, 110 BPM'de son ölçüm" gibi yanıltıcı kıyaslar önlenir.
+- **Blok medyanı**: dönem başı/sonu, uçtaki tek ölçüm yerine **uç blokların
+  medyanıdır** (6+ ölçümde 3'er, 4–5'te 2'şer). İlk denemedeki "görevi tanıma"
+  çöküşü tek başına başlangıç sayılmaz — bu, sistemin en sık ürettiği sahte
+  kazanım kaynağıydı.
+- **Gürültü bandı (MDC95)**: dönemlik raporda her fark, öğrencinin kendi ölçüm
+  dalgalanmasıyla birlikte gösterilir (1,96 × ardışık farkların RMS'i). Bandın
+  içindeki fark "değişim yok" değil, **"ölçümle ayırt edilemiyor"** diye yazılır;
+  3'ten az ölçümde karar verilmez.
+- **Kararlılık (SD)**: her ölçümle birlikte asenkroni standart sapması `sd_ms`
+  ve o andaki **kalibrasyon kalitesi** saklanır. Skor sabit kaymayı (cihaz
+  gecikmesi + kişisel erken/geç vurma eğilimi) içinde taşır, SD taşımaz —
+  dönemler arası karşılaştırma için SD tercih edilmelidir (düşük = iyi).
+- **Eğitilmeyen sonda**: Aksak Vuruş Algısı ev programında bilerek
+  çalıştırılmaz; eğitilenlerle birlikte o da yükseliyorsa görülen büyük
+  olasılıkla genel alışma etkisidir. Raporda böyle etiketlenir.
+- **Ev pratiği dozu**: dönemlik raporda hafta başına işaretlenen pratik günü,
+  protokol trendinin yanında (nedensellik kanıtı değil, tutarlılık kontrolü).
+
+Ayrıntılı yöntem: [docs/olcum-kilavuzu.md](docs/olcum-kilavuzu.md) — ne zaman
+kaç ölçüm alınacağı, hangi sayıya bakılacağı ve **iddia edilmeyecekler**.
 - **🧭 Ders Akışı**: oturum sayfasındaki "Ders Akışını Stüdyoda Başlat" (veya
   stüdyodaki oturum seçici) plandaki teknikleri sırayla çalıştırır — adım başına
   geri sayım, bitişte zil + titreşim, otomatik geçiş, ⏮/⏭/duraklat/sıfırla.
@@ -220,6 +320,8 @@ bu bilgisayardadır; arada bir indirip USB/buluta kopyalamanız önerilir.
 | Öğrenciler | `ogrenciler.php`, `ogrenci.php`, `ogrenci-sil.php` |
 | Teknik kütüphanesi | `teknikler.php`, `teknik.php`, `teknik-sil.php` |
 | Ders planı | `plan.php` (sürükle-bırak sıralama, 60 dk hedef uyarısı) |
+| Grup atölyesi | `grup-atolyesi.php`, `assets/js/grup-atolyesi*.js`, `assets/css/grup-atolyesi.css` |
+| Motor koordinasyon | `motor-studyo.php`, `motor-api.php` |
 | Oturum kaydı | `oturumlar.php`, `oturum.php` (yoklama + işlenen teknikler + notlar) |
 | Raporlar | `raporlar.php`, `rapor-haftalik.php`, `rapor-donemlik.php`, `rapor-veli.php` |
 | Altyapı | `includes/` (bootstrap, db, model, helpers, seed, görünüm), `assets/` |

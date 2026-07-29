@@ -111,6 +111,33 @@ function istek(string $metod, string $yol, ?array $veri, array &$cerez): array
 function git_(string $yol, array &$cerez): array { return istek('GET', $yol, null, $cerez); }
 function gonder(string $yol, array $veri, array &$cerez): array { return istek('POST', $yol, $veri, $cerez); }
 
+function json_gonder(string $yol, array $veri, array &$cerez): array
+{
+    global $TABAN;
+    $basliklar = "Accept: application/json\r\nContent-Type: application/json\r\n";
+    if ($cerez) {
+        $parcalar = [];
+        foreach ($cerez as $k => $v) { $parcalar[] = $k . '=' . $v; }
+        $basliklar .= 'Cookie: ' . implode('; ', $parcalar) . "\r\n";
+    }
+    $ctx = stream_context_create(['http' => [
+        'method' => 'POST',
+        'header' => $basliklar,
+        'content' => json_encode($veri, JSON_UNESCAPED_UNICODE),
+        'ignore_errors' => true,
+        'follow_location' => 0,
+        'timeout' => 15,
+    ]]);
+    $govde = @file_get_contents($TABAN . $yol, false, $ctx);
+    $ham = $http_response_header ?? [];
+    $durum = 0;
+    foreach ($ham as $satir) {
+        if (preg_match('#^HTTP/\S+\s+(\d{3})#', $satir, $m)) { $durum = (int)$m[1]; }
+    }
+    return ['durum' => $durum, 'govde' => (string)$govde,
+            'json' => json_decode((string)$govde, true)];
+}
+
 function csrf_al(string $yol, array &$cerez): string
 {
     $y = git_($yol, $cerez);
@@ -227,7 +254,7 @@ dogrula($y['durum'] !== 200 && !str_contains($y['govde'], 'PANEL_KULLANICILAR'),
    C) KİMLİK KAPISI (güvenlik)
    ================================================================= */
 bolum('Kimlik kapısı (çıkış yapılmışken)');
-foreach (['panel.php', 'ogrenciler.php', 'yedek.php', 'disa-aktar.php?tur=protokol', 'metronom.php'] as $sayfa) {
+foreach (['panel.php', 'ogrenciler.php', 'yedek.php', 'disa-aktar.php?tur=protokol', 'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php'] as $sayfa) {
     $y = git_($sayfa, $jar);
     dogrula($y['durum'] >= 300 && $y['durum'] < 400 && str_contains($y['yer'], 'giris.php'),
         "{$sayfa} girişe yönlendiriyor", 'durum ' . $y['durum']);
@@ -272,7 +299,7 @@ dogrula($y['durum'] === 200 && !str_contains($y['govde'], 'Beklenmeyen bir sorun
    ================================================================= */
 bolum('Çekirdek sayfalar (giriş sonrası)');
 $sayfalar = ['gruplar.php', 'ogrenciler.php', 'teknikler.php', 'sablonlar.php', 'ev-programi.php',
-             'metronom.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
+             'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
              'plan.php'];
 foreach ($sayfalar as $sayfa) {
     $y = git_($sayfa, $jar);
@@ -307,11 +334,87 @@ try {
     $teknikAdet = (int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn();
     $pdo = null;
 } catch (Throwable $e) { $surum = -1; $teknikAdet = -1; }
-dogrula($surum === 9, 'göçler uygulanmış (user_version=9)', 'bulunan: ' . $surum);
+dogrula($surum === 14, 'göçler uygulanmış (user_version=14)', 'bulunan: ' . $surum);
 dogrula($teknikAdet >= 18, 'teknik kütüphanesi seed edilmiş', 'adet: ' . $teknikAdet);
 dogrula(str_contains(git_('teknikler.php', $jar)['govde'], 'Metronoma eşlik'), 'seed içeriği sayfada görünüyor');
+$grupAtolyesi = git_('grup-atolyesi.php', $jar)['govde'];
+dogrula(str_contains($grupAtolyesi, 'Grup Atölyesi Çalışma Alanı')
+    && str_contains($grupAtolyesi, 'Dört hazırlık vuruşuyla başlat'),
+    'grup atölyesi akış kurucusu görünüyor');
+dogrula(str_contains($grupAtolyesi, 'Katılım isteğe bağlıdır')
+    && str_contains($grupAtolyesi, 'Tam dönüş ve göğse vurma'),
+    'grup atölyesi seçim ve güvenlik sınırlarını gösteriyor');
+$calismaDefteri = git_('calismalar.php', $jar)['govde'];
+dogrula(str_contains($calismaDefteri, 'Prosocial Consequences of Interpersonal Synchrony')
+    && str_contains($calismaDefteri, 'The effects of rhythmic auditory stimulation'),
+    'grup atölyesi bilimsel kaynakları kayıt defterinde');
 dogrula(str_contains(git_('sablonlar.php', $jar)['govde'], 'RitimOdak'), 'RitimOdak şablonları hazır');
 dogrula((bool)glob($TEMP . '/yedek/otomatik-*.sqlite'), 'günlük otomatik yedek alınmış');
+
+bolum('Metronom çalışma merkezi');
+$t = csrf_al('metronom.php', $jar);
+$y = json_gonder('metronom-api.php', [
+    'csrfToken' => $t, 'islem' => 'set_kaydet', 'ad' => 'Duman Seti', 'aciklama' => 'Otomatik test',
+    'adimlar' => [[
+        'baslik' => 'Isınma', 'bpm' => 88, 'olcu' => 4, 'payda' => 4, 'gruplama' => '4',
+        'alt' => 2, 'swing' => 50, 'poliritim' => 3, 'poliDuzey' => 55,
+        'girisOlcu' => 1, 'sureSn' => 60, 'gecis' => 'otomatik', 'desen' => [2,1,1,1]
+    ]]
+], $jar);
+$setId = (int)($y['json']['id'] ?? 0);
+dogrula($y['durum'] === 200 && $setId > 0, 'setlist API ile kaydediliyor', 'durum ' . $y['durum']);
+
+$y = json_gonder('metronom-api.php', [
+    'csrfToken' => $t, 'islem' => 'calisma_kaydet', 'tur' => 'setlist', 'setId' => $setId,
+    'baslik' => 'Duman Seti', 'sureSn' => 75, 'bpmMin' => 88, 'bpmMax' => 88,
+    'detay' => ['adimSayisi' => 1, 'tamamlananAdim' => 1]
+], $jar);
+dogrula($y['durum'] === 200 && !empty($y['json']['ozet']['sonKayitlar']),
+    'setlist çalışması otomatik günlüğe yazılıyor', 'durum ' . $y['durum']);
+
+$y = json_gonder('metronom-api.php', [
+    'csrfToken' => $t, 'islem' => 'hedef_kaydet', 'gunlukDk' => 25, 'haftalikGun' => 4
+], $jar);
+dogrula(($y['json']['hedef']['gunlukDk'] ?? 0) === 25 && ($y['json']['hedef']['haftalikGun'] ?? 0) === 4,
+    'çalışma hedefi kalıcı kaydediliyor');
+
+$y = json_gonder('metronom-api.php', ['islem' => 'set_sil', 'id' => $setId], $jar);
+dogrula($y['durum'] === 403, 'çalışma merkezi API uçları CSRF ile korunuyor', 'durum ' . $y['durum']);
+
+bolum('İki el motor koordinasyon modülü');
+$t = csrf_al('motor-studyo.php', $jar);
+$y = json_gonder('motor-api.php', [
+    'csrfToken' => $t, 'islem' => 'protokol_kaydet',
+    'ad' => 'Duman Motor Protokolü', 'hedef' => 'İki el dönüşümlü zamanlama',
+    'desen' => 'donusumlu', 'bpm' => 60, 'sureSn' => 30, 'hazirlikVurus' => 4, 'toleransMs' => 140
+], $jar);
+$motorProtokolId = (int)($y['json']['protokol']['id'] ?? 0);
+dogrula($y['durum'] === 200 && $motorProtokolId > 0,
+    'uzman motor protokolü API ile kaydediliyor', 'durum ' . $y['durum']);
+
+$y = json_gonder('motor-api.php', [
+    'csrfToken' => $t, 'islem' => 'sonuc_kaydet', 'protokolId' => $motorProtokolId,
+    'durum' => 'tamamlandi', 'skor' => 87, 'dogruluk' => 91,
+    'detay' => ['sonuc' => ['asimetriMs' => 28], 'zamanlamaSurumu' => 'test']
+], $jar);
+dogrula($y['durum'] === 200 && !empty($y['json']['sonKayitlar']),
+    'motor koordinasyon sonucu ayrıntılarıyla kaydediliyor', 'durum ' . $y['durum']);
+
+$y = json_gonder('motor-api.php', [
+    'csrfToken' => $t, 'islem' => 'sonuc_kaydet', 'protokolId' => $motorProtokolId,
+    'durum' => 'guvenlik', 'skor' => 99, 'dogruluk' => 40,
+    'detay' => ['durmaNedeni' => 'Olağandışı yorulma']
+], $jar);
+$guvenlikKaydi = $y['json']['sonKayitlar'][0] ?? [];
+dogrula($y['durum'] === 200 && ($guvenlikKaydi['durum'] ?? '') === 'guvenlik'
+    && array_key_exists('skor', $guvenlikKaydi) && $guvenlikKaydi['skor'] === null,
+    'güvenlik durdurması skor üretmeden kaydediliyor', 'durum ' . $y['durum']);
+
+$y = json_gonder('motor-api.php', [
+    'islem' => 'sonuc_kaydet', 'protokolId' => $motorProtokolId,
+    'durum' => 'guvenlik', 'dogruluk' => 0, 'detay' => ['durmaNedeni' => 'test']
+], $jar);
+dogrula($y['durum'] === 403, 'motor koordinasyon API uçları CSRF ile korunuyor', 'durum ' . $y['durum']);
 
 /* =================================================================
    E) CRUD + XSS KAÇIŞI + PROTOKOL AKIŞI
@@ -324,6 +427,14 @@ gonder('gruplar.php', ['ad' => 'CSRFSIZ-GRUP', 'yas_araligi' => '', 'gun' => 1, 
                        'baslangic_tarihi' => date('Y-m-d'), 'aktif' => 1], $jar);
 dogrula(!str_contains(git_('gruplar.php', $jar)['govde'], 'CSRFSIZ-GRUP'), 'CSRF jetonu olmadan kayıt oluşmuyor');
 
+gonder('gruplar.php', ['csrf_token' => $t, 'ad' => 'GECERSIZ-SAAT', 'yas_araligi' => '', 'gun' => 1,
+                       'saat' => '99:99', 'baslangic_tarihi' => '2026-02-30', 'aktif' => 1], $jar);
+$pdoKontrol = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$gecersizGrup = (int)$pdoKontrol->query("SELECT COUNT(*) FROM gruplar WHERE ad = 'GECERSIZ-SAAT'")->fetchColumn();
+$pdoKontrol = null;
+dogrula($gecersizGrup === 0,
+    'takvim dışı tarih ve saat sunucu tarafında reddediliyor');
+
 // XSS: kötü niyetli ad kaçırılarak basılmalı
 $kotuAd = 'Duman <script>alert(1)</script>';
 gonder('gruplar.php', ['csrf_token' => $t, 'ad' => $kotuAd, 'yas_araligi' => '7-10', 'gun' => 2,
@@ -334,7 +445,29 @@ dogrula(!str_contains($g, '<script>alert(1)'), 'ham betik etiketi sayfaya sızm�
 preg_match('/grup\.php\?id=(\d+)/', $g, $m);
 $grupId = (int)($m[1] ?? 0);
 
+// Şablon uygulaması da takvimde olmayan bir tarihi oturuma dönüştürmemeli.
+$pdoKontrol = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$sablonId = (int)$pdoKontrol->query('SELECT id FROM plan_sablonlari ORDER BY id LIMIT 1')->fetchColumn();
+$oturumOnce = (int)$pdoKontrol->query("SELECT COUNT(*) FROM oturumlar WHERE grup_id = {$grupId}")->fetchColumn();
+$t = csrf_al('sablonlar.php?id=' . $sablonId, $jar);
+gonder('sablonlar.php?id=' . $sablonId, [
+    'csrf_token' => $t, 'islem' => 'uygula', 'sablon_id' => $sablonId,
+    'grup_id' => $grupId, 'baslangic' => '2026-02-30', 'mod' => 'A', 'b_fark' => 3,
+], $jar);
+$oturumSonra = (int)$pdoKontrol->query("SELECT COUNT(*) FROM oturumlar WHERE grup_id = {$grupId}")->fetchColumn();
+$pdoKontrol = null;
+dogrula($oturumSonra === $oturumOnce,
+    'takvim dışı tarih plan şablonundan oturum üretmiyor');
+
 // Öğrenci + protokol sonucu (standart işaretli)
+$t = csrf_al('ogrenciler.php', $jar);
+gonder('ogrenciler.php', ['csrf_token' => $t, 'kod' => 'BOZUK-YIL', 'dogum_yili' => '2015abc',
+                          'grup_id' => $grupId, 'veli_notu' => '', 'aktif' => 1], $jar);
+$pdoKontrol = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$gecersizOgrenci = (int)$pdoKontrol->query("SELECT COUNT(*) FROM ogrenciler WHERE kod = 'BOZUK-YIL'")->fetchColumn();
+$pdoKontrol = null;
+dogrula($gecersizOgrenci === 0,
+    'bozuk doğum yılı sunucu tarafında reddediliyor');
 $t = csrf_al('ogrenciler.php', $jar);
 gonder('ogrenciler.php', ['csrf_token' => $t, 'kod' => 'DUMAN-1', 'dogum_yili' => 2015,
                           'grup_id' => $grupId, 'veli_notu' => '', 'aktif' => 1], $jar);
@@ -343,6 +476,200 @@ preg_match('/ogrenci\.php\?id=(\d+)(?=[^>]*>DUMAN-1)/', $o, $m);
 if (!isset($m[1])) { preg_match('/ogrenci\.php\?id=(\d+)/', $o, $m); }
 $ogrenciId = (int)($m[1] ?? 0);
 dogrula($ogrenciId > 0 && str_contains($o, 'DUMAN-1'), 'öğrenci kaydı oluşturuldu');
+
+bolum('Çoklu grup üyeliği ve katılımcı portalı');
+// İkinci bir grup oluştur, var olan kişiyi bu gruba da ekle.
+$t = csrf_al('gruplar.php', $jar);
+gonder('gruplar.php', [
+    'csrf_token' => $t, 'ad' => 'Çarşamba Ansambl', 'tur' => 'grup',
+    'yas_araligi' => '10-14', 'gun' => 3, 'saat' => '18:00',
+    'baslangic_tarihi' => date('Y-m-d'), 'aktif' => 1,
+], $jar);
+$pdo = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$grup2Id = (int)$pdo->query("SELECT id FROM gruplar WHERE ad = 'Çarşamba Ansambl'")->fetchColumn();
+$t = csrf_al('grup.php?id=' . $grup2Id, $jar);
+gonder('grup.php?id=' . $grup2Id, [
+    'csrf_token' => $t, 'id' => $grup2Id, 'islem' => 'duyuru_ekle',
+    'baslik' => 'GECERSIZ-TARIH-DUYURU', 'mesaj' => '',
+    'yayin_tarihi' => '2026-02-30', 'bitis_tarihi' => '',
+], $jar);
+$gecersizDuyuru = (int)$pdo->query("SELECT COUNT(*) FROM grup_duyurulari
+    WHERE baslik = 'GECERSIZ-TARIH-DUYURU'")->fetchColumn();
+dogrula($gecersizDuyuru === 0, 'takvim dışı duyuru tarihi kaydedilmiyor');
+$t = csrf_al('grup.php?id=' . $grup2Id, $jar);
+gonder('grup.php?id=' . $grup2Id, [
+    'csrf_token' => $t, 'id' => $grup2Id, 'islem' => 'uye_ekle', 'ogrenci_id' => $ogrenciId,
+], $jar);
+$uyeSayisi = (int)$pdo->query("SELECT COUNT(*) FROM grup_uyelikleri
+    WHERE ogrenci_id = {$ogrenciId} AND aktif = 1")->fetchColumn();
+$og = git_('ogrenci.php?id=' . $ogrenciId, $jar)['govde'];
+dogrula($uyeSayisi === 2 && str_contains($og, 'Çarşamba Ansambl'),
+    'var olan kişi ikinci gruba eklenebiliyor ve iki üyelik birlikte görünüyor');
+
+// Aynı gün/saatteki başka bir derse aynı kişi eklenememeli.
+$t = csrf_al('gruplar.php', $jar);
+gonder('gruplar.php', [
+    'csrf_token' => $t, 'ad' => 'Çakışan Prova', 'tur' => 'grup',
+    'yas_araligi' => '', 'gun' => 3, 'saat' => '18:00',
+    'baslangic_tarihi' => date('Y-m-d'), 'aktif' => 1,
+], $jar);
+$cakisanGrupId = (int)$pdo->query("SELECT id FROM gruplar WHERE ad = 'Çakışan Prova'")->fetchColumn();
+$t = csrf_al('grup.php?id=' . $cakisanGrupId, $jar);
+gonder('grup.php?id=' . $cakisanGrupId, [
+    'csrf_token' => $t, 'id' => $cakisanGrupId, 'islem' => 'uye_ekle', 'ogrenci_id' => $ogrenciId,
+], $jar);
+$cakismaUyelik = (int)$pdo->query("SELECT COUNT(*) FROM grup_uyelikleri
+    WHERE grup_id = {$cakisanGrupId} AND ogrenci_id = {$ogrenciId} AND aktif = 1")->fetchColumn();
+$cakismaFlash = flash_metni(git_('grup.php?id=' . $cakisanGrupId, $jar)['govde']);
+dogrula($cakismaUyelik === 0 && str_contains($cakismaFlash, 'Program çakışması'),
+    'aynı katılımcının çakışan gün-saatteki derse eklenmesi engelleniyor', $cakismaFlash);
+
+// Mevcut dersin saati değiştirilirken de üyelerin diğer programları korunmalı.
+$t = csrf_al('grup.php?id=' . $grupId, $jar);
+gonder('grup.php?id=' . $grupId, [
+    'csrf_token' => $t, 'id' => $grupId, 'islem' => 'guncelle',
+    'ad' => $kotuAd, 'tur' => 'grup', 'yas_araligi' => '7-10',
+    'gun' => 3, 'saat' => '18:00', 'baslangic_tarihi' => date('Y-m-d'), 'aktif' => 1,
+], $jar);
+$korunanSaat = $pdo->query("SELECT gun, saat FROM gruplar WHERE id = {$grupId}")->fetch();
+$guncellemeFlash = flash_metni(git_('grup.php?id=' . $grupId, $jar)['govde']);
+dogrula((int)$korunanSaat['gun'] === 2 && $korunanSaat['saat'] === '17:00'
+    && str_contains($guncellemeFlash, 'program çakışması'),
+    'ders günü/saatini değiştirmek üyelerde çakışma yaratıyorsa değişiklik reddediliyor',
+    $guncellemeFlash);
+
+// Grup arkadaşı: portalda yalnızca takma adı görünmeli.
+$t = csrf_al('ogrenciler.php', $jar);
+gonder('ogrenciler.php', [
+    'csrf_token' => $t, 'kod' => 'ARKADAS-2', 'dogum_yili' => 2012,
+    'grup_id' => $grup2Id, 'veli_notu' => 'GIZLI-VELI-NOTU', 'aktif' => 1,
+], $jar);
+$arkadasId = (int)$pdo->query("SELECT id FROM ogrenciler WHERE kod = 'ARKADAS-2'")->fetchColumn();
+
+// Grup duyurusu yayın aralığıyla yönetilmeli.
+$t = csrf_al('grup.php?id=' . $grup2Id, $jar);
+gonder('grup.php?id=' . $grup2Id, [
+    'csrf_token' => $t, 'id' => $grup2Id, 'islem' => 'duyuru_ekle',
+    'baslik' => 'Bagetlerini getir', 'mesaj' => 'Bu hafta çalışma pedi de yanında olsun.',
+    'yayin_tarihi' => date('Y-m-d'), 'bitis_tarihi' => date('Y-m-d', strtotime('+7 days')),
+], $jar);
+$duyuruId = (int)$pdo->query("SELECT id FROM grup_duyurulari WHERE baslik = 'Bagetlerini getir'")->fetchColumn();
+$t = csrf_al('grup.php?id=' . $grup2Id, $jar);
+gonder('grup.php?id=' . $grup2Id, [
+    'csrf_token' => $t, 'id' => $grup2Id, 'islem' => 'duyuru_ekle',
+    'baslik' => 'GELECEK-DUYURU', 'mesaj' => 'Henüz görünmemeli.',
+    'yayin_tarihi' => date('Y-m-d', strtotime('+3 days')), 'bitis_tarihi' => '',
+], $jar);
+
+// Özel derste ikinci aktif kişi sunucu tarafında reddedilmeli.
+$t = csrf_al('gruplar.php', $jar);
+gonder('gruplar.php', [
+    'csrf_token' => $t, 'ad' => 'DUMAN Özel Ders', 'tur' => 'ozel',
+    'yas_araligi' => '', 'gun' => 5, 'saat' => '16:00',
+    'baslangic_tarihi' => date('Y-m-d'), 'aktif' => 1,
+], $jar);
+$ozelGrupId = (int)$pdo->query("SELECT id FROM gruplar WHERE ad = 'DUMAN Özel Ders'")->fetchColumn();
+$t = csrf_al('grup.php?id=' . $ozelGrupId, $jar);
+gonder('grup.php?id=' . $ozelGrupId, [
+    'csrf_token' => $t, 'id' => $ozelGrupId, 'islem' => 'uye_ekle', 'ogrenci_id' => $ogrenciId,
+], $jar);
+$t = csrf_al('grup.php?id=' . $ozelGrupId, $jar);
+gonder('grup.php?id=' . $ozelGrupId, [
+    'csrf_token' => $t, 'id' => $ozelGrupId, 'islem' => 'uye_ekle', 'ogrenci_id' => $arkadasId,
+], $jar);
+$ozelSayisi = (int)$pdo->query("SELECT COUNT(*) FROM grup_uyelikleri
+    WHERE grup_id = {$ozelGrupId} AND aktif = 1")->fetchColumn();
+$ozelFlash = flash_metni(git_('grup.php?id=' . $ozelGrupId, $jar)['govde']);
+dogrula($ozelSayisi === 1 && str_contains($ozelFlash, 'yalnızca bir'),
+    'özel derse ikinci aktif katılımcı eklenmesi engelleniyor', $ozelFlash);
+
+// Yaklaşan grup programı ve teknik adları katılımcı portalında görünmeli.
+$yarin = (new DateTimeImmutable('tomorrow'))->format('Y-m-d');
+$pdo->prepare('INSERT INTO oturumlar (grup_id, tarih, hafta_no, notlar, created_at, protokol)
+               VALUES (?, ?, 2, ?, ?, ?)')
+    ->execute([$grup2Id, $yarin, 'GIZLI-OTURUM-NOTU', date('Y-m-d H:i:s'), '']);
+$portalOturumId = (int)$pdo->lastInsertId();
+$teknikId = (int)$pdo->query('SELECT id FROM teknikler ORDER BY id LIMIT 1')->fetchColumn();
+$pdo->prepare('INSERT INTO oturum_teknikleri
+    (oturum_id, teknik_id, sira, sure_dk, uygulama_notu, islendi)
+    VALUES (?, ?, 1, 12, ?, NULL)')
+    ->execute([$portalOturumId, $teknikId, 'GIZLI-UYGULAMA-NOTU']);
+$teknikAdi = (string)$pdo->query("SELECT ad FROM teknikler WHERE id = {$teknikId}")->fetchColumn();
+$erisimKodu = (string)$pdo->query("SELECT erisim_kodu FROM ogrenciler WHERE id = {$ogrenciId}")->fetchColumn();
+$evJar = [];
+$t = csrf_al('ev.php', $evJar);
+gonder('ev.php', ['csrf_token' => $t, 'islem' => 'giris', 'kod' => $erisimKodu], $evJar);
+$evHtml = git_('ev.php', $evJar)['govde'];
+dogrula(str_contains($evHtml, 'Çarşamba Ansambl')
+    && str_contains($evHtml, 'ARKADAS-2')
+    && str_contains($evHtml, $teknikAdi)
+    && str_contains($evHtml, 'Bagetlerini getir')
+    && !str_contains($evHtml, 'GELECEK-DUYURU'),
+    'katılımcı programı, üye takma adlarını ve yalnız geçerli duyuruları görebiliyor');
+dogrula(!str_contains($evHtml, 'GIZLI-VELI-NOTU')
+    && !str_contains($evHtml, 'GIZLI-OTURUM-NOTU')
+    && !str_contains($evHtml, 'GIZLI-UYGULAMA-NOTU')
+    && !str_contains($evHtml, '>2012<'),
+    'portal grup arkadaşlarının kişisel ve eğitmen notlarını sızdırmıyor');
+
+$t = csrf_al('grup.php?id=' . $grup2Id, $jar);
+gonder('grup.php?id=' . $grup2Id, [
+    'csrf_token' => $t, 'id' => $grup2Id, 'islem' => 'duyuru_durum',
+    'duyuru_id' => $duyuruId, 'aktif_yap' => 0,
+], $jar);
+$evHtmlKapali = git_('ev.php', $evJar)['govde'];
+dogrula(!str_contains($evHtmlKapali, 'Bagetlerini getir'),
+    'yayından kaldırılan duyuru katılımcı portalından anında kalkıyor');
+
+// Portal yalnız ödevin kendi modül türünü ve etkin tarih aralığını kaydedebilmeli.
+$calismaId = (int)$pdo->query("SELECT id FROM ev_calismalari
+    WHERE tur = 'vurus_tutturma' ORDER BY id LIMIT 1")->fetchColumn();
+$pdo->prepare('INSERT INTO ev_odevleri
+    (ogrenci_id, calisma_id, baslangic, bitis, hedef_gun, notlar, created_at)
+    VALUES (?, ?, ?, ?, 5, ?, ?)')
+    ->execute([$ogrenciId, $calismaId, date('Y-m-d'), date('Y-m-d', strtotime('+2 days')), '', date('Y-m-d H:i:s')]);
+$aktifOdevId = (int)$pdo->lastInsertId();
+$pdo->prepare('INSERT INTO ev_odevleri
+    (ogrenci_id, calisma_id, baslangic, bitis, hedef_gun, notlar, created_at)
+    VALUES (?, ?, ?, ?, 5, ?, ?)')
+    ->execute([$ogrenciId, $calismaId, '2025-01-01', '2025-01-02', '', date('Y-m-d H:i:s')]);
+$eskiOdevId = (int)$pdo->lastInsertId();
+$evSonucOnce = (int)$pdo->query("SELECT COUNT(*) FROM protokol_sonuclari
+    WHERE ogrenci_id = {$ogrenciId} AND kaynak = 'ev'")->fetchColumn();
+$tEv = csrf_al('ev.php', $evJar);
+gonder('ev.php', [
+    'csrf_token' => $tEv, 'islem' => 'modul_sonuc', 'odev_id' => $aktifOdevId,
+    'protokol' => 'ritim_okuma', 'skor' => 99, 'bpm' => 72, 'detay' => '{}',
+], $evJar);
+$tEv = csrf_al('ev.php', $evJar);
+gonder('ev.php', [
+    'csrf_token' => $tEv, 'islem' => 'modul_sonuc', 'odev_id' => $eskiOdevId,
+    'protokol' => 'vurus_tutturma', 'skor' => 99, 'bpm' => 72, 'detay' => '{}',
+], $evJar);
+$evSonucSahte = (int)$pdo->query("SELECT COUNT(*) FROM protokol_sonuclari
+    WHERE ogrenci_id = {$ogrenciId} AND kaynak = 'ev'")->fetchColumn();
+$tEv = csrf_al('ev.php', $evJar);
+gonder('ev.php', [
+    'csrf_token' => $tEv, 'islem' => 'modul_sonuc', 'odev_id' => $aktifOdevId,
+    'protokol' => 'vurus_tutturma', 'skor' => 88, 'bpm' => 72, 'detay' => '{}',
+], $evJar);
+$evSonucGecerli = (int)$pdo->query("SELECT COUNT(*) FROM protokol_sonuclari
+    WHERE ogrenci_id = {$ogrenciId} AND kaynak = 'ev'")->fetchColumn();
+dogrula($evSonucSahte === $evSonucOnce && $evSonucGecerli === $evSonucOnce + 1,
+    'portal farklı modül türü ve süresi geçmiş ödev için sahte sonuç kaydetmiyor');
+$pdo->exec("DELETE FROM protokol_sonuclari WHERE ogrenci_id = {$ogrenciId} AND kaynak = 'ev'");
+$pdo->exec("DELETE FROM ev_odevleri WHERE id IN ({$aktifOdevId}, {$eskiOdevId})");
+
+$t = csrf_al('ev-programi.php', $jar);
+gonder('ev-programi.php', [
+    'csrf_token' => $t, 'islem' => 'ata', 'hedef' => 'o' . $ogrenciId,
+    'calisma_id' => $calismaId, 'baslangic' => '2026-08-10', 'bitis' => '2026-08-01',
+    'hedef_gun' => 5, 'notlar' => '',
+], $jar);
+$tersOdev = (int)$pdo->query("SELECT COUNT(*) FROM ev_odevleri
+    WHERE ogrenci_id = {$ogrenciId} AND baslangic = '2026-08-10' AND bitis = '2026-08-01'")->fetchColumn();
+dogrula($tersOdev === 0, 'ödev bitiş tarihi başlangıçtan önceyse atama reddediliyor');
+$pdo = null;
 
 foreach ([[52, 1], [83, 1]] as [$skor, $std]) {
     $t = csrf_al('metronom.php', $jar);
@@ -389,6 +716,14 @@ $y = git_('sertifika.php?ogrenci_id=999999', $jar);
 dogrula($y['durum'] === 404, 'olmayan kayıt → 404');
 
 bolum('Temizlik (silme + basamaklı silme)');
+$t = csrf_al('ogrenciler.php', $jar);
+$y = gonder('ogrenci-sil.php', ['csrf_token' => $t, 'id' => $arkadasId], $jar);
+$t = csrf_al('gruplar.php', $jar);
+gonder('grup-sil.php', ['csrf_token' => $t, 'id' => $ozelGrupId], $jar);
+$t = csrf_al('gruplar.php', $jar);
+gonder('grup-sil.php', ['csrf_token' => $t, 'id' => $grup2Id], $jar);
+$t = csrf_al('gruplar.php', $jar);
+gonder('grup-sil.php', ['csrf_token' => $t, 'id' => $cakisanGrupId], $jar);
 $t = csrf_al('ogrenciler.php', $jar);
 $y = gonder('ogrenci-sil.php', ['csrf_token' => $t, 'id' => $ogrenciId], $jar);
 $flash = flash_metni(git_('ogrenciler.php', $jar)['govde']); // flash'ı tüket

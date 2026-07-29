@@ -4,7 +4,7 @@ define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
 
 $tarih = trim((string)($_GET['tarih'] ?? today()));
-if (!DateTime::createFromFormat('Y-m-d', $tarih)) { $tarih = today(); }
+if (!valid_date_ymd($tarih)) { $tarih = today(); }
 [$pzt, $paz] = week_bounds($tarih);
 $rapor = report_weekly($pzt, $paz);
 

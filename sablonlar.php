@@ -60,7 +60,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             flash_set('hata', 'Şablon bulunamadı.');
         } elseif (!group_get($grupId)) {
             flash_set('hata', 'Uygulanacak grubu seçin.');
-        } elseif (!DateTime::createFromFormat('Y-m-d', $tarih)) {
+        } elseif (!valid_date_ymd($tarih)) {
             flash_set('hata', 'Geçerli bir başlangıç tarihi seçin.');
         } else {
             $sonuc = template_apply($sablonId, $grupId, $tarih, $mod, $bFark);

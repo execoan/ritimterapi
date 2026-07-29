@@ -13,8 +13,8 @@ if (!$ogrenci) { not_found('Öğrenci bulunamadı.'); }
 
 $from = trim((string)($_GET['from'] ?? ''));
 $to   = trim((string)($_GET['to'] ?? ''));
-if (!DateTime::createFromFormat('Y-m-d', $from)) { $from = now()->modify('-8 weeks')->format('Y-m-d'); }
-if (!DateTime::createFromFormat('Y-m-d', $to))   { $to = today(); }
+if (!valid_date_ymd($from)) { $from = now()->modify('-8 weeks')->format('Y-m-d'); }
+if (!valid_date_ymd($to))   { $to = today(); }
 
 $rapor = report_student($ogrenciId, $from, $to);
 $evOzet = report_student_home($ogrenciId, $from, $to);

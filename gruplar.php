@@ -20,23 +20,24 @@ $gruplar = groups_list();
 $PAGE_TITLE = 'Gruplar';
 require APP_DIR . '/includes/view/header.php';
 ?>
-<div class="sayfa-baslik"><h1>Gruplar</h1></div>
+<div class="sayfa-baslik"><h1>Dersler ve gruplar</h1></div>
 
 <div class="kart">
   <div class="kart-baslik">
-    <h2>Grup listesi</h2>
-    <span class="rozet rozet-acik"><?= count($gruplar) ?> grup</span>
+    <h2>Ders listesi</h2>
+    <span class="rozet rozet-acik"><?= count($gruplar) ?> kayıt</span>
   </div>
   <?php if (!$gruplar): ?>
     <div class="bos-durum">Henüz grup yok — aşağıdan ilk grubu ekleyin.</div>
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Grup</th><th>Yaş aralığı</th><th>Ders günü</th><th class="sayi">Öğrenci</th><th class="sayi">Oturum</th><th>Durum</th></tr></thead>
+      <thead><tr><th>Ders / grup</th><th>Tür</th><th>Yaş aralığı</th><th>Ders günü</th><th class="sayi">Katılımcı</th><th class="sayi">Oturum</th><th>Durum</th></tr></thead>
       <tbody>
         <?php foreach ($gruplar as $g): ?>
         <tr>
           <td><a href="<?= e(url('grup.php?id=' . (int)$g['id'])) ?>"><?= e($g['ad']) ?></a></td>
+          <td><span class="rozet rozet-acik"><?= e(GRUP_TUR_LABELS[$g['tur'] ?? 'grup']) ?></span></td>
           <td><?= e($g['yas_araligi'] ?: '—') ?></td>
           <td><?= e(GUNLER[(int)$g['gun']] ?? '—') ?><?= $g['saat'] ? ' ' . e($g['saat']) : '' ?></td>
           <td class="sayi"><?= (int)$g['ogrenci_sayisi'] ?></td>
@@ -51,13 +52,21 @@ require APP_DIR . '/includes/view/header.php';
 </div>
 
 <div class="kart">
-  <h2>Yeni grup</h2>
+  <h2>Yeni ders / grup</h2>
   <form method="post" action="<?= e(url('gruplar.php')) ?>">
     <?= csrf_field() ?>
     <div class="form-grid">
-      <label class="form-alan">Grup adı
+      <label class="form-alan">Ders / grup adı
         <input type="text" name="ad" class="girdi" value="<?= e(old('ad')) ?>" maxlength="80" required
                placeholder="Örn. Çarşamba 8–11 yaş">
+      </label>
+      <label class="form-alan">Ders türü
+        <select name="tur" class="secim">
+          <?php foreach (GRUP_TUR_LABELS as $tur => $etiket): ?>
+          <option value="<?= e($tur) ?>" <?= (string)old('tur', 'grup') === $tur ? 'selected' : '' ?>><?= e($etiket) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <span class="alan-ipucu">Özel ders yalnızca bir aktif katılımcı kabul eder.</span>
       </label>
       <label class="form-alan">Yaş aralığı
         <input type="text" name="yas_araligi" class="girdi" value="<?= e(old('yas_araligi')) ?>" maxlength="40"
@@ -79,7 +88,7 @@ require APP_DIR . '/includes/view/header.php';
       </label>
     </div>
     <div class="form-butonlar">
-      <button type="submit" class="btn btn-birincil">Grup Ekle</button>
+      <button type="submit" class="btn btn-birincil">Ders Ekle</button>
     </div>
   </form>
 </div>

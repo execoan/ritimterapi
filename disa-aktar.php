@@ -19,11 +19,18 @@ fwrite($cikti, "\xEF\xBB\xBF"); // BOM: Excel'in UTF-8 tanıması için
 $yaz = fn(array $satir) => fputcsv($cikti, $satir, ';', '"', '\\');
 
 if ($tur === 'protokol') {
-    $yaz(['Tarih', 'Saat', 'Öğrenci', 'Grup', 'Protokol', 'Skor (0-100)', 'BPM', 'Kaynak', 'Standart ölçüm', 'Not']);
-    $st = db()->query('SELECT p.*, o.kod, g.ad AS grup_ad
+    // Ham ölçüler de dışa aktarılır: skor sabit kaymayı içinde taşır, asıl
+    // analiz kararlılık (SD) ve detay JSON'u üzerinden yapılır.
+    $yaz(['Tarih', 'Saat', 'Öğrenci', 'Grup', 'Protokol', 'Skor (0-100)',
+          'Kararlılık SD (ms)', 'BPM', 'Kaynak', 'Standart ölçüm', 'Kalibrasyon kalitesi',
+          'Not', 'Ham veri (JSON)']);
+    $st = db()->query('SELECT p.*, o.kod,
+                              (SELECT GROUP_CONCAT(g.ad, " • ")
+                                 FROM grup_uyelikleri gu
+                                 JOIN gruplar g ON g.id = gu.grup_id
+                                WHERE gu.ogrenci_id = o.id AND gu.aktif = 1) AS grup_ad
                          FROM protokol_sonuclari p
                          JOIN ogrenciler o ON o.id = p.ogrenci_id
-                         LEFT JOIN gruplar g ON g.id = o.grup_id
                         ORDER BY p.created_at, p.id');
     foreach ($st->fetchAll() as $r) {
         $yaz([
@@ -33,10 +40,13 @@ if ($tur === 'protokol') {
             $r['grup_ad'] ?? '',
             PROTOKOL_LABELS[$r['protokol']] ?? $r['protokol'],
             (int)$r['skor'],
+            $r['sd_ms'] !== null && $r['sd_ms'] !== '' ? (int)$r['sd_ms'] : '',
             $r['bpm'] !== null ? (int)$r['bpm'] : '',
             ($r['kaynak'] ?? 'atolye') === 'ev' ? 'Ev' : 'Atölye',
             (int)($r['standart'] ?? 0) === 1 ? 'Evet' : 'Hayır',
+            OLCUM_KALITE_LABELS[(string)($r['kalite'] ?? '')] ?? '',
             (string)$r['notlar'],
+            (string)($r['detay'] ?? ''),
         ]);
     }
 } else {

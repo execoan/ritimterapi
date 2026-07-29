@@ -379,6 +379,88 @@ function seed_studies(): void
     }
 }
 
+/**
+ * Yerel eğitim PDF'lerinin grup çalışması taramasında doğrulanan bağımsız
+ * kaynaklar. Mevcut kurulumlara da yalnız bir kez eklenir; aynı DOI varsa
+ * kullanıcının kaydı korunur ve yalnız ilgili teknik bağı kurulur.
+ */
+function seed_group_workshop_studies(): void
+{
+    if (site_text('sistem_grup_atolyesi_kaynak_seed') === '1') { return; }
+    $pdo = db();
+    $calismalar = [
+        // [anahtar, başlık, yazarlar, yıl, dergi, doi, tür, nötr özet]
+        ['senkron_meta',
+         'Prosocial Consequences of Interpersonal Synchrony: A Meta-Analysis',
+         'Rennung & Göritz', 2016, 'Zeitschrift für Psychologie',
+         '10.1027/2151-2604/a000252', 'meta',
+         'Altmış yayımlanmış ve yayımlanmamış deneyi birleştiren meta-analiz, kişilerarası senkronun prososyal tutum ve davranış ölçümlerinde orta büyüklükte etkisini bildirdi. Deneyci etkisi ve bağlam sonucu değiştirebilir; atölye dışına kalıcı aktarım garanti değildir.'],
+        ['grup_davul',
+         'Effects of Group Drumming Interventions on Anxiety, Depression, Social Resilience and Inflammatory Immune Response among Mental Health Service Users',
+         'Fancourt, Perkins, Ascenso et al.', 2016, 'PLOS ONE',
+         '10.1371/journal.pone.0151136', 'deneysel',
+         'On haftalık grup davulu çalışması olumlu sonuçlar bildirdi. Atama randomize değildi ve çalışma belirli bir hizmet bağlamında yürütüldü; bu nedenle bulgular ön ve bağlama duyarlı kanıt olarak değerlendirilmelidir.'],
+        ['ras_derleme',
+         'The effects of rhythmic auditory stimulation on functional ambulation after stroke: a systematic review',
+         'Gonzalez-Hoelling, Reig-García, Bertran-Noguer & Suñer-Soler', 2024,
+         'BMC Complementary Medicine and Therapies',
+         '10.1186/s12906-023-04310-3', 'derleme',
+         'Yirmi bir çalışmayı ve 948 katılımcıyı kapsayan derleme, ritmik işitsel ipuçlarının yürüme ölçümlerinde olumlu fakat heterojen bulgularını bildirdi. Yanlılık riski ve müdahale çeşitliliği nedeniyle genelleme dikkatle yapılmalıdır.'],
+        ['nefes_meta',
+         'The Effect of Slow-Paced Breathing on Cardiovascular and Emotion Functions: A Meta-Analysis and Systematic Review',
+         'Shao, Man & Lee', 2024, 'Mindfulness',
+         '10.1007/s12671-023-02294-2', 'meta',
+         'Klinik olmayan 1.133 katılımcılı 31 çalışmanın sentezi bazı kısa süreli kardiyovasküler ölçümlerde etki, olumsuz duygu azalmasında ise sınırda sonuç bildirdi. Yerel eğitim notlarındaki nefes uygulamasının doğrulaması değildir.'],
+    ];
+
+    $sec = $pdo->prepare('SELECT id FROM akademik_calismalar WHERE lower(doi) = lower(?) LIMIT 1');
+    $ekle = $pdo->prepare(
+        'INSERT INTO akademik_calismalar
+            (baslik, yazarlar, yil, dergi, doi, tur, ozet, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $bagla = $pdo->prepare(
+        'INSERT OR IGNORE INTO teknik_calismalari (teknik_id, calisma_id, iliski_notu)
+         VALUES (?, ?, ?)'
+    );
+    $teknikId = $pdo->query('SELECT ad, id FROM teknikler')->fetchAll(PDO::FETCH_KEY_PAIR);
+    $id = [];
+
+    $pdo->exec('BEGIN');
+    try {
+        foreach ($calismalar as $c) {
+            $sec->execute([$c[5]]);
+            $bulunan = (int)($sec->fetchColumn() ?: 0);
+            if ($bulunan === 0) {
+                $ekle->execute([$c[1], $c[2], $c[3], $c[4], $c[5], $c[6], $c[7], now_str()]);
+                $bulunan = (int)$pdo->lastInsertId();
+            }
+            $id[$c[0]] = $bulunan;
+        }
+
+        $baglar = [
+            ['Daire Senkroni', 'senkron_meta',
+             'Ortak zamanlamanın sosyal ölçümlerle ilişkisine dayanak; atölye dışına aktarım iddiası sınırlıdır.'],
+            ['Daire Senkroni', 'grup_davul',
+             'Grup davulu için ön çalışma; randomize değildir ve sonuç vaadine dönüştürülmez.'],
+            ['Katmanlı grup ritmi', 'senkron_meta',
+             'Aynı anda ritim üretme, kişilerarası senkron görev ailesindedir.'],
+            ['Metronoma eşlik', 'ras_derleme',
+             'Ritmik işitsel ipucunun hareket alanındaki kanıtı; genel atölye sonuçlarına doğrudan genellenmez.'],
+        ];
+        foreach ($baglar as [$teknik, $anahtar, $not]) {
+            if (isset($teknikId[$teknik], $id[$anahtar])) {
+                $bagla->execute([(int)$teknikId[$teknik], $id[$anahtar], $not]);
+            }
+        }
+        site_text_set('sistem_grup_atolyesi_kaynak_seed', '1');
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+}
+
 /** MOXO bölümü metin varsayılanları (yalnız yoksa eklenir; düzenlemeler ezilmez). */
 function seed_moxo_texts(): void
 {

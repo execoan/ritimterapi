@@ -128,6 +128,22 @@ function today(): string
     return now()->format('Y-m-d');
 }
 
+/** YYYY-MM-DD biçiminde ve takvimde gerçekten var olan tarih mi? */
+function valid_date_ymd(?string $value): bool
+{
+    if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) { return false; }
+    $d = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+    return $d !== false && $d->format('Y-m-d') === $value;
+}
+
+/** 24 saatlik HH:MM biçiminde gerçekten var olan saat mi? */
+function valid_time_hm(?string $value): bool
+{
+    if (!is_string($value) || !preg_match('/^\d{2}:\d{2}$/', $value)) { return false; }
+    $d = DateTimeImmutable::createFromFormat('!H:i', $value);
+    return $d !== false && $d->format('H:i') === $value;
+}
+
 const GUNLER = [1 => 'Pazartesi', 2 => 'Salı', 3 => 'Çarşamba', 4 => 'Perşembe',
                 5 => 'Cuma', 6 => 'Cumartesi', 7 => 'Pazar'];
 const GUNLER_KISA = [1 => 'Pzt', 2 => 'Sal', 3 => 'Çar', 4 => 'Per', 5 => 'Cum', 6 => 'Cmt', 7 => 'Paz'];
@@ -138,8 +154,9 @@ const AYLAR_KISA = [1 => 'Oca', 2 => 'Şub', 3 => 'Mar', 4 => 'Nis', 5 => 'May',
 function format_date_tr(?string $ymd, bool $gunAdi = true): string
 {
     if (!$ymd) { return '—'; }
-    $d = DateTime::createFromFormat('Y-m-d', substr($ymd, 0, 10));
-    if (!$d) { return $ymd; }
+    $tarih = substr($ymd, 0, 10);
+    if (!valid_date_ymd($tarih)) { return $ymd; }
+    $d = DateTime::createFromFormat('Y-m-d', $tarih);
     $s = (int)$d->format('j') . ' ' . AYLAR_KISA[(int)$d->format('n')] . ' ' . $d->format('Y');
     return $gunAdi ? $s . ' ' . GUNLER_KISA[(int)$d->format('N')] : $s;
 }
@@ -147,8 +164,7 @@ function format_date_tr(?string $ymd, bool $gunAdi = true): string
 /** Verilen tarihin (varsayılan bugün) Pazartesi–Pazar sınırları: ['YYYY-MM-DD', 'YYYY-MM-DD']. */
 function week_bounds(?string $ymd = null): array
 {
-    $d = $ymd ? DateTime::createFromFormat('Y-m-d', $ymd) : now();
-    if (!$d) { $d = now(); }
+    $d = $ymd && valid_date_ymd($ymd) ? DateTime::createFromFormat('Y-m-d', $ymd) : now();
     $pzt = (clone $d)->modify('monday this week');
     $paz = (clone $pzt)->modify('+6 days');
     return [$pzt->format('Y-m-d'), $paz->format('Y-m-d')];
@@ -195,6 +211,7 @@ function tr_sort_by(array &$rows, string $key): void
 const KANIT_LABELS = ['guclu' => 'Güçlü', 'orta' => 'Orta', 'zayif' => 'Zayıf', 'yok' => 'Kanıt yok'];
 const SEVIYE_LABELS = [1 => 'Başlangıç', 2 => 'Orta', 3 => 'İleri'];
 const KATILIM_LABELS = ['katildi' => 'Katıldı', 'gec' => 'Geç geldi', 'gelmedi' => 'Gelmedi'];
+const GRUP_TUR_LABELS = ['grup' => 'Grup dersi', 'ozel' => 'Özel ders'];
 const PROTOKOL_LABELS = ['vurus_tutturma' => 'Vuruş Tutturma', 'bpm_bulma' => 'BPM Bulma',
                          'ritim_okuma' => 'Ritim Okuma', 'spontan_tempo' => 'Spontan Tempo',
                          'aksak_bulma' => 'Aksak Vuruş Algısı', 'icsel_ritim' => 'İçsel Ritim'];
@@ -202,6 +219,15 @@ const EV_TUR_LABELS = ['serbest' => 'Serbest (işaretlemeli)', 'metronom' => 'Me
                        'vurus_tutturma' => 'Vuruş Tutturma (mini)', 'ritim_okuma' => 'Ritim Okuma',
                        'icsel_ritim' => 'İçsel Ritim (mini)'];
 const KITLE_LABELS = ['cocuk' => 'Çocuk & Genç', 'yetiskin' => 'Yetişkin', 'hepsi' => 'Hepsi'];
+
+/* Ölçüm anındaki kalibrasyon kalitesi (zamanlama-cekirdegi.js kaliteDurumu.kod) */
+const OLCUM_KALITE_LABELS = [
+    'cok-iyi' => 'Çok iyi', 'iyi' => 'İyi', 'orta' => 'Orta', 'zayif' => 'Zayıf',
+    'elle' => 'Elle ayarlı', 'eski' => 'Kalibrasyon eski', 'cihaz-degisti' => 'Cihaz değişmiş',
+    'eksik' => 'Kalibrasyonsuz',
+];
+/** Karşılaştırmaya girmesi güvenli sayılan kalibrasyon kaliteleri. */
+const OLCUM_KALITE_GUVENLI = ['cok-iyi', 'iyi', 'orta'];
 const CALISMA_TUR_LABELS = [
     'rct' => 'Randomize kontrollü', 'deneysel' => 'Deneysel', 'meta' => 'Meta-analiz',
     'derleme' => 'Sistematik derleme', 'pilot' => 'Pilot / uygulanabilirlik',

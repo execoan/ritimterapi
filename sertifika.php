@@ -15,8 +15,8 @@ if (!$ogrenci) { not_found('Öğrenci bulunamadı.'); }
 
 $from = trim((string)($_GET['from'] ?? ''));
 $to   = trim((string)($_GET['to'] ?? ''));
-if (!DateTime::createFromFormat('Y-m-d', $from)) { $from = now()->modify('-12 weeks')->format('Y-m-d'); }
-if (!DateTime::createFromFormat('Y-m-d', $to))   { $to = today(); }
+if (!valid_date_ymd($from)) { $from = now()->modify('-12 weeks')->format('Y-m-d'); }
+if (!valid_date_ymd($to))   { $to = today(); }
 
 $olcumlerIstendi = (string)($_GET['olcumler'] ?? '') === '1';
 $rapor = report_student($ogrenciId, $from, $to);

@@ -23,5 +23,17 @@ jobs:
           extensions: pdo_sqlite, sqlite3, mbstring
           coverage: none
 
+      - name: Zamanlama ve öğrenme birim testlerini çalıştır
+        run: |
+          node test/zamanlama.test.js
+          node test/ritim-ogrenme.test.js
+          node test/metronom-cekirdegi.test.js
+          node test/metronom-setlist.test.js
+          node test/motor-koordinasyon.test.js
+          node test/grup-atolyesi.test.js
+
       - name: Duman testini çalıştır
-        run: php test/smoke.php
+        run: |
+          php test/migration-v13.php
+          php test/olcum.test.php
+          php test/smoke.php

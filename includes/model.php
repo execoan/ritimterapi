@@ -6,7 +6,11 @@ if (!defined('RITIM')) { http_response_code(403); exit; }
 function groups_list(bool $onlyActive = false): array
 {
     $sql = 'SELECT g.*,
-                   (SELECT COUNT(*) FROM ogrenciler o WHERE o.grup_id = g.id AND o.aktif = 1) AS ogrenci_sayisi,
+                   (SELECT COUNT(*) FROM grup_uyelikleri gu
+                     JOIN ogrenciler o ON o.id = gu.ogrenci_id
+                    WHERE gu.grup_id = g.id AND gu.aktif = 1 AND o.aktif = 1) AS ogrenci_sayisi,
+                   (SELECT COUNT(*) FROM grup_uyelikleri gu
+                    WHERE gu.grup_id = g.id AND gu.aktif = 1) AS uyelik_sayisi,
                    (SELECT COUNT(*) FROM oturumlar s WHERE s.grup_id = g.id)                  AS oturum_sayisi
               FROM gruplar g' . ($onlyActive ? ' WHERE g.aktif = 1' : '');
     $rows = db()->query($sql)->fetchAll();
@@ -29,23 +33,51 @@ function group_save(array $d, ?int $id = null): array
     $gun = (int)($d['gun'] ?? 0);
     if ($gun < 1 || $gun > 7) { return ['ok' => false, 'error' => 'Geçerli bir gün seçin.', 'id' => null]; }
     $saat = trim((string)($d['saat'] ?? ''));
-    if ($saat !== '' && !preg_match('/^\d{2}:\d{2}$/', $saat)) {
+    if ($saat !== '' && !valid_time_hm($saat)) {
         return ['ok' => false, 'error' => 'Saat SS:DD biçiminde olmalı (örn. 17:30).', 'id' => null];
     }
     $baslangic = trim((string)($d['baslangic_tarihi'] ?? ''));
-    if ($baslangic !== '' && !DateTime::createFromFormat('Y-m-d', $baslangic)) {
+    if ($baslangic !== '' && !valid_date_ymd($baslangic)) {
         return ['ok' => false, 'error' => 'Başlangıç tarihi geçersiz.', 'id' => null];
     }
+    $tur = (string)($d['tur'] ?? 'grup');
+    if (!isset(GRUP_TUR_LABELS[$tur])) {
+        return ['ok' => false, 'error' => 'Geçerli bir ders türü seçin.', 'id' => null];
+    }
+    if ($id !== null && $tur === 'ozel') {
+        $st = db()->prepare('SELECT COUNT(*) FROM grup_uyelikleri WHERE grup_id = ? AND aktif = 1');
+        $st->execute([$id]);
+        if ((int)$st->fetchColumn() > 1) {
+            return ['ok' => false, 'error' => 'Birden fazla aktif katılımcısı olan ders özel derse çevrilemez.', 'id' => null];
+        }
+    }
+    if ($id !== null && $saat !== '') {
+        $st = db()->prepare('SELECT o.kod, diger.ad AS diger_grup
+                               FROM grup_uyelikleri mevcut
+                               JOIN ogrenciler o ON o.id = mevcut.ogrenci_id
+                               JOIN grup_uyelikleri gu ON gu.ogrenci_id = mevcut.ogrenci_id
+                                    AND gu.aktif = 1 AND gu.grup_id != mevcut.grup_id
+                               JOIN gruplar diger ON diger.id = gu.grup_id AND diger.aktif = 1
+                              WHERE mevcut.grup_id = ? AND mevcut.aktif = 1
+                                AND diger.gun = ? AND diger.saat = ?
+                              LIMIT 1');
+        $st->execute([$id, $gun, $saat]);
+        if ($cakisma = $st->fetch()) {
+            return ['ok' => false,
+                    'error' => $cakisma['kod'] . ' için program çakışması var: ' . $cakisma['diger_grup']
+                             . ' aynı gün ve saatte.', 'id' => null];
+        }
+    }
     $vals = [$ad, trim((string)($d['yas_araligi'] ?? '')), $gun, $saat,
-             isset($d['aktif']) ? (int)!!$d['aktif'] : 1, $baslangic];
+             isset($d['aktif']) ? (int)!!$d['aktif'] : 1, $baslangic, $tur];
     if ($id === null) {
         $vals[] = now_str();
-        db()->prepare('INSERT INTO gruplar (ad, yas_araligi, gun, saat, aktif, baslangic_tarihi, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?)')->execute($vals);
+        db()->prepare('INSERT INTO gruplar (ad, yas_araligi, gun, saat, aktif, baslangic_tarihi, tur, created_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)')->execute($vals);
         return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
     }
     $vals[] = $id;
-    db()->prepare('UPDATE gruplar SET ad = ?, yas_araligi = ?, gun = ?, saat = ?, aktif = ?, baslangic_tarihi = ?
+    db()->prepare('UPDATE gruplar SET ad = ?, yas_araligi = ?, gun = ?, saat = ?, aktif = ?, baslangic_tarihi = ?, tur = ?
                    WHERE id = ?')->execute($vals);
     return ['ok' => true, 'error' => null, 'id' => $id];
 }
@@ -54,6 +86,61 @@ function group_save(array $d, ?int $id = null): array
 function group_delete(int $id): void
 {
     db()->prepare('DELETE FROM gruplar WHERE id = ?')->execute([$id]);
+}
+
+/* ---------- Grup duyuruları ---------- */
+
+function group_announcements(int $grupId, bool $onlyVisible = false): array
+{
+    $sql = 'SELECT * FROM grup_duyurulari WHERE grup_id = ?';
+    $par = [$grupId];
+    if ($onlyVisible) {
+        $sql .= ' AND aktif = 1 AND yayin_tarihi <= ?
+                  AND (bitis_tarihi IS NULL OR bitis_tarihi = "" OR bitis_tarihi >= ?)';
+        $par[] = today();
+        $par[] = today();
+    }
+    $sql .= ' ORDER BY aktif DESC, yayin_tarihi DESC, id DESC';
+    $st = db()->prepare($sql);
+    $st->execute($par);
+    return $st->fetchAll();
+}
+
+/** @return array{ok:bool,error:?string,id:?int} */
+function group_announcement_save(int $grupId, array $d): array
+{
+    if (!group_get($grupId)) {
+        return ['ok' => false, 'error' => 'Ders/grup bulunamadı.', 'id' => null];
+    }
+    $baslik = trim((string)($d['baslik'] ?? ''));
+    $mesaj = trim((string)($d['mesaj'] ?? ''));
+    if ($baslik === '') {
+        return ['ok' => false, 'error' => 'Duyuru başlığı boş olamaz.', 'id' => null];
+    }
+    if (mb_strlen($baslik) > 80 || mb_strlen($mesaj) > 500) {
+        return ['ok' => false, 'error' => 'Duyuru metni izin verilen uzunluğu aşıyor.', 'id' => null];
+    }
+    $yayin = trim((string)($d['yayin_tarihi'] ?? today()));
+    $bitis = trim((string)($d['bitis_tarihi'] ?? ''));
+    if (!valid_date_ymd($yayin) || ($bitis !== '' && !valid_date_ymd($bitis))) {
+        return ['ok' => false, 'error' => 'Duyuru tarihlerini kontrol edin.', 'id' => null];
+    }
+    if ($bitis !== '' && $bitis < $yayin) {
+        return ['ok' => false, 'error' => 'Bitiş tarihi yayın tarihinden önce olamaz.', 'id' => null];
+    }
+    db()->prepare('INSERT INTO grup_duyurulari
+            (grup_id, baslik, mesaj, yayin_tarihi, bitis_tarihi, aktif, created_at)
+         VALUES (?, ?, ?, ?, ?, 1, ?)')
+        ->execute([$grupId, $baslik, $mesaj, $yayin, $bitis !== '' ? $bitis : null, now_str()]);
+    return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
+}
+
+function group_announcement_set_active(int $grupId, int $duyuruId, bool $aktif): bool
+{
+    $st = db()->prepare('UPDATE grup_duyurulari SET aktif = ?
+                         WHERE id = ? AND grup_id = ?');
+    $st->execute([$aktif ? 1 : 0, $duyuruId, $grupId]);
+    return $st->rowCount() > 0;
 }
 
 /** Grubun ders gününe göre bugünden itibaren ilk uygun tarih. */
@@ -71,9 +158,17 @@ function students_list(?int $grupId = null, ?int $aktif = null): array
 {
     $kosul = [];
     $par = [];
-    if ($grupId !== null) { $kosul[] = 'o.grup_id = ?'; $par[] = $grupId; }
+    if ($grupId !== null) {
+        $kosul[] = 'EXISTS (SELECT 1 FROM grup_uyelikleri guf
+                            WHERE guf.ogrenci_id = o.id AND guf.grup_id = ? AND guf.aktif = 1)';
+        $par[] = $grupId;
+    }
     if ($aktif !== null)  { $kosul[] = 'o.aktif = ?';   $par[] = $aktif; }
-    $sql = 'SELECT o.*, g.ad AS grup_ad
+    $sql = 'SELECT o.*, g.ad AS grup_ad,
+                   (SELECT GROUP_CONCAT(g2.ad, " • ")
+                      FROM grup_uyelikleri gu2
+                      JOIN gruplar g2 ON g2.id = gu2.grup_id
+                     WHERE gu2.ogrenci_id = o.id AND gu2.aktif = 1) AS grup_adlari
               FROM ogrenciler o LEFT JOIN gruplar g ON g.id = o.grup_id'
          . ($kosul ? ' WHERE ' . implode(' AND ', $kosul) : '');
     $st = db()->prepare($sql);
@@ -85,7 +180,12 @@ function students_list(?int $grupId = null, ?int $aktif = null): array
 
 function student_get(int $id): ?array
 {
-    $st = db()->prepare('SELECT o.*, g.ad AS grup_ad FROM ogrenciler o
+    $st = db()->prepare('SELECT o.*, g.ad AS grup_ad,
+                         (SELECT GROUP_CONCAT(g2.ad, " • ")
+                            FROM grup_uyelikleri gu2
+                            JOIN gruplar g2 ON g2.id = gu2.grup_id
+                           WHERE gu2.ogrenci_id = o.id AND gu2.aktif = 1) AS grup_adlari
+                         FROM ogrenciler o
                          LEFT JOIN gruplar g ON g.id = o.grup_id WHERE o.id = ?');
     $st->execute([$id]);
     return $st->fetch() ?: null;
@@ -103,28 +203,135 @@ function student_save(array $d, ?int $id = null): array
     $dogum = trim((string)($d['dogum_yili'] ?? ''));
     $dogumYili = null;
     if ($dogum !== '') {
+        if (!preg_match('/^\d{4}$/', $dogum)) {
+            return ['ok' => false, 'error' => 'Doğum yılı dört haneli olmalıdır.', 'id' => null];
+        }
         $dogumYili = (int)$dogum;
         $buYil = (int)now()->format('Y');
         if ($dogumYili < 1920 || $dogumYili > $buYil) {
             return ['ok' => false, 'error' => 'Doğum yılı geçersiz.', 'id' => null];
         }
     }
-    $grupId = (int)($d['grup_id'] ?? 0) ?: null;
-    if ($grupId !== null && !group_get($grupId)) {
+    $grupDegisecek = array_key_exists('grup_id', $d);
+    $grupId = $grupDegisecek ? ((int)($d['grup_id'] ?? 0) ?: null) : null;
+    if ($grupDegisecek && $grupId !== null && !group_get($grupId)) {
         return ['ok' => false, 'error' => 'Seçilen grup bulunamadı.', 'id' => null];
     }
-    $vals = [$kod, $dogumYili, $grupId, trim((string)($d['veli_notu'] ?? '')),
-             isset($d['aktif']) ? (int)!!$d['aktif'] : 1];
+    $aktif = isset($d['aktif']) ? (int)!!$d['aktif'] : 1;
+    $veliNotu = trim((string)($d['veli_notu'] ?? ''));
     if ($id === null) {
-        $vals[] = today();
-        db()->prepare('INSERT INTO ogrenciler (kod, dogum_yili, grup_id, veli_notu, aktif, kayit_tarihi)
-                       VALUES (?, ?, ?, ?, ?, ?)')->execute($vals);
-        return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $pdo->prepare('INSERT INTO ogrenciler (kod, dogum_yili, grup_id, veli_notu, aktif, kayit_tarihi)
+                           VALUES (?, ?, NULL, ?, ?, ?)')->execute([$kod, $dogumYili, $veliNotu, $aktif, today()]);
+            $yeniId = (int)$pdo->lastInsertId();
+            if ($grupId !== null) {
+                $uyelik = group_member_add($grupId, $yeniId);
+                if (!$uyelik['ok']) {
+                    $pdo->rollBack();
+                    return ['ok' => false, 'error' => $uyelik['error'], 'id' => null];
+                }
+            }
+            $pdo->commit();
+            return ['ok' => true, 'error' => null, 'id' => $yeniId];
+        } catch (Throwable $ex) {
+            if ($pdo->inTransaction()) { $pdo->rollBack(); }
+            throw $ex;
+        }
     }
-    $vals[] = $id;
-    db()->prepare('UPDATE ogrenciler SET kod = ?, dogum_yili = ?, grup_id = ?, veli_notu = ?, aktif = ?
-                   WHERE id = ?')->execute($vals);
+    db()->prepare('UPDATE ogrenciler SET kod = ?, dogum_yili = ?, veli_notu = ?, aktif = ?
+                   WHERE id = ?')->execute([$kod, $dogumYili, $veliNotu, $aktif, $id]);
+    if ($grupDegisecek && $grupId !== null) {
+        $uyelik = group_member_add($grupId, $id);
+        if (!$uyelik['ok']) { return ['ok' => false, 'error' => $uyelik['error'], 'id' => null]; }
+    }
     return ['ok' => true, 'error' => null, 'id' => $id];
+}
+
+/** Katılımcının aktif ders/grup üyelikleri. */
+function student_groups(int $ogrenciId, bool $onlyActive = true): array
+{
+    $sql = 'SELECT g.*, gu.baslangic_tarihi AS uyelik_baslangic, gu.bitis_tarihi AS uyelik_bitis,
+                   gu.aktif AS uyelik_aktif
+              FROM grup_uyelikleri gu
+              JOIN gruplar g ON g.id = gu.grup_id
+             WHERE gu.ogrenci_id = ?' . ($onlyActive ? ' AND gu.aktif = 1' : '')
+         . ' ORDER BY g.aktif DESC, g.ad';
+    $st = db()->prepare($sql);
+    $st->execute([$ogrenciId]);
+    return $st->fetchAll();
+}
+
+/** Grupta etkin üyeliği olmayan aktif katılımcılar. */
+function students_not_in_group(int $grupId): array
+{
+    $st = db()->prepare('SELECT o.*
+                           FROM ogrenciler o
+                          WHERE o.aktif = 1
+                            AND NOT EXISTS (
+                                SELECT 1 FROM grup_uyelikleri gu
+                                 WHERE gu.grup_id = ? AND gu.ogrenci_id = o.id AND gu.aktif = 1
+                            )
+                          ORDER BY o.kod');
+    $st->execute([$grupId]);
+    return $st->fetchAll();
+}
+
+/** @return array{ok:bool,error:?string} */
+function group_member_add(int $grupId, int $ogrenciId): array
+{
+    $grup = group_get($grupId);
+    if (!$grup || !student_get($ogrenciId)) {
+        return ['ok' => false, 'error' => 'Grup veya katılımcı bulunamadı.'];
+    }
+    if (($grup['tur'] ?? 'grup') === 'ozel') {
+        $st = db()->prepare('SELECT COUNT(*) FROM grup_uyelikleri
+                             WHERE grup_id = ? AND aktif = 1 AND ogrenci_id != ?');
+        $st->execute([$grupId, $ogrenciId]);
+        if ((int)$st->fetchColumn() > 0) {
+            return ['ok' => false, 'error' => 'Özel derse yalnızca bir aktif katılımcı eklenebilir.'];
+        }
+    }
+    if ((string)$grup['saat'] !== '') {
+        $st = db()->prepare('SELECT g.ad
+                               FROM grup_uyelikleri gu
+                               JOIN gruplar g ON g.id = gu.grup_id
+                              WHERE gu.ogrenci_id = ? AND gu.aktif = 1
+                                AND g.aktif = 1 AND g.id != ?
+                                AND g.gun = ? AND g.saat = ?
+                              LIMIT 1');
+        $st->execute([$ogrenciId, $grupId, (int)$grup['gun'], (string)$grup['saat']]);
+        if ($cakisan = $st->fetchColumn()) {
+            return ['ok' => false,
+                    'error' => 'Program çakışması: ' . $cakisan . ' aynı gün ve saatte.'];
+        }
+    }
+    db()->prepare('INSERT INTO grup_uyelikleri
+            (grup_id, ogrenci_id, aktif, baslangic_tarihi, bitis_tarihi, created_at)
+         VALUES (?, ?, 1, ?, NULL, ?)
+         ON CONFLICT(grup_id, ogrenci_id) DO UPDATE SET
+            aktif = 1, baslangic_tarihi = excluded.baslangic_tarihi, bitis_tarihi = NULL')
+        ->execute([$grupId, $ogrenciId, today(), now_str()]);
+    db()->prepare('UPDATE ogrenciler SET grup_id = COALESCE(grup_id, ?) WHERE id = ?')
+        ->execute([$grupId, $ogrenciId]);
+    return ['ok' => true, 'error' => null];
+}
+
+/** Üyeliği tarihçeyi koruyarak pasife alır; oturum/yoklama geçmişini silmez. */
+function group_member_remove(int $grupId, int $ogrenciId): bool
+{
+    $st = db()->prepare('UPDATE grup_uyelikleri SET aktif = 0, bitis_tarihi = ?
+                         WHERE grup_id = ? AND ogrenci_id = ? AND aktif = 1');
+    $st->execute([today(), $grupId, $ogrenciId]);
+    if ($st->rowCount() < 1) { return false; }
+    $st = db()->prepare('SELECT grup_id FROM grup_uyelikleri
+                         WHERE ogrenci_id = ? AND aktif = 1 ORDER BY baslangic_tarihi, grup_id LIMIT 1');
+    $st->execute([$ogrenciId]);
+    $yedekGrup = $st->fetchColumn();
+    db()->prepare('UPDATE ogrenciler SET grup_id = ? WHERE id = ? AND grup_id = ?')
+        ->execute([$yedekGrup === false ? null : (int)$yedekGrup, $ogrenciId, $grupId]);
+    return true;
 }
 
 function student_delete(int $id): void
@@ -316,7 +523,7 @@ function session_save_plan(array $d, array $items, ?int $id = null): array
     $grupId = (int)($d['grup_id'] ?? 0);
     if (!group_get($grupId)) { return ['ok' => false, 'error' => 'Grup bulunamadı.', 'id' => null]; }
     $tarih = trim((string)($d['tarih'] ?? ''));
-    if (!DateTime::createFromFormat('Y-m-d', $tarih)) {
+    if (!valid_date_ymd($tarih)) {
         return ['ok' => false, 'error' => 'Geçerli bir tarih seçin.', 'id' => null];
     }
     $haftaNo = (int)($d['hafta_no'] ?? 0);
@@ -830,8 +1037,10 @@ function template_apply(int $sablonId, int $grupId, string $baslangicTarihi, str
 {
     $sablon = template_get($sablonId);
     $grup = group_get($grupId);
-    if (!$sablon || !$grup) { return ['olusan' => 0, 'atlanan' => 0, 'odev' => 0]; }
-    $baslangic = DateTime::createFromFormat('Y-m-d', $baslangicTarihi) ?: new DateTime('now');
+    if (!$sablon || !$grup || !valid_date_ymd($baslangicTarihi)) {
+        return ['olusan' => 0, 'atlanan' => 0, 'odev' => 0];
+    }
+    $baslangic = DateTime::createFromFormat('Y-m-d', $baslangicTarihi);
     $bGunFarki = max(1, min(6, $bGunFarki));
 
     $olusan = 0;
@@ -904,10 +1113,16 @@ function protocol_result_save(array $d): array
 
     $kaynak = ($d['kaynak'] ?? 'atolye') === 'ev' ? 'ev' : 'atolye';
     $standart = (int)($d['standart'] ?? 0) === 1 ? 1 : 0;
-    db()->prepare('INSERT INTO protokol_sonuclari (ogrenci_id, protokol, bpm, skor, detay, notlar, kaynak, standart, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    // Kararlılık (asenkroni SD) ve ölçüm anındaki kalibrasyon kalitesi:
+    // ikisi de sonradan süzme/yorumlama için sonuçla birlikte saklanır.
+    $sd = $d['sd_ms'] ?? null;
+    $sdMs = ($sd === null || $sd === '' || !is_numeric($sd)) ? null : max(0, min(60000, (int)round((float)$sd)));
+    $kalite = (string)($d['kalite'] ?? '');
+    if (!isset(OLCUM_KALITE_LABELS[$kalite])) { $kalite = ''; }
+    db()->prepare('INSERT INTO protokol_sonuclari (ogrenci_id, protokol, bpm, skor, detay, notlar, kaynak, standart, sd_ms, kalite, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([$ogrenciId, $protokol, $bpm, $skor,
-                   $detay, trim((string)($d['notlar'] ?? '')), $kaynak, $standart, now_str()]);
+                   $detay, trim((string)($d['notlar'] ?? '')), $kaynak, $standart, $sdMs, $kalite, now_str()]);
     return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
 }
 
@@ -946,72 +1161,173 @@ function protocol_last_scores(): array
     return $harita;
 }
 
+/* ==================== ÖLÇÜM KARŞILAŞTIRMA ÇEKİRDEĞİ ====================
+ * Tek ilk ölçümü tek son ölçümle karşılaştırmak iki yönden yanıltıcıdır:
+ * (1) ilk ölçüm neredeyse her zaman "görevi ilk kez yapma" etkisiyle düşüktür,
+ * (2) tek ölçüm gün içi dalgalanmaya açıktır. Bu yüzden uçlardan blok medyanı
+ * alınır ve fark, ölçümün kendi gürültü bandıyla birlikte sunulur.
+ */
+
+function measure_median(array $sayilar): float
+{
+    if (!$sayilar) { return 0.0; }
+    sort($sayilar);
+    $n = count($sayilar);
+    $orta = intdiv($n, 2);
+    return $n % 2 ? (float)$sayilar[$orta] : ($sayilar[$orta - 1] + $sayilar[$orta]) / 2;
+}
+
+/** Uç blok boyu — bloklar çakışmayacak biçimde seçilir. */
+function measure_block_size(int $n): int
+{
+    if ($n >= 6) { return 3; }
+    if ($n >= 4) { return 2; }
+    return 1;
+}
+
+/**
+ * Ölçüm gürültüsü bandı (MDC95): "bu fark ölçüm hatasından büyük mü?".
+ * Ardışık ölçüm farklarından kestirilir — SEM = RMS(fark)/√2, MDC95 = 1,96×√2×SEM
+ * (sadeleşince 1,96 × RMS(fark)). Gerçek bir eğilim varsa band genişler, yani
+ * tahmin temkinli tarafta kalır. En az 3 ölçüm ister.
+ */
+function measure_noise_band(array $skorlar): ?array
+{
+    $n = count($skorlar);
+    if ($n < 3) { return null; }
+    $kareler = [];
+    for ($i = 1; $i < $n; $i++) {
+        $fark = $skorlar[$i] - $skorlar[$i - 1];
+        $kareler[] = $fark * $fark;
+    }
+    $rms = sqrt(array_sum($kareler) / count($kareler));
+    return ['mdc' => 1.96 * $rms, 'sem' => $rms / M_SQRT2, 'adet' => $n];
+}
+
+/**
+ * Kronolojik ölçüm serisinden ilk→son karşılaştırması.
+ * $seri: [['skor'=>int, 'tarih'=>string, 'kalite'=>string], …]
+ */
+function measure_compare(array $seri): array
+{
+    $n = count($seri);
+    $k = measure_block_size($n);
+    $ilkBlok = array_slice($seri, 0, $k);
+    $sonBlok = array_slice($seri, -$k);
+    $skorlar = array_map(fn($x) => (int)$x['skor'], $seri);
+    $ilk = (int)round(measure_median(array_map(fn($x) => (int)$x['skor'], $ilkBlok)));
+    $son = (int)round(measure_median(array_map(fn($x) => (int)$x['skor'], $sonBlok)));
+    $band = measure_noise_band($skorlar);
+    $fark = $son - $ilk;
+    $supheli = count(array_filter($seri, fn($x) => !in_array((string)($x['kalite'] ?? ''), OLCUM_KALITE_GUVENLI, true)));
+    return [
+        'ilk' => $ilk, 'son' => $son, 'fark' => $fark, 'adet' => $n, 'blok' => $k,
+        'ilk_tarih' => (string)($ilkBlok[0]['tarih'] ?? ''),
+        'son_tarih' => (string)($sonBlok[count($sonBlok) - 1]['tarih'] ?? ''),
+        'mdc' => $band ? (int)round($band['mdc']) : null,
+        // null = karar verilemiyor (3'ten az ölçüm)
+        'anlamli' => $band ? abs($fark) >= $band['mdc'] : null,
+        'supheli_olcum' => $supheli,
+    ];
+}
+
+/** Karşılaştırmaya girecek seriyi seçer: yeterliyse yalnız standart ölçümler. */
+function measure_pick_series(array $hepsi, array $standart): array
+{
+    return count($standart) >= 2 ? $standart : $hepsi;
+}
+
 /**
  * Dönemlik rapor için grup protokol gelişimi:
  * - haftalik: [protokol => [haftaPzt => ['toplam','adet']]]
- * - ogrenciler: [protokol => [ogrenci_kod => ['ilk','son','adet']]]
+ * - ogrenciler: [protokol => [ogrenci_kod => measure_compare(...) + 'standart']]
  */
 function report_group_protocols(int $grupId, string $from, string $to): array
 {
-    $st = db()->prepare("SELECT p.protokol, p.skor, p.standart, p.created_at, o.kod
+    $st = db()->prepare("SELECT p.protokol, p.skor, p.standart, p.kalite, p.created_at, o.kod
                            FROM protokol_sonuclari p
                            JOIN ogrenciler o ON o.id = p.ogrenci_id
-                          WHERE o.grup_id = ? AND date(p.created_at) BETWEEN ? AND ?
-                          ORDER BY p.created_at");
+                           JOIN grup_uyelikleri gu ON gu.ogrenci_id = o.id
+                            AND gu.grup_id = ? AND gu.aktif = 1
+                          WHERE date(p.created_at) BETWEEN ? AND ?
+                          ORDER BY p.created_at, p.id");
     $st->execute([$grupId, $from, $to]);
     $haftalik = [];
-    $seriler = []; // [protokol][kod] => ['hepsi' => [skor,…], 'std' => [skor,…]]
+    $seriler = [];
     foreach ($st->fetchAll() as $r) {
         [$pzt] = week_bounds(substr($r['created_at'], 0, 10));
         $haftalik[$r['protokol']][$pzt]['toplam'] = ($haftalik[$r['protokol']][$pzt]['toplam'] ?? 0) + (int)$r['skor'];
         $haftalik[$r['protokol']][$pzt]['adet'] = ($haftalik[$r['protokol']][$pzt]['adet'] ?? 0) + 1;
-        $seriler[$r['protokol']][$r['kod']]['hepsi'][] = (int)$r['skor'];
-        if ((int)$r['standart'] === 1) { $seriler[$r['protokol']][$r['kod']]['std'][] = (int)$r['skor']; }
+        $kayit = ['skor' => (int)$r['skor'], 'tarih' => substr((string)$r['created_at'], 0, 10),
+                  'kalite' => (string)($r['kalite'] ?? '')];
+        $seriler[$r['protokol']][$r['kod']]['hepsi'][] = $kayit;
+        if ((int)$r['standart'] === 1) { $seriler[$r['protokol']][$r['kod']]['std'][] = $kayit; }
     }
-    // İlk→son karşılaştırması: en az iki STANDART ölçüm varsa yalnız onlardan
-    // (koşullar sabit → karşılaştırma dürüst); yoksa tüm ölçümlerden.
     $ogrenciler = [];
     foreach ($seriler as $protokol => $kodlar) {
         foreach ($kodlar as $kod => $s) {
             $std = $s['std'] ?? [];
-            $dizi = count($std) >= 2 ? $std : $s['hepsi'];
-            $ogrenciler[$protokol][$kod] = [
-                'ilk' => $dizi[0], 'son' => $dizi[count($dizi) - 1],
-                'adet' => count($dizi), 'standart' => count($std) >= 2 ? 1 : 0,
-            ];
+            $dizi = measure_pick_series($s['hepsi'], $std);
+            $ogrenciler[$protokol][$kod] = measure_compare($dizi) + ['standart' => count($std) >= 2 ? 1 : 0];
         }
     }
     return ['haftalik' => $haftalik, 'ogrenciler' => $ogrenciler];
 }
 
 /**
- * Sertifika için tek öğrencinin protokol başına İLK ve SON ölçümü (tarihli).
- * En az iki STANDART ölçüm varsa karşılaştırma yalnız onlardan yapılır
- * ('standart' => 1); yoksa tüm ölçümlerden ('standart' => 0).
- * Dönüş: [protokol => ['ilk','ilk_tarih','son','son_tarih','adet','standart']].
+ * Grubun dönem içi ev pratiği DOZU: hafta başına işaretlenen pratik günü.
+ * Aynı gün birden çok çalışma işaretlense de bir "pratik günü" sayılır.
+ * Protokol trendinin yanında durur: değişim pratikle birlikte mi gidiyor?
+ * Dönüş: [haftaPzt => ['gun' => int, 'ogrenci' => int]]
+ */
+function report_group_practice(int $grupId, string $from, string $to): array
+{
+    $st = db()->prepare('SELECT DISTINCT o.ogrenci_id, t.tarih
+                           FROM ev_tamamlama t
+                           JOIN ev_odevleri o ON o.id = t.odev_id
+                           JOIN grup_uyelikleri gu ON gu.ogrenci_id = o.ogrenci_id
+                            AND gu.grup_id = ? AND gu.aktif = 1
+                          WHERE t.tarih BETWEEN ? AND ?');
+    $st->execute([$grupId, $from, $to]);
+    $haftalar = [];
+    foreach ($st->fetchAll() as $r) {
+        [$pzt] = week_bounds((string)$r['tarih']);
+        $haftalar[$pzt]['gun'] = ($haftalar[$pzt]['gun'] ?? 0) + 1;
+        $haftalar[$pzt]['ogrenciler'][(int)$r['ogrenci_id']] = true;
+    }
+    $sonuc = [];
+    foreach ($haftalar as $pzt => $v) {
+        $sonuc[$pzt] = ['gun' => (int)$v['gun'], 'ogrenci' => count($v['ogrenciler'] ?? [])];
+    }
+    ksort($sonuc);
+    return $sonuc;
+}
+
+/**
+ * Sertifika için tek öğrencinin protokol başına dönem başı/sonu ölçümü.
+ * Uçlardan blok medyanı alınır (measure_compare); en az iki STANDART ölçüm
+ * varsa karşılaştırma yalnız onlardan yapılır ('standart' => 1).
+ * Dönüş: [protokol => measure_compare(...) + 'standart'].
  */
 function student_protocol_first_last(int $ogrenciId, string $from, string $to): array
 {
-    $st = db()->prepare('SELECT protokol, skor, standart, created_at
+    $st = db()->prepare('SELECT protokol, skor, standart, kalite, created_at
                            FROM protokol_sonuclari
                           WHERE ogrenci_id = ? AND date(created_at) BETWEEN ? AND ?
                           ORDER BY created_at, id');
     $st->execute([$ogrenciId, $from, $to]);
     $seriler = [];
     foreach ($st->fetchAll() as $r) {
-        $kayit = ['skor' => (int)$r['skor'], 'tarih' => substr((string)$r['created_at'], 0, 10)];
+        $kayit = ['skor' => (int)$r['skor'], 'tarih' => substr((string)$r['created_at'], 0, 10),
+                  'kalite' => (string)($r['kalite'] ?? '')];
         $seriler[$r['protokol']]['hepsi'][] = $kayit;
         if ((int)$r['standart'] === 1) { $seriler[$r['protokol']]['std'][] = $kayit; }
     }
     $harita = [];
     foreach ($seriler as $p => $s) {
         $std = $s['std'] ?? [];
-        $dizi = count($std) >= 2 ? $std : $s['hepsi'];
-        $ilk = $dizi[0];
-        $son = $dizi[count($dizi) - 1];
-        $harita[$p] = ['ilk' => $ilk['skor'], 'ilk_tarih' => $ilk['tarih'],
-                       'son' => $son['skor'], 'son_tarih' => $son['tarih'],
-                       'adet' => count($dizi), 'standart' => count($std) >= 2 ? 1 : 0];
+        $dizi = measure_pick_series($s['hepsi'], $std);
+        $harita[$p] = measure_compare($dizi) + ['standart' => count($std) >= 2 ? 1 : 0];
     }
     uksort($harita, fn($a, $b) => array_search($a, array_keys(PROTOKOL_LABELS)) <=> array_search($b, array_keys(PROTOKOL_LABELS)));
     return $harita;
@@ -1047,7 +1363,12 @@ function student_by_code(string $kod): ?array
 {
     $kod = strtoupper(trim($kod));
     if ($kod === '') { return null; }
-    $st = db()->prepare('SELECT o.*, g.ad AS grup_ad FROM ogrenciler o
+    $st = db()->prepare('SELECT o.*, g.ad AS grup_ad,
+                         (SELECT GROUP_CONCAT(g2.ad, " • ")
+                            FROM grup_uyelikleri gu2
+                            JOIN gruplar g2 ON g2.id = gu2.grup_id
+                           WHERE gu2.ogrenci_id = o.id AND gu2.aktif = 1) AS grup_adlari
+                         FROM ogrenciler o
                          LEFT JOIN gruplar g ON g.id = o.grup_id
                          WHERE o.erisim_kodu = ? AND o.aktif = 1');
     $st->execute([$kod]);
@@ -1142,7 +1463,7 @@ function assignments_admin_list(): array
 function assignment_create(array $ogrenciIds, int $calismaId, string $baslangic, string $bitis, int $hedefGun, string $notlar): int
 {
     if (!home_exercise_get($calismaId)) { return 0; }
-    if (!DateTime::createFromFormat('Y-m-d', $baslangic) || !DateTime::createFromFormat('Y-m-d', $bitis)) { return 0; }
+    if (!valid_date_ymd($baslangic) || !valid_date_ymd($bitis) || $bitis < $baslangic) { return 0; }
     $olusan = 0;
     $ins = db()->prepare('INSERT INTO ev_odevleri (ogrenci_id, calisma_id, baslangic, bitis, hedef_gun, notlar, created_at)
                           VALUES (?, ?, ?, ?, ?, ?, ?)');
@@ -1269,7 +1590,7 @@ function packages_for(int $ogrenciId): array
 
 function package_create(int $ogrenciId, string $ad, int $toplam, string $baslangic, string $notlar): bool
 {
-    if (!student_get($ogrenciId) || !DateTime::createFromFormat('Y-m-d', $baslangic)) { return false; }
+    if (!student_get($ogrenciId) || !valid_date_ymd($baslangic)) { return false; }
     // Aynı anda tek aktif paket: öncekini kapat.
     db()->prepare('UPDATE paketler SET kapali = 1 WHERE ogrenci_id = ? AND kapali = 0')->execute([$ogrenciId]);
     db()->prepare('INSERT INTO paketler (ogrenci_id, ad, toplam_seans, baslangic, kapali, notlar, created_at)
@@ -1305,6 +1626,41 @@ function next_session_for_group(int $grupId): ?array
     $st = db()->prepare('SELECT * FROM oturumlar WHERE grup_id = ? AND tarih >= ? ORDER BY tarih LIMIT 1');
     $st->execute([$grupId, today()]);
     return $st->fetch() ?: null;
+}
+
+/**
+ * Katılımcı portalında gösterilecek güvenli ders programı.
+ * Yalnızca grup planı ve üyelerin takma adları döner; kişisel not/değerlendirme alanları yoktur.
+ */
+function student_group_programs(int $ogrenciId): array
+{
+    $gruplar = student_groups($ogrenciId);
+    $uyeSt = db()->prepare('SELECT o.kod, CASE WHEN o.id = ? THEN 1 ELSE 0 END AS kendisi
+                              FROM grup_uyelikleri gu
+                              JOIN ogrenciler o ON o.id = gu.ogrenci_id
+                             WHERE gu.grup_id = ? AND gu.aktif = 1 AND o.aktif = 1
+                             ORDER BY o.kod');
+    $oturumSt = db()->prepare('SELECT s.id, s.tarih, s.hafta_no, s.protokol,
+                                     COALESCE(GROUP_CONCAT(t.ad, " • "), "") AS teknikler,
+                                     COALESCE(SUM(ot.sure_dk), 0) AS sure_dk
+                                FROM oturumlar s
+                                LEFT JOIN oturum_teknikleri ot ON ot.oturum_id = s.id
+                                LEFT JOIN teknikler t ON t.id = ot.teknik_id
+                               WHERE s.grup_id = ? AND s.tarih >= ?
+                               GROUP BY s.id
+                               ORDER BY s.tarih, s.id
+                               LIMIT 6');
+    $sonuc = [];
+    foreach ($gruplar as $grup) {
+        if ((int)$grup['aktif'] !== 1) { continue; }
+        $uyeSt->execute([$ogrenciId, (int)$grup['id']]);
+        $grup['uyeler'] = $uyeSt->fetchAll();
+        $oturumSt->execute([(int)$grup['id'], today()]);
+        $grup['program'] = $oturumSt->fetchAll();
+        $grup['duyurular'] = group_announcements((int)$grup['id'], true);
+        $sonuc[] = $grup;
+    }
+    return $sonuc;
 }
 
 /* ======================== RAPOR SORGULARI ======================== */
@@ -1386,4 +1742,341 @@ function report_student(int $ogrenciId, string $from, string $to): array
         'teknikler'  => $teknikler,
         'gozlemler'  => $gozlemler,
     ];
+}
+
+/* ======================== METRONOM ÇALIŞMA MERKEZİ ======================== */
+
+/** Oturum hesabını veri kayıtlarında kullanılabilecek güvenli bir anahtara dönüştürür. */
+function metronom_kullanici_anahtari(): string
+{
+    $rol = trim((string)($_SESSION['rol'] ?? 'egitmen'));
+    return mb_substr($rol !== '' ? $rol : 'egitmen', 0, 50);
+}
+
+/** Setlist adımlarını güvenli aralıklara sıkıştırır. @return array<int,array<string,mixed>> */
+function metronom_adimlari_normalle(array $adimlar): array
+{
+    $sonuc = [];
+    foreach (array_slice($adimlar, 0, 50) as $i => $ham) {
+        if (!is_array($ham)) { continue; }
+        $olcu = (int)($ham['olcu'] ?? 4);
+        $payda = (int)($ham['payda'] ?? 4);
+        if (!in_array($olcu, [2,3,4,5,6,7,8,9,10,11,12], true)) { $olcu = 4; }
+        if (!in_array($payda, [4,8], true)) { $payda = 4; }
+        $alt = (int)($ham['alt'] ?? 1);
+        if (!in_array($alt, [1,2,3,4], true)) { $alt = 1; }
+        $poli = max(0, min(12, (int)($ham['poliritim'] ?? 0)));
+        if ($poli === 1) { $poli = 0; }
+        $gecis = ($ham['gecis'] ?? 'otomatik') === 'bekle' ? 'bekle' : 'otomatik';
+        $desen = [];
+        foreach (array_slice((array)($ham['desen'] ?? []), 0, $olcu) as $v) {
+            $desen[] = max(0, min(2, (int)$v));
+        }
+        while (count($desen) < $olcu) { $desen[] = count($desen) === 0 ? 2 : 1; }
+        $sonuc[] = [
+            'baslik' => mb_substr(trim((string)($ham['baslik'] ?? 'Adım ' . ($i + 1))), 0, 60),
+            'bpm' => max(30, min(240, (int)($ham['bpm'] ?? 92))),
+            'olcu' => $olcu,
+            'payda' => $payda,
+            'gruplama' => mb_substr(trim((string)($ham['gruplama'] ?? 'ozel')), 0, 30),
+            'alt' => $alt,
+            'swing' => max(50, min(75, (float)($ham['swing'] ?? 50))),
+            'poliritim' => $poli,
+            'poliDuzey' => max(10, min(100, (int)($ham['poliDuzey'] ?? 55))),
+            'girisOlcu' => in_array((int)($ham['girisOlcu'] ?? 0), [0,1,2,4], true)
+                ? (int)$ham['girisOlcu'] : 0,
+            'sureSn' => max(15, min(7200, (int)($ham['sureSn'] ?? 300))),
+            'gecis' => $gecis,
+            'desen' => $desen,
+        ];
+    }
+    return $sonuc;
+}
+
+function metronom_setleri_listele(string $kullanici): array
+{
+    $st = db()->prepare('SELECT * FROM metronom_setleri WHERE kullanici = ? ORDER BY updated_at DESC, id DESC');
+    $st->execute([$kullanici]);
+    $sonuc = [];
+    foreach ($st->fetchAll() as $r) {
+        $r['id'] = (int)$r['id'];
+        $coz = json_decode((string)$r['adimlar'], true);
+        $r['adimlar'] = metronom_adimlari_normalle(is_array($coz) ? $coz : []);
+        $sonuc[] = $r;
+    }
+    return $sonuc;
+}
+
+/** @return array{ok:bool,id?:int,error?:string,set?:array} */
+function metronom_seti_kaydet(string $kullanici, array $veri): array
+{
+    $ad = mb_substr(trim((string)($veri['ad'] ?? '')), 0, 80);
+    $aciklama = mb_substr(trim((string)($veri['aciklama'] ?? '')), 0, 300);
+    $adimlar = metronom_adimlari_normalle(is_array($veri['adimlar'] ?? null) ? $veri['adimlar'] : []);
+    if ($ad === '') { return ['ok' => false, 'error' => 'Setlist adı boş bırakılamaz.']; }
+    if (!$adimlar) { return ['ok' => false, 'error' => 'Setlistte en az bir adım olmalı.']; }
+    $json = json_encode($adimlar, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    $id = max(0, (int)($veri['id'] ?? 0));
+    if ($id > 0) {
+        $st = db()->prepare('UPDATE metronom_setleri SET ad = ?, aciklama = ?, adimlar = ?, updated_at = ?
+                              WHERE id = ? AND kullanici = ?');
+        $st->execute([$ad, $aciklama, $json, now_str(), $id, $kullanici]);
+        if ($st->rowCount() < 1) { return ['ok' => false, 'error' => 'Setlist bulunamadı veya bu hesaba ait değil.']; }
+    } else {
+        $st = db()->prepare('INSERT INTO metronom_setleri
+            (kullanici, ad, aciklama, adimlar, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+        $simdi = now_str();
+        $st->execute([$kullanici, $ad, $aciklama, $json, $simdi, $simdi]);
+        $id = (int)db()->lastInsertId();
+    }
+    $st = db()->prepare('SELECT * FROM metronom_setleri WHERE id = ? AND kullanici = ?');
+    $st->execute([$id, $kullanici]);
+    $set = $st->fetch() ?: [];
+    $set['id'] = $id;
+    $set['adimlar'] = $adimlar;
+    return ['ok' => true, 'id' => $id, 'set' => $set];
+}
+
+function metronom_seti_sil(string $kullanici, int $id): bool
+{
+    $st = db()->prepare('DELETE FROM metronom_setleri WHERE id = ? AND kullanici = ?');
+    $st->execute([$id, $kullanici]);
+    return $st->rowCount() > 0;
+}
+
+/** On saniyeden kısa yanlış başlatmaları günlüğe yazmaz. */
+function metronom_calisma_kaydet(string $kullanici, array $veri): array
+{
+    $sure = max(0, min(43200, (int)($veri['sureSn'] ?? 0)));
+    if ($sure < 10) { return ['ok' => false, 'atlandi' => true, 'error' => '10 saniyeden kısa deneme kaydedilmedi.']; }
+    $tur = ($veri['tur'] ?? '') === 'setlist' ? 'setlist' : 'serbest';
+    $setId = max(0, (int)($veri['setId'] ?? 0)) ?: null;
+    if ($setId !== null) {
+        $st = db()->prepare('SELECT 1 FROM metronom_setleri WHERE id = ? AND kullanici = ?');
+        $st->execute([$setId, $kullanici]);
+        if (!$st->fetchColumn()) { $setId = null; }
+    }
+    $detay = is_array($veri['detay'] ?? null) ? $veri['detay'] : [];
+    $st = db()->prepare('INSERT INTO metronom_calisma_kayitlari
+        (kullanici, set_id, tur, baslik, sure_sn, bpm_min, bpm_max, detay, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $st->execute([
+        $kullanici, $setId, $tur, mb_substr(trim((string)($veri['baslik'] ?? '')), 0, 100), $sure,
+        isset($veri['bpmMin']) ? max(30, min(240, (int)$veri['bpmMin'])) : null,
+        isset($veri['bpmMax']) ? max(30, min(240, (int)$veri['bpmMax'])) : null,
+        json_encode($detay, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES), now_str()
+    ]);
+    return ['ok' => true, 'id' => (int)db()->lastInsertId()];
+}
+
+function metronom_hedef_getir(string $kullanici): array
+{
+    $st = db()->prepare('SELECT gunluk_dk, haftalik_gun FROM metronom_hedefleri WHERE kullanici = ?');
+    $st->execute([$kullanici]);
+    $r = $st->fetch();
+    return $r
+        ? ['gunlukDk' => (int)$r['gunluk_dk'], 'haftalikGun' => (int)$r['haftalik_gun']]
+        : ['gunlukDk' => 20, 'haftalikGun' => 5];
+}
+
+function metronom_hedef_kaydet(string $kullanici, int $gunlukDk, int $haftalikGun): array
+{
+    $gunlukDk = max(1, min(480, $gunlukDk));
+    $haftalikGun = max(1, min(7, $haftalikGun));
+    db()->prepare('INSERT INTO metronom_hedefleri (kullanici, gunluk_dk, haftalik_gun, updated_at)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(kullanici) DO UPDATE SET gunluk_dk = excluded.gunluk_dk,
+          haftalik_gun = excluded.haftalik_gun, updated_at = excluded.updated_at')
+        ->execute([$kullanici, $gunlukDk, $haftalikGun, now_str()]);
+    return ['gunlukDk' => $gunlukDk, 'haftalikGun' => $haftalikGun];
+}
+
+/** Bugün, son yedi gün, seri ve son kayıtları tek istekte döndürür. */
+function metronom_calisma_ozeti(string $kullanici): array
+{
+    $bugun = today();
+    $baslangic = now()->modify('-6 days')->format('Y-m-d');
+    $st = db()->prepare("SELECT substr(created_at, 1, 10) AS gun, SUM(sure_sn) AS sure
+                           FROM metronom_calisma_kayitlari
+                          WHERE kullanici = ? AND substr(created_at, 1, 10) BETWEEN ? AND ?
+                          GROUP BY substr(created_at, 1, 10)");
+    $st->execute([$kullanici, $baslangic, $bugun]);
+    $harita = [];
+    foreach ($st->fetchAll() as $r) { $harita[(string)$r['gun']] = (int)$r['sure']; }
+    $gunler = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $tarih = now()->modify("-$i days")->format('Y-m-d');
+        $gunler[] = ['tarih' => $tarih, 'sureSn' => $harita[$tarih] ?? 0];
+    }
+
+    $st = db()->prepare("SELECT DISTINCT substr(created_at, 1, 10) AS gun
+                           FROM metronom_calisma_kayitlari
+                          WHERE kullanici = ? ORDER BY gun DESC LIMIT 366");
+    $st->execute([$kullanici]);
+    $aktifGunler = array_flip($st->fetchAll(PDO::FETCH_COLUMN));
+    $tarih = now();
+    if (!isset($aktifGunler[$tarih->format('Y-m-d')])) { $tarih->modify('-1 day'); }
+    $seri = 0;
+    while (isset($aktifGunler[$tarih->format('Y-m-d')])) {
+        $seri++;
+        $tarih->modify('-1 day');
+    }
+
+    $st = db()->prepare('SELECT id, set_id, tur, baslik, sure_sn, bpm_min, bpm_max, created_at
+                           FROM metronom_calisma_kayitlari
+                          WHERE kullanici = ? ORDER BY created_at DESC, id DESC LIMIT 12');
+    $st->execute([$kullanici]);
+    $son = $st->fetchAll();
+    foreach ($son as &$r) {
+        $r['id'] = (int)$r['id'];
+        $r['set_id'] = $r['set_id'] === null ? null : (int)$r['set_id'];
+        $r['sure_sn'] = (int)$r['sure_sn'];
+        $r['bpm_min'] = $r['bpm_min'] === null ? null : (int)$r['bpm_min'];
+        $r['bpm_max'] = $r['bpm_max'] === null ? null : (int)$r['bpm_max'];
+    }
+    unset($r);
+    return [
+        'bugunSn' => $harita[$bugun] ?? 0,
+        'haftaGunSayisi' => count(array_filter($gunler, fn($g) => $g['sureSn'] > 0)),
+        'seri' => $seri,
+        'gunler' => $gunler,
+        'sonKayitlar' => $son,
+        'hedef' => metronom_hedef_getir($kullanici),
+    ];
+}
+
+/* ======================== İKİ EL MOTOR KOORDİNASYONU ======================== */
+
+function motor_protokol_normalle(array $veri): array
+{
+    $desenler = ['donusumlu', 'ikiserli', 'capraz', 'eszamanli', 'karma'];
+    $desen = (string)($veri['desen'] ?? 'donusumlu');
+    if (!in_array($desen, $desenler, true)) { $desen = 'donusumlu'; }
+    return [
+        'id' => max(0, (int)($veri['id'] ?? 0)),
+        'ad' => mb_substr(trim((string)($veri['ad'] ?? '')), 0, 80),
+        'hedef' => mb_substr(trim((string)($veri['hedef'] ?? '')), 0, 300),
+        'desen' => $desen,
+        'bpm' => max(30, min(180, (int)($veri['bpm'] ?? 60))),
+        'sure_sn' => max(15, min(600, (int)($veri['sureSn'] ?? $veri['sure_sn'] ?? 30))),
+        'hazirlik_vurus' => max(2, min(16, (int)($veri['hazirlikVurus'] ?? $veri['hazirlik_vurus'] ?? 4))),
+        'tolerans_ms' => max(60, min(300, (int)($veri['toleransMs'] ?? $veri['tolerans_ms'] ?? 140))),
+    ];
+}
+
+function motor_protokolleri_listele(string $kullanici): array
+{
+    $st = db()->prepare('SELECT * FROM motor_protokolleri WHERE kullanici = ?
+                          ORDER BY updated_at DESC, id DESC');
+    $st->execute([$kullanici]);
+    $sonuc = [];
+    foreach ($st->fetchAll() as $r) {
+        $n = motor_protokol_normalle($r);
+        $n['created_at'] = $r['created_at'];
+        $n['updated_at'] = $r['updated_at'];
+        $sonuc[] = $n;
+    }
+    return $sonuc;
+}
+
+/** @return array{ok:bool,error?:string,protokol?:array} */
+function motor_protokol_kaydet(string $kullanici, array $veri): array
+{
+    $p = motor_protokol_normalle($veri);
+    if ($p['ad'] === '') { return ['ok' => false, 'error' => 'Protokol adı boş bırakılamaz.']; }
+    $simdi = now_str();
+    if ($p['id'] > 0) {
+        $st = db()->prepare('UPDATE motor_protokolleri
+            SET ad = ?, hedef = ?, desen = ?, bpm = ?, sure_sn = ?, hazirlik_vurus = ?,
+                tolerans_ms = ?, updated_at = ?
+            WHERE id = ? AND kullanici = ?');
+        $st->execute([
+            $p['ad'], $p['hedef'], $p['desen'], $p['bpm'], $p['sure_sn'],
+            $p['hazirlik_vurus'], $p['tolerans_ms'], $simdi, $p['id'], $kullanici
+        ]);
+        if ($st->rowCount() < 1) {
+            $kontrol = db()->prepare('SELECT 1 FROM motor_protokolleri WHERE id = ? AND kullanici = ?');
+            $kontrol->execute([$p['id'], $kullanici]);
+            if (!$kontrol->fetchColumn()) {
+                return ['ok' => false, 'error' => 'Protokol bulunamadı veya bu hesaba ait değil.'];
+            }
+        }
+    } else {
+        $st = db()->prepare('INSERT INTO motor_protokolleri
+            (kullanici, ad, hedef, desen, bpm, sure_sn, hazirlik_vurus, tolerans_ms, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+        $st->execute([
+            $kullanici, $p['ad'], $p['hedef'], $p['desen'], $p['bpm'], $p['sure_sn'],
+            $p['hazirlik_vurus'], $p['tolerans_ms'], $simdi, $simdi
+        ]);
+        $p['id'] = (int)db()->lastInsertId();
+    }
+    return ['ok' => true, 'protokol' => $p];
+}
+
+function motor_protokol_sil(string $kullanici, int $id): bool
+{
+    $st = db()->prepare('DELETE FROM motor_protokolleri WHERE id = ? AND kullanici = ?');
+    $st->execute([$id, $kullanici]);
+    return $st->rowCount() > 0;
+}
+
+/** @return array{ok:bool,error?:string,id?:int} */
+function motor_sonuc_kaydet(string $kullanici, array $veri): array
+{
+    $durum = (string)($veri['durum'] ?? 'tamamlandi');
+    if (!in_array($durum, ['tamamlandi', 'erken_durduruldu', 'guvenlik'], true)) {
+        $durum = 'erken_durduruldu';
+    }
+    $protokolId = max(0, (int)($veri['protokolId'] ?? 0)) ?: null;
+    if ($protokolId !== null) {
+        $st = db()->prepare('SELECT 1 FROM motor_protokolleri WHERE id = ? AND kullanici = ?');
+        $st->execute([$protokolId, $kullanici]);
+        if (!$st->fetchColumn()) { $protokolId = null; }
+    }
+    $ogrenciId = max(0, (int)($veri['ogrenciId'] ?? 0)) ?: null;
+    if ($ogrenciId !== null && !student_get($ogrenciId)) { $ogrenciId = null; }
+    $skor = isset($veri['skor']) ? max(0, min(100, (int)$veri['skor'])) : null;
+    $dogruluk = isset($veri['dogruluk']) ? max(0, min(100, (int)$veri['dogruluk'])) : null;
+    if ($durum !== 'tamamlandi') { $skor = null; }
+    $detay = is_array($veri['detay'] ?? null) ? $veri['detay'] : [];
+    $json = json_encode($detay, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($json === false || strlen($json) > 50000) {
+        return ['ok' => false, 'error' => 'Sonuç ayrıntısı geçersiz veya çok büyük.'];
+    }
+    $st = db()->prepare('INSERT INTO motor_sonuclari
+        (kullanici, protokol_id, ogrenci_id, durum, skor, dogruluk, detay, notlar, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+    $st->execute([
+        $kullanici, $protokolId, $ogrenciId, $durum, $skor, $dogruluk, $json,
+        mb_substr(trim((string)($veri['notlar'] ?? '')), 0, 500), now_str()
+    ]);
+    return ['ok' => true, 'id' => (int)db()->lastInsertId()];
+}
+
+function motor_sonuclari_son(string $kullanici, int $limit = 20): array
+{
+    $st = db()->prepare('SELECT s.id, s.protokol_id, s.ogrenci_id, s.durum, s.skor, s.dogruluk,
+                                s.detay, s.notlar, s.created_at,
+                                p.ad AS protokol_ad, o.kod AS ogrenci_kod
+                           FROM motor_sonuclari s
+                      LEFT JOIN motor_protokolleri p ON p.id = s.protokol_id
+                      LEFT JOIN ogrenciler o ON o.id = s.ogrenci_id
+                          WHERE s.kullanici = ?
+                       ORDER BY s.created_at DESC, s.id DESC LIMIT ?');
+    $st->bindValue(1, $kullanici, PDO::PARAM_STR);
+    $st->bindValue(2, max(1, min(100, $limit)), PDO::PARAM_INT);
+    $st->execute();
+    $sonuc = [];
+    foreach ($st->fetchAll() as $r) {
+        $r['id'] = (int)$r['id'];
+        $r['protokol_id'] = $r['protokol_id'] === null ? null : (int)$r['protokol_id'];
+        $r['ogrenci_id'] = $r['ogrenci_id'] === null ? null : (int)$r['ogrenci_id'];
+        $r['skor'] = $r['skor'] === null ? null : (int)$r['skor'];
+        $r['dogruluk'] = $r['dogruluk'] === null ? null : (int)$r['dogruluk'];
+        $coz = json_decode((string)$r['detay'], true);
+        $r['detay'] = is_array($coz) ? $coz : [];
+        $sonuc[] = $r;
+    }
+    return $sonuc;
 }

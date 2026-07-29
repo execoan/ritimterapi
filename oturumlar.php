@@ -6,8 +6,8 @@ require __DIR__ . '/includes/bootstrap.php';
 $grupFiltre = isset($_GET['grup_id']) && $_GET['grup_id'] !== '' ? (int)$_GET['grup_id'] : null;
 $from = trim((string)($_GET['from'] ?? ''));
 $to   = trim((string)($_GET['to'] ?? ''));
-$fromOk = $from !== '' && DateTime::createFromFormat('Y-m-d', $from) ? $from : null;
-$toOk   = $to !== '' && DateTime::createFromFormat('Y-m-d', $to) ? $to : null;
+$fromOk = valid_date_ymd($from) ? $from : null;
+$toOk   = valid_date_ymd($to) ? $to : null;
 
 $oturumlar = sessions_list($grupFiltre, $fromOk, $toOk);
 $gruplar = groups_list();

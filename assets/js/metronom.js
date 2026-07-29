@@ -1,17 +1,54 @@
 /* =======================================================
-   Metronom Stüdyosu v2 — Web Audio motoru + dikkat protokolleri
+   Metronom Stüdyosu v4 — Web Audio motoru + dikkat protokolleri
    Zamanlama: lookahead planlayıcı (25 ms tarama, 120 ms ileri)
-   v2: alt bölünme, vuruş başına aksan deseni, tempo trainer,
-   poliritim, geniş ses kiti + seçim önizlemesi, sesli sayma,
+   v4: swing/shuffle, 12/8'e kadar ölçü grupları, sayarak giriş,
+   alt bölünme, vuruş başına aksan deseni, tempo trainer,
+   görsel poliritim, geniş ses kiti + seçim önizlemesi,
    flaş modu, preset'ler, Spontan Tempo + Aksak Bulma testleri.
    ======================================================= */
 (function () {
   'use strict';
 
+  var zaman = window.RitimZamanlama;
+  if (!zaman) { throw new Error('Ortak zamanlama çekirdeği yüklenemedi.'); }
+  var metronomCekirdegi = window.MetronomCekirdegi;
+  if (!metronomCekirdegi) { throw new Error('Profesyonel metronom çekirdeği yüklenemedi.'); }
+  var setlistCekirdegi = window.MetronomSetlist;
+
   function byId(id) { return document.getElementById(id); }
   function ort(dizi) {
     if (!dizi.length) { return 0; }
     return dizi.reduce(function (a, b) { return a + b; }, 0) / dizi.length;
+  }
+
+  /* Ortak kronolojik çekirdeği eski protokol sonuç biçimine uyarlar. */
+  function vuruslariEsle(taplar, hedefler, esikSn, fazUygun) {
+    var kal = zaman.kalibrasyonOku();
+    var sonuc = zaman.eslestir(taplar, hedefler, {
+      esikSn: esikSn,
+      hedefUygun: fazUygun,
+      telafiMs: kal.yapildi ? kal.telafiMs : 0
+    });
+    var denemeler = sonuc.eslesenler.map(function (d) {
+      return {
+        tap: taplar[d.tapIdx], tapIdx: d.tapIdx, hedef: d.hedef, hedefIdx: d.hedefIdx,
+        sapmaMs: d.sapmaMs, hamSapmaMs: d.hamSapmaMs,
+        mutlakSn: Math.abs(d.sapmaMs) / 1000, eslesti: true
+      };
+    }).concat(sonuc.fazlaTaplar.map(function (d) {
+      return {
+        tap: taplar[d.tapIdx], tapIdx: d.tapIdx, hedef: d.hedef, hedefIdx: d.hedefIdx,
+        sapmaMs: d.sapmaMs, hamSapmaMs: d.hamSapmaMs,
+        mutlakSn: Math.abs(d.sapmaMs) / 1000, eslesti: false
+      };
+    })).sort(function (a, b) {
+      return a.tapIdx - b.tapIdx;
+    });
+    return {
+      denemeler: denemeler,
+      eslesenler: denemeler.filter(function (d) { return d.eslesti; }),
+      kacirilanHedefler: sonuc.kacirilanHedefler
+    };
   }
 
   /* ---------- İlerleme çubuğu ----------
@@ -135,14 +172,6 @@
           n.start(zaman);
         }
 
-      } else if (tur === 'sayma') { /* sesli sayma: alt tık; sayı TTS ile görselde */
-        var s = ctx.createOscillator();
-        s.type = 'sine';
-        s.frequency.value = aksan ? 1200 : 900;
-        g.gain.setValueAtTime(0.12, zaman);
-        g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.03);
-        s.connect(g); s.start(zaman); s.stop(zaman + 0.035);
-
       } else { /* tahta blok (varsayılan) */
         var o4 = ctx.createOscillator();
         o4.type = 'sine';
@@ -175,42 +204,169 @@
     },
 
     /* Poliritim çapraz vuruşu: ayırt edici tiz bip. */
-    vurCapraz: function (zaman) {
+    vurCapraz: function (zaman, duzey, aksan) {
       var o = this.ctx.createOscillator();
       var g = this.ctx.createGain();
       o.type = 'triangle';
-      o.frequency.value = 1976;
-      g.gain.setValueAtTime(0.3, zaman);
-      g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.07);
-      o.connect(g).connect(this.master);
-      o.start(zaman); o.stop(zaman + 0.08);
+      o.frequency.value = aksan ? 1865 : 1568;
+      g.gain.setValueAtTime((aksan ? 0.42 : 0.32) * (duzey === undefined ? 0.55 : duzey), zaman);
+      g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.055);
+      o.connect(g);
+      if (this.ctx.createStereoPanner) {
+        var pan = this.ctx.createStereoPanner();
+        pan.pan.value = 0.38;
+        g.connect(pan).connect(this.master);
+      } else {
+        g.connect(this.master);
+      }
+      o.start(zaman); o.stop(zaman + 0.06);
     }
   };
 
-  var SAYILAR_TR = ['bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi'];
-  function konus(metin) {
-    if (!('speechSynthesis' in window)) { return; }
-    var u = new SpeechSynthesisUtterance(metin);
-    u.lang = 'tr-TR';
-    u.rate = 1.25;
-    u.volume = 1;
-    window.speechSynthesis.speak(u);
+  /* ================================================================
+     ORTAK CİHAZ KALİTESİ VE KALİBRASYON
+     ================================================================ */
+  var zkKalibrator = null;
+
+  function kisaTarih(iso) {
+    if (!iso) { return '—'; }
+    var d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('tr-TR');
   }
+
+  function zkGuncelle(ozelMesaj) {
+    var durum = zaman.kaliteDurumu(ses.ctx);
+    var kal = durum.kalibrasyon;
+    var rozet = byId('zkRozet');
+    if (!rozet) { return durum; }
+    rozet.className = 'm-zaman-rozet ' + durum.kod;
+    rozet.textContent = durum.etiket;
+    byId('zkTelafi').textContent = kal.yapildi
+      ? (kal.telafiMs > 0 ? '+' : '') + Math.round(kal.telafiMs) + ' ms' : '—';
+    byId('zkDagilim').textContent = kal.yapildi ? '±' + Math.round(kal.dagilimMs) + ' ms' : '—';
+    byId('zkTarayici').textContent = ses.ctx ? durum.tarayiciGecikmesiMs + ' ms' : 'ses açılınca';
+    byId('zkOrnekleme').textContent = durum.sampleRate
+      ? (durum.sampleRate / 1000).toFixed(1) + ' kHz' : '—';
+    byId('zkTarih').textContent = kisaTarih(kal.tarih);
+    var aciklama = ozelMesaj;
+    if (!aciklama) {
+      if (!kal.yapildi) {
+        aciklama = 'Mutlak senkronizasyon testlerinden önce 4 hazırlık ve 12 ölçüm vuruşuyla kalibre et.';
+      } else if (durum.imzaDegisti) {
+        aciklama = 'Ses çıkışı veya tarayıcı gecikmesi değişmiş görünüyor. Sonuçları karşılaştırmadan önce yenile.';
+      } else if (kal.tur === 'elle' || kal.ornek < 8) {
+        aciklama = 'Elle telafi aktif. Karşılaştırılabilir profesyonel ölçüm için 12 vuruşluk otomatik kalibrasyon önerilir.';
+      } else if (kal.dagilimMs > 65) {
+        aciklama = 'Vuruşlar dağınık ölçüldü. Kulaklıkla ve ekrana bakmadan yeniden kalibrasyon önerilir.';
+      } else {
+        aciklama = 'Ortak telafi Vuruş Tutturma, Ritim Okuma ve İçsel Ritim ölçümlerine uygulanıyor.';
+      }
+    }
+    byId('zkAciklama').textContent = aciklama;
+    return durum;
+  }
+
+  function zkDurumGoster(veri) {
+    if (veri.faz === 'hazirlik') {
+      byId('zkSayac').textContent = veri.kalan + ' · sonra duyduğun kliklerde vur';
+    } else {
+      byId('zkSayac').textContent = 'ŞİMDİ · her klikte vur';
+    }
+    byId('zkIlerleme').textContent = veri.ilerleme + '/' + veri.toplam;
+  }
+
+  function zkIptalEt() {
+    if (zkKalibrator) { zkKalibrator.iptal(); }
+    zkKalibrator = null;
+    if (byId('zkSahne')) { byId('zkSahne').hidden = true; }
+    if (byId('zkKalibre')) { byId('zkKalibre').disabled = false; }
+    ses.sustur();
+  }
+
+  function zkBaslat() {
+    digerleriniIptalEt('zk');
+    ses.hazirla();
+    ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
+    byId('zkSahne').hidden = false;
+    byId('zkKalibre').disabled = true;
+    byId('zkIlerleme').textContent = '0/12';
+    zkKalibrator = zaman.kalibrasyonBaslat({
+      ctx: ses.ctx,
+      klik: function (z, aksan) { ses.vur(z, aksan, 'klik'); },
+      durum: zkDurumGoster,
+      tamam: function (sonuc) {
+        zkKalibrator = null;
+        byId('zkSahne').hidden = true;
+        byId('zkKalibre').disabled = false;
+        if (!sonuc.basarili) {
+          zkGuncelle('Kalibrasyon tamamlanamadı: 12 klikten en az 8’inde vurmalısın. Tekrar dene.');
+          return;
+        }
+        zkGuncelle('Kalibrasyon tamamlandı: '
+          + (sonuc.telafiMs > 0 ? '+' : '') + sonuc.telafiMs + ' ms telafi · '
+          + 'dağılım ±' + sonuc.dagilimMs + ' ms.');
+      }
+    });
+  }
+
+  function olcumIcinKalibrasyonHazir() {
+    var durum = zkGuncelle();
+    if (durum.kullanilabilir) { return true; }
+    var panel = byId('zamanKalitePanel');
+    panel.classList.remove('m-zaman-dikkat');
+    void panel.offsetWidth;
+    panel.classList.add('m-zaman-dikkat');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    byId('zkKalibre').focus();
+    zkGuncelle('Bu protokol mutlak vuruş zamanını ölçüyor. Başlamadan önce cihazı kalibre et.');
+    return false;
+  }
+
+  byId('zkKalibre').addEventListener('click', zkBaslat);
+  byId('zkIptal').addEventListener('click', zkIptalEt);
+  byId('zkPad').addEventListener('pointerdown', function (ev) {
+    ev.preventDefault();
+    if (zkKalibrator && zkKalibrator.tap(ev)) {
+      this.classList.add('vurdum');
+      var pad = this;
+      setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
+    }
+  });
+  byId('zkYenile').addEventListener('click', function () {
+    ses.hazirla();
+    zkGuncelle();
+  });
+  byId('zkSifirla').addEventListener('click', function () {
+    zkIptalEt();
+    zaman.kalibrasyonSifirla();
+    zkGuncelle('Kalibrasyon sıfırlandı. Puanlı senkronizasyon testlerinden önce yeniden ölç.');
+  });
+  window.addEventListener('ritim-zamanlama-guncellendi', function () { zkGuncelle(); });
+  window.addEventListener('storage', function (ev) {
+    if (ev.key === zaman.AYAR_ANAHTARI) { zkGuncelle(); }
+  });
+  zkGuncelle();
 
   /* ================================================================
      A) SERBEST METRONOM
      ================================================================ */
   var m = {
     bpm: 92, calisiyor: false, zamanlayici: null,
-    sonrakiZaman: 0, vurusNo: 0, olcuSayaci: 0,
-    sarkacYonu: 1,
+    sonrakiZaman: 0, vurusNo: 0, olcuSayaci: 0, girisOlcuAktif: 0,
+    sarkacYonu: 1, jenerasyon: 0,
     aksanDeseni: [2, 1, 1, 1],
+    oturumBaslangicMs: 0, oturumBpmMin: 92, oturumBpmMax: 92,
     el: {
       bpm: byId('mBpm'), tempoAdi: byId('mTempoAdi'), surgu: byId('mBpmSurgu'),
       noktalar: byId('mNoktalar'), olcu: byId('mOlcu'), ses: byId('mSes'),
       duzey: byId('mSesDuzeyi'), altBolunme: byId('mAltBolunme'),
-      poliritim: byId('mPoliritim'), flasModu: byId('mFlasModu'), flas: byId('mFlas'),
+      gruplama: byId('mGruplama'), swing: byId('mSwing'), girisOlcu: byId('mGirisOlcu'),
+      poliritim: byId('mPoliritim'), poliDuzey: byId('mPoliDuzey'),
+      poliSatir: byId('mPoliSatir'), poliEtiket: byId('mPoliEtiket'),
+      poliNoktalar: byId('mPoliNoktalar'),
+      flasModu: byId('mFlasModu'), flas: byId('mFlas'),
       sayac: byId('mSayac'),
+      durum: byId('mDurum'), durumMetin: byId('mDurumMetin'), birimSembol: byId('mBirimSembol'),
       sessizModu: byId('mSessizModu'), sessizSecim: byId('mSessizSecim'),
       sesliOlcu: byId('mSesliOlcu'), sessizOlcu: byId('mSessizOlcu'),
       trainer: byId('mTrainer'), trainerSecim: byId('mTrainerSecim'),
@@ -220,6 +376,8 @@
       titresim: byId('mTitresim'), tamEkran: byId('mTamEkran'),
       sarkiTurler: byId('sarkiTurler'), sarkiListe: byId('sarkiListe'), sarkiAra: byId('sarkiAra'),
       presetler: byId('mPresetler'), presetKaydet: byId('mPresetKaydet'),
+      presetForm: byId('mPresetForm'), presetAdi: byId('mPresetAdi'),
+      presetOnay: byId('mPresetOnay'), presetIptal: byId('mPresetIptal'),
       baslat: byId('mBaslat'), tap: byId('mTap'),
       sarkac: byId('mSarkac'), halka: byId('mHalka')
     }
@@ -237,11 +395,107 @@
     return 'Presto';
   }
 
+  function olcuPaydasi() {
+    var secenek = m.el.olcu.options[m.el.olcu.selectedIndex];
+    return parseInt(secenek && secenek.dataset.payda, 10) || 4;
+  }
+
+  function vurusSuresi() {
+    return (60 / m.bpm) * (4 / olcuPaydasi());
+  }
+
+  function gruplamaSecenekleriniKur(secili, deseniUygula) {
+    var adet = parseInt(m.el.olcu.value, 10) || 4;
+    var secenekler = metronomCekirdegi.gruplamaSecenekleri(adet, olcuPaydasi());
+    m.el.gruplama.replaceChildren();
+    secenekler.forEach(function (ifade, i) {
+      var option = document.createElement('option');
+      option.value = ifade;
+      option.textContent = ifade + (i === 0 ? ' · önerilen' : '');
+      m.el.gruplama.appendChild(option);
+    });
+    var ozel = document.createElement('option');
+    ozel.value = 'ozel';
+    ozel.textContent = 'Özel aksan deseni';
+    m.el.gruplama.appendChild(ozel);
+    m.el.gruplama.value = secimdeVar(m.el.gruplama, secili) ? String(secili) : secenekler[0];
+    if (deseniUygula && m.el.gruplama.value !== 'ozel') {
+      m.aksanDeseni = metronomCekirdegi.gruplamaDeseni(adet, m.el.gruplama.value);
+    }
+  }
+
+  function swingDurumunuGuncelle() {
+    var alt = parseInt(m.el.altBolunme.value, 10) || 1;
+    var kullanilabilir = alt === 2 || alt === 4;
+    m.el.swing.disabled = !kullanilabilir;
+    m.el.swing.title = kullanilabilir
+      ? 'İkilinin ilk notasının vuruş içindeki payı'
+      : 'Swing yalnız sekizlik ve onaltılık alt bölünmede uygulanır';
+  }
+
+  function durumGuncelle(metin, calisiyor) {
+    if (!m.el.durumMetin) { return; }
+    m.el.durumMetin.textContent = metin;
+    m.el.durum.classList.toggle('calisiyor', !!calisiyor);
+  }
+
+  var AYAR_ANAHTAR = 'ritim_metronom_ayar_v1';
+  var ayarYazmaZamani = null;
+  function secimdeVar(el, deger) {
+    return Array.prototype.some.call(el.options, function (o) { return o.value === String(deger); });
+  }
+  function ayarKaydet() {
+    clearTimeout(ayarYazmaZamani);
+    ayarYazmaZamani = setTimeout(function () {
+      try {
+        localStorage.setItem(AYAR_ANAHTAR, JSON.stringify({
+          bpm: m.bpm, olcu: m.el.olcu.value, ses: m.el.ses.value,
+          duzey: m.el.duzey.value, alt: m.el.altBolunme.value,
+          grup: m.el.gruplama.value, swing: m.el.swing.value, girisOlcu: m.el.girisOlcu.value,
+          poliritim: m.el.poliritim.value, poliDuzey: m.el.poliDuzey.value,
+          desen: m.aksanDeseni.slice()
+        }));
+      } catch (e) { /* gizli mod veya dolu depolama */ }
+    }, 120);
+  }
+  function ayarYukle() {
+    try {
+      var a = JSON.parse(localStorage.getItem(AYAR_ANAHTAR) || '{}');
+      if (secimdeVar(m.el.olcu, a.olcu)) { m.el.olcu.value = String(a.olcu); }
+      if (secimdeVar(m.el.ses, a.ses)) { m.el.ses.value = String(a.ses); }
+      if (secimdeVar(m.el.altBolunme, a.alt)) { m.el.altBolunme.value = String(a.alt); }
+      if (secimdeVar(m.el.swing, a.swing)) { m.el.swing.value = String(a.swing); }
+      if (secimdeVar(m.el.girisOlcu, a.girisOlcu)) { m.el.girisOlcu.value = String(a.girisOlcu); }
+      if (secimdeVar(m.el.poliritim, a.poliritim)) { m.el.poliritim.value = String(a.poliritim); }
+      if (Number.isFinite(Number(a.duzey))) { m.el.duzey.value = Math.max(0, Math.min(100, Number(a.duzey))); }
+      if (Number.isFinite(Number(a.poliDuzey))) { m.el.poliDuzey.value = Math.max(10, Math.min(100, Number(a.poliDuzey))); }
+      if (Array.isArray(a.desen)) {
+        m.aksanDeseni = a.desen.slice(0, 12).map(function (v) { return [0, 1, 2].indexOf(Number(v)) >= 0 ? Number(v) : 1; });
+      }
+      m.yuklenenGruplama = a.grup || (Array.isArray(a.desen) ? 'ozel' : '');
+      return Number.isFinite(Number(a.bpm)) ? Number(a.bpm) : 92;
+    } catch (e) { return 92; }
+  }
+
   function bpmAyarla(yeni) {
     m.bpm = Math.max(30, Math.min(240, Math.round(yeni)));
+    if (m.calisiyor && m.oturumBaslangicMs) {
+      m.oturumBpmMin = Math.min(m.oturumBpmMin, m.bpm);
+      m.oturumBpmMax = Math.max(m.oturumBpmMax, m.bpm);
+    }
     m.el.bpm.textContent = m.bpm;
     m.el.surgu.value = m.bpm;
     m.el.tempoAdi.textContent = tempoAdi(m.bpm);
+    if (m.el.birimSembol) { m.el.birimSembol.textContent = olcuPaydasi() === 8 ? '♪' : '♩'; }
+    if (m.calisiyor) {
+      var giris = metronomCekirdegi.girisBilgisi(
+        m.vurusNo, parseInt(m.el.olcu.value, 10), m.girisOlcuAktif
+      );
+      durumGuncelle(giris.giriste
+        ? 'Sayarak giriş · ' + giris.kalanOlcu + ' ölçü kaldı · ' + m.bpm + ' BPM'
+        : 'Çalıyor · ' + m.el.olcu.options[m.el.olcu.selectedIndex].text + ' · ' + m.bpm + ' BPM', true);
+    }
+    ayarKaydet();
   }
 
   /* ---- Aksan deseni editörü: nokta tıkla → aksan(2) → normal(1) → sessiz(0) ---- */
@@ -263,6 +517,24 @@
       n.title = (i + 1) + '. vuruş: ' + (deger === 2 ? 'aksan' : deger === 1 ? 'normal' : 'sessiz');
       m.el.noktalar.appendChild(n);
     });
+    if (m.el.birimSembol) { m.el.birimSembol.textContent = olcuPaydasi() === 8 ? '♪' : '♩'; }
+    ayarKaydet();
+  }
+
+  function poliritimNoktalariKur() {
+    var capraz = parseInt(m.el.poliritim.value, 10) || 0;
+    var ana = parseInt(m.el.olcu.value, 10) || 4;
+    m.el.poliSatir.hidden = capraz === 0;
+    m.el.poliNoktalar.replaceChildren();
+    if (!capraz) { return; }
+    m.el.poliEtiket.textContent = capraz + ':' + ana;
+    m.el.poliNoktalar.setAttribute('aria-label', capraz + ' vuruşa karşı ' + ana + ' vuruş');
+    for (var i = 0; i < capraz; i++) {
+      var nokta = document.createElement('span');
+      nokta.className = 'm-poli-nokta';
+      nokta.title = 'Poliritim ' + (i + 1) + ' / ' + capraz;
+      m.el.poliNoktalar.appendChild(nokta);
+    }
   }
 
   m.el.noktalar.addEventListener('click', function (ev) {
@@ -272,17 +544,36 @@
     m.aksanDeseni[i] = (m.aksanDeseni[i] + 2) % 3; /* 2→1→0→2 */
     n.className = noktaSinifi(m.aksanDeseni[i]);
     n.title = (i + 1) + '. vuruş: ' + (m.aksanDeseni[i] === 2 ? 'aksan' : m.aksanDeseni[i] === 1 ? 'normal' : 'sessiz');
+    m.el.gruplama.value = 'ozel';
+    ayarKaydet();
   });
 
-  function gorselVurus(zaman, olcuIcindeki, vurgu, sesli) {
+  function gorselVurus(zaman, olcuIcindeki, vurgu, sesli, faz) {
     var gecikme = Math.max(0, (zaman - ses.ctx.currentTime) * 1000);
-    var sure = 60 / m.bpm;
+    var sure = vurusSuresi();
+    var jenerasyon = m.jenerasyon;
     setTimeout(function () {
-      if (!m.calisiyor) { return; }
+      if (!m.calisiyor || jenerasyon !== m.jenerasyon) { return; }
       m.sarkacYonu = -m.sarkacYonu;
       m.el.sarkac.style.transition = 'transform ' + sure.toFixed(3) + 's ease-in-out';
       m.el.sarkac.style.transform = 'rotate(' + (26 * m.sarkacYonu) + 'deg)';
-      m.el.sayac.textContent = olcuIcindeki + 1;
+      if (faz && faz.giriste) {
+        m.el.sayac.classList.remove('m-sayac-simdi');
+        m.el.sayac.textContent = 'G ' + (olcuIcindeki + 1);
+        durumGuncelle('Sayarak giriş · ' + faz.kalanOlcu + ' ölçü kaldı · sonra ŞİMDİ', true);
+      } else if (faz && faz.calismaBaslangici) {
+        m.el.sayac.classList.add('m-sayac-simdi');
+        m.el.sayac.textContent = 'ŞİMDİ';
+        durumGuncelle('ŞİMDİ · ' + m.el.olcu.options[m.el.olcu.selectedIndex].text + ' · ' + m.bpm + ' BPM', true);
+        setTimeout(function () { m.el.sayac.classList.remove('m-sayac-simdi'); }, Math.max(180, sure * 650));
+      } else {
+        m.el.sayac.classList.remove('m-sayac-simdi');
+        m.el.sayac.textContent = olcuIcindeki + 1;
+        if (faz && faz.girisTamamlandi) {
+          durumGuncelle('Çalıyor · ' + m.el.olcu.options[m.el.olcu.selectedIndex].text
+            + ' · ' + m.bpm + ' BPM', true);
+        }
+      }
 
       var noktalar = m.el.noktalar.children;
       for (var i = 0; i < noktalar.length; i++) { noktalar[i].classList.remove('aktif'); }
@@ -298,7 +589,22 @@
         if (m.el.titresim.checked && navigator.vibrate) {
           navigator.vibrate(vurgu === 2 ? 40 : 20);
         }
-        if (m.el.ses.value === 'sayma') { konus(SAYILAR_TR[olcuIcindeki] || String(olcuIcindeki + 1)); }
+      }
+    }, gecikme);
+  }
+
+  function gorselPoliritimVurusu(zaman, idx) {
+    var gecikme = Math.max(0, (zaman - ses.ctx.currentTime) * 1000);
+    var jenerasyon = m.jenerasyon;
+    setTimeout(function () {
+      if (!m.calisiyor || jenerasyon !== m.jenerasyon) { return; }
+      var noktalar = m.el.poliNoktalar.children;
+      Array.prototype.forEach.call(noktalar, function (n) { n.classList.remove('aktif'); });
+      if (noktalar[idx]) {
+        noktalar[idx].classList.add('aktif');
+        setTimeout(function () {
+          if (noktalar[idx]) { noktalar[idx].classList.remove('aktif'); }
+        }, 90);
       }
     }, gecikme);
   }
@@ -310,18 +616,19 @@
 
     /* Çalışma zamanlayıcısı: süre dolunca kendiliğinden dur */
     if (m.bitisMs && Date.now() >= m.bitisMs) {
-      metronomDurdur();
+      metronomDurdur('Zamanlayıcı tamamlandı · tekrar başlatmaya hazır');
       m.el.sayac.textContent = '✓';
       return;
     }
 
     while (m.sonrakiZaman < ses.ctx.currentTime + 0.12) {
-      var spb = 60 / m.bpm;
-      var olcuIcindeki = m.vurusNo % olcuAdedi;
-      var olcuNo = Math.floor(m.vurusNo / olcuAdedi);
+      var spb = vurusSuresi();
+      var giris = metronomCekirdegi.girisBilgisi(m.vurusNo, olcuAdedi, m.girisOlcuAktif);
+      var olcuIcindeki = giris.olcuIcindeki;
+      var olcuNo = giris.giriste ? -1 : Math.floor(giris.calismaVurusNo / olcuAdedi);
 
       /* Tempo trainer: her N ölçüde hedefe doğru yaklaş */
-      if (olcuIcindeki === 0 && m.vurusNo > 0 && m.el.trainer.checked) {
+      if (!giris.giriste && olcuIcindeki === 0 && giris.calismaVurusNo > 0 && m.el.trainer.checked) {
         m.olcuSayaci++;
         var herOlcu = parseInt(m.el.trainerOlcu.value, 10);
         if (m.olcuSayaci % herOlcu === 0) {
@@ -329,73 +636,152 @@
           var artis = parseInt(m.el.trainerArtis.value, 10);
           if (m.bpm < hedef) { bpmAyarla(Math.min(hedef, m.bpm + artis)); }
           else if (m.bpm > hedef) { bpmAyarla(Math.max(hedef, m.bpm - artis)); }
-          spb = 60 / m.bpm;
+          spb = vurusSuresi();
         }
       }
 
       var sesli = true;
-      if (m.el.sessizModu.checked) {
+      if (!giris.giriste && m.el.sessizModu.checked) {
         var a = parseInt(m.el.sesliOlcu.value, 10);
         var s = parseInt(m.el.sessizOlcu.value, 10);
         sesli = (olcuNo % (a + s)) < a;
       }
 
-      var vurgu = m.aksanDeseni[olcuIcindeki] === undefined ? 1 : m.aksanDeseni[olcuIcindeki];
+      var vurgu = giris.giriste
+        ? (olcuIcindeki === 0 ? 2 : 1)
+        : (m.aksanDeseni[olcuIcindeki] === undefined ? 1 : m.aksanDeseni[olcuIcindeki]);
 
       /* 🎲 Rastgele sus (Time Guru tarzı): görsel akar, ses o vuruşta susar */
       var rastgeleSustu = false;
       var susYuzde = parseInt(m.el.rastgeleSus.value, 10);
-      if (sesli && susYuzde > 0 && Math.random() * 100 < susYuzde) {
+      if (!giris.giriste && sesli && susYuzde > 0 && Math.random() * 100 < susYuzde) {
         rastgeleSustu = true;
       }
 
       if (sesli && !rastgeleSustu && vurgu > 0) {
         ses.vur(m.sonrakiZaman, vurgu, m.el.ses.value);
       }
-      if (sesli && !rastgeleSustu && alt > 1 && m.el.ses.value !== 'sayma') {
-        for (var sb = 1; sb < alt; sb++) {
-          ses.vurSub(m.sonrakiZaman + sb * spb / alt);
-        }
+      if (!giris.giriste && sesli && !rastgeleSustu && alt > 1) {
+        var altOfsetler = metronomCekirdegi.altVurusOfsetleri(alt, parseFloat(m.el.swing.value));
+        altOfsetler.slice(1).forEach(function (ofset) {
+          ses.vurSub(m.sonrakiZaman + ofset * spb);
+        });
       }
-      if (sesli && capraz > 0 && olcuIcindeki === 0) {
+      if (!giris.giriste && sesli && capraz > 0 && olcuIcindeki === 0) {
         var olcuSuresi = spb * olcuAdedi;
         for (var c = 0; c < capraz; c++) {
-          ses.vurCapraz(m.sonrakiZaman + c * olcuSuresi / capraz);
+          var poliZamani = m.sonrakiZaman + c * olcuSuresi / capraz;
+          ses.vurCapraz(poliZamani, parseInt(m.el.poliDuzey.value, 10) / 100, c === 0);
+          gorselPoliritimVurusu(poliZamani, c);
         }
       }
-      gorselVurus(m.sonrakiZaman, olcuIcindeki, vurgu, sesli);
+      gorselVurus(m.sonrakiZaman, olcuIcindeki, vurgu, sesli, {
+        giriste: giris.giriste,
+        kalanOlcu: giris.kalanOlcu,
+        calismaBaslangici: !giris.giriste && giris.calismaVurusNo === 0 && giris.toplamVurus > 0,
+        girisTamamlandi: !giris.giriste && giris.calismaVurusNo > 0 && giris.toplamVurus > 0
+      });
       m.sonrakiZaman += spb;
       m.vurusNo++;
     }
   }
 
-  function metronomBaslat() {
+  var ekranKilidi = null;
+  function ekranAcikTut() {
+    if (!('wakeLock' in navigator) || ekranKilidi) { return; }
+    navigator.wakeLock.request('screen').then(function (kilit) {
+      ekranKilidi = kilit;
+      kilit.addEventListener('release', function () { ekranKilidi = null; });
+    }).catch(function () { /* tarayıcı/izin desteklemiyor; metronom yine çalışır */ });
+  }
+  function ekranKilidiniBirak() {
+    if (!ekranKilidi) { return; }
+    ekranKilidi.release().catch(function () {}).then(function () { ekranKilidi = null; });
+  }
+
+  function metronomBaslat(secenek) {
+    secenek = secenek || {};
     ses.hazirla();
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     m.vurusNo = 0;
     m.olcuSayaci = 0;
-    var dk = parseInt(m.el.zamanlayiciSel.value, 10);
-    m.bitisMs = dk > 0 ? Date.now() + dk * 60000 : 0;
-    m.sonrakiZaman = ses.ctx.currentTime + 0.08;
-    m.zamanlayici = setInterval(planla, 25);
+    m.girisOlcuAktif = secenek.girisYok
+      ? 0
+      : Math.max(0, parseInt(m.el.girisOlcu.value, 10) || 0);
+    m.jenerasyon++;
+    var dk = secenek.zamanlayiciYok ? 0 : parseInt(m.el.zamanlayiciSel.value, 10);
+    var girisSuresiMs = m.girisOlcuAktif * (parseInt(m.el.olcu.value, 10) || 4) * vurusSuresi() * 1000;
+    m.bitisMs = dk > 0 ? Date.now() + girisSuresiMs + dk * 60000 : 0;
     m.calisiyor = true;
+    if (!secenek.setlist) {
+      m.oturumBaslangicMs = Date.now();
+      m.oturumBpmMin = m.bpm;
+      m.oturumBpmMax = m.bpm;
+    }
+    m.el.girisOlcu.disabled = true;
+    m.sonrakiZaman = ses.ctx.currentTime + 0.08;
+    planla();
+    m.zamanlayici = setInterval(planla, 25);
     m.el.baslat.textContent = '⏸ Durdur';
     m.el.baslat.classList.add('calisiyor');
+    m.el.baslat.setAttribute('aria-pressed', 'true');
+    durumGuncelle(m.girisOlcuAktif
+      ? 'Sayarak giriş hazırlanıyor · ' + m.girisOlcuAktif + ' ölçü'
+      : 'Çalıyor · ' + m.el.olcu.options[m.el.olcu.selectedIndex].text + ' · ' + m.bpm + ' BPM', true);
+    ekranAcikTut();
   }
 
-  function metronomDurdur() {
+  function metronomDurdur(durumMetni, secenek) {
+    secenek = secenek || {};
+    if (setAkis && setAkis.aktif && !secenek.setlistKor) {
+      setlistBitir('Setlist durduruldu');
+      return;
+    }
+    var serbestBaslangic = m.oturumBaslangicMs;
+    var serbestSure = serbestBaslangic ? Math.round((Date.now() - serbestBaslangic) / 1000) : 0;
     clearInterval(m.zamanlayici);
     m.calisiyor = false;
+    m.girisOlcuAktif = 0;
+    m.jenerasyon++;
+    ses.sustur();
     m.el.baslat.textContent = '▶ Başlat';
     m.el.baslat.classList.remove('calisiyor');
+    m.el.baslat.setAttribute('aria-pressed', 'false');
     m.el.sarkac.style.transition = 'transform .4s ease';
     m.el.sarkac.style.transform = 'rotate(0deg)';
     m.el.sayac.textContent = '–';
+    m.el.sayac.classList.remove('m-sayac-simdi');
+    m.el.girisOlcu.disabled = false;
     Array.prototype.forEach.call(m.el.noktalar.children, function (n) { n.classList.remove('aktif'); });
+    Array.prototype.forEach.call(m.el.poliNoktalar.children, function (n) { n.classList.remove('aktif'); });
+    durumGuncelle(durumMetni || 'Hazır · son ayarlar bu cihazda saklandı', false);
+    ekranKilidiniBirak();
+    m.oturumBaslangicMs = 0;
+    if (!secenek.kaydetme && !secenek.setlistKor && serbestSure >= 10) {
+      calismaKaydet({
+        tur: 'serbest',
+        baslik: 'Serbest metronom',
+        sureSn: serbestSure,
+        bpmMin: m.oturumBpmMin,
+        bpmMax: m.oturumBpmMax,
+        detay: {
+          olcu: parseInt(m.el.olcu.value, 10) || 4,
+          payda: olcuPaydasi(),
+          alt: parseInt(m.el.altBolunme.value, 10) || 1,
+          poliritim: parseInt(m.el.poliritim.value, 10) || 0
+        }
+      });
+    }
   }
 
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && m.calisiyor) { ekranAcikTut(); }
+  });
+
   m.el.baslat.addEventListener('click', function () {
-    if (m.calisiyor) { metronomDurdur(); } else { metronomBaslat(); }
+    if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
+    else if (m.calisiyor) { metronomDurdur(); }
+    else { metronomBaslat(); }
   });
   m.el.surgu.addEventListener('input', function () { bpmAyarla(this.value); });
   document.querySelectorAll('[data-bpm-degistir]').forEach(function (b) {
@@ -403,8 +789,34 @@
       bpmAyarla(m.bpm + parseInt(b.dataset.bpmDegistir, 10));
     });
   });
-  m.el.olcu.addEventListener('change', noktalariKur);
-  m.el.duzey.addEventListener('input', function () { ses.duzey(parseInt(this.value, 10) / 100); });
+  m.el.olcu.addEventListener('change', function () {
+    gruplamaSecenekleriniKur('', true);
+    noktalariKur();
+    poliritimNoktalariKur();
+    bpmAyarla(m.bpm);
+  });
+  m.el.duzey.addEventListener('input', function () {
+    ses.duzey(parseInt(this.value, 10) / 100);
+    ayarKaydet();
+  });
+  m.el.gruplama.addEventListener('change', function () {
+    if (this.value !== 'ozel') {
+      m.aksanDeseni = metronomCekirdegi.gruplamaDeseni(parseInt(m.el.olcu.value, 10), this.value);
+      noktalariKur();
+    }
+    ayarKaydet();
+  });
+  m.el.altBolunme.addEventListener('change', function () {
+    swingDurumunuGuncelle();
+    ayarKaydet();
+  });
+  m.el.swing.addEventListener('change', ayarKaydet);
+  m.el.girisOlcu.addEventListener('change', ayarKaydet);
+  m.el.poliritim.addEventListener('change', function () {
+    poliritimNoktalariKur();
+    ayarKaydet();
+  });
+  m.el.poliDuzey.addEventListener('input', ayarKaydet);
   m.el.sessizModu.addEventListener('change', function () { m.el.sessizSecim.hidden = !this.checked; });
   m.el.trainer.addEventListener('change', function () {
     m.el.trainerSecim.hidden = !this.checked;
@@ -418,7 +830,7 @@
     var t = ses.ctx.currentTime + 0.03;
     ses.vur(t, 2, this.value);
     ses.vur(t + 0.32, 1, this.value);
-    if (this.value === 'sayma') { konus('bir, iki'); }
+    ayarKaydet();
   });
 
   /* Tap tempo */
@@ -444,7 +856,10 @@
   /* ---- Preset'ler (localStorage) ---- */
   var PRESET_ANAHTAR = 'ritim_presetler_v1';
   function presetOku() {
-    try { return JSON.parse(localStorage.getItem(PRESET_ANAHTAR) || '[]'); }
+    try {
+      var liste = JSON.parse(localStorage.getItem(PRESET_ANAHTAR) || '[]');
+      return Array.isArray(liste) ? liste.slice(0, 12) : [];
+    }
     catch (e) { return []; }
   }
   function presetYaz(liste) {
@@ -458,37 +873,545 @@
       return;
     }
     liste.forEach(function (p, i) {
+      var kume = document.createElement('span');
+      kume.className = 'm-preset-kume';
       var chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'm-preset-chip';
-      chip.innerHTML = '<b>' + p.ad + '</b> ' + p.bpm + ' <span class="m-preset-sil" title="Sil">×</span>';
-      chip.addEventListener('click', function (ev) {
-        if (ev.target.closest('.m-preset-sil')) {
-          liste.splice(i, 1);
-          presetYaz(liste);
-          presetCiz();
-          return;
-        }
-        bpmAyarla(p.bpm);
-        m.el.olcu.value = p.olcu;
-        m.el.ses.value = p.ses;
-        m.el.altBolunme.value = p.alt || '1';
-        m.el.poliritim.value = p.poliritim || '0';
-        m.aksanDeseni = (p.desen || []).slice();
-        noktalariKur();
+      var ad = document.createElement('b');
+      ad.textContent = String(p.ad || 'Preset').slice(0, 18);
+      var bilgi = document.createTextNode(' ' + Math.max(30, Math.min(240, parseInt(p.bpm, 10) || 92)) + ' ');
+      var sil = document.createElement('button');
+      sil.type = 'button';
+      sil.className = 'm-preset-sil';
+      sil.title = 'Preseti sil';
+      sil.setAttribute('aria-label', String(p.ad || 'Preset').slice(0, 18) + ' presetini sil');
+      sil.textContent = '×';
+      chip.appendChild(ad);
+      chip.appendChild(bilgi);
+      sil.addEventListener('click', function () {
+        liste.splice(i, 1);
+        presetYaz(liste);
+        presetCiz();
       });
-      m.el.presetler.appendChild(chip);
+      chip.addEventListener('click', function () {
+        if (secimdeVar(m.el.olcu, p.olcu)) { m.el.olcu.value = String(p.olcu); }
+        gruplamaSecenekleriniKur(p.grup || 'ozel', false);
+        if (secimdeVar(m.el.ses, p.ses)) { m.el.ses.value = String(p.ses); }
+        if (secimdeVar(m.el.altBolunme, p.alt || '1')) { m.el.altBolunme.value = String(p.alt || '1'); }
+        if (secimdeVar(m.el.swing, p.swing || '50')) { m.el.swing.value = String(p.swing || '50'); }
+        if (secimdeVar(m.el.girisOlcu, p.girisOlcu || '0')) { m.el.girisOlcu.value = String(p.girisOlcu || '0'); }
+        if (secimdeVar(m.el.poliritim, p.poliritim || '0')) { m.el.poliritim.value = String(p.poliritim || '0'); }
+        if (Number.isFinite(Number(p.poliDuzey))) {
+          m.el.poliDuzey.value = Math.max(10, Math.min(100, Number(p.poliDuzey)));
+        }
+        m.aksanDeseni = Array.isArray(p.desen)
+          ? p.desen.slice(0, 12)
+          : metronomCekirdegi.gruplamaDeseni(parseInt(m.el.olcu.value, 10), m.el.gruplama.value);
+        noktalariKur();
+        poliritimNoktalariKur();
+        swingDurumunuGuncelle();
+        bpmAyarla(parseInt(p.bpm, 10) || 92);
+      });
+      kume.appendChild(chip);
+      kume.appendChild(sil);
+      m.el.presetler.appendChild(kume);
     });
   }
-  m.el.presetKaydet.addEventListener('click', function () {
-    var ad = window.prompt('Preset adı:', tempoAdi(m.bpm) + ' ' + m.bpm);
-    if (!ad) { return; }
+  function presetFormKapat() {
+    m.el.presetForm.hidden = true;
+    m.el.presetKaydet.hidden = false;
+  }
+  function presetOlustur() {
+    var ad = m.el.presetAdi.value.trim();
+    if (!ad) {
+      m.el.presetAdi.focus();
+      return;
+    }
     var liste = presetOku();
     liste.push({ ad: ad.slice(0, 18), bpm: m.bpm, olcu: m.el.olcu.value, ses: m.el.ses.value,
-                 alt: m.el.altBolunme.value, poliritim: m.el.poliritim.value, desen: m.aksanDeseni.slice() });
+                 alt: m.el.altBolunme.value, poliritim: m.el.poliritim.value,
+                 grup: m.el.gruplama.value, swing: m.el.swing.value, girisOlcu: m.el.girisOlcu.value,
+                 poliDuzey: m.el.poliDuzey.value, desen: m.aksanDeseni.slice() });
     presetYaz(liste.slice(0, 12));
     presetCiz();
+    presetFormKapat();
+  }
+  m.el.presetKaydet.addEventListener('click', function () {
+    m.el.presetKaydet.hidden = true;
+    m.el.presetForm.hidden = false;
+    m.el.presetAdi.value = tempoAdi(m.bpm) + ' ' + m.bpm;
+    m.el.presetAdi.focus();
+    m.el.presetAdi.select();
   });
+  m.el.presetOnay.addEventListener('click', presetOlustur);
+  m.el.presetIptal.addEventListener('click', presetFormKapat);
+  m.el.presetAdi.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); presetOlustur(); }
+    else if (ev.key === 'Escape') { presetFormKapat(); m.el.presetKaydet.focus(); }
+  });
+
+  /* ================================================================
+     ÇALIŞMA MERKEZİ — hesaba bağlı setlist + otomatik günlük
+     ================================================================ */
+  var cmVeri = window.METRONOM_CALISMA_VERI || null;
+  var setler = [];
+  var duzenlenenSet = null;
+  var setAkis = {
+    aktif: false, idx: 0, bekliyor: false, duraklatildi: false,
+    segmentBaslangicMs: 0, adimCalisilanMs: 0, toplamCalisilanMs: 0,
+    tik: null, set: null, tamamlanan: 0
+  };
+
+  function cmDurum(metin, tur) {
+    var el = byId('mCmKayitDurum');
+    if (!el) { return; }
+    el.textContent = metin;
+    el.className = 'm-cm-kayit-durum' + (tur ? ' ' + tur : '');
+  }
+
+  function apiGonder(veri) {
+    if (!cmVeri || !cmVeri.api) { return Promise.reject(new Error('Çalışma günlüğü bağlantısı yok.')); }
+    veri.csrfToken = cmVeri.csrfToken;
+    return fetch(cmVeri.api, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(veri)
+    }).then(function (yanit) {
+      return yanit.json().catch(function () { return {}; }).then(function (json) {
+        if (!yanit.ok || json.ok === false && !json.atlandi) {
+          throw new Error(json.error || 'İşlem tamamlanamadı.');
+        }
+        return json;
+      });
+    });
+  }
+
+  function calismaKaydet(veri) {
+    cmDurum('Günlüğe yazılıyor…');
+    return apiGonder(Object.assign({ islem: 'calisma_kaydet' }, veri)).then(function (sonuc) {
+      if (sonuc.ozet) { gunlukCiz(sonuc.ozet); }
+      cmDurum(sonuc.atlandi ? 'Kısa deneme kaydedilmedi' : 'Çalışma günlüğe yazıldı', 'basarili');
+      return sonuc;
+    }).catch(function (hata) {
+      cmDurum(hata.message, 'hata');
+      return null;
+    });
+  }
+
+  function dakikaYaz(saniye) {
+    var dk = Math.round((Number(saniye) || 0) / 60);
+    return dk < 1 && saniye > 0 ? '<1 dk' : dk + ' dk';
+  }
+
+  function gunlukCiz(ozet) {
+    if (!ozet || !byId('mGunlukBugun')) { return; }
+    var hedef = ozet.hedef || { gunlukDk: 20, haftalikGun: 5 };
+    var bugunDk = (Number(ozet.bugunSn) || 0) / 60;
+    var oran = Math.min(100, Math.round(100 * bugunDk / Math.max(1, hedef.gunlukDk)));
+    byId('mGunlukBugun').textContent = dakikaYaz(ozet.bugunSn);
+    byId('mGunlukHalka').style.setProperty('--oran', oran + '%');
+    byId('mGunlukHedefMetin').textContent = hedef.gunlukDk + ' dk hedef · %' + oran;
+    byId('mGunlukHedefCubuk').style.width = oran + '%';
+    byId('mGunlukHaftaMetin').textContent =
+      'Son 7 gün ' + (ozet.haftaGunSayisi || 0) + ' / ' + hedef.haftalikGun + ' çalışma günü';
+    byId('mGunlukSeri').textContent = (ozet.seri || 0) + ' gün seri';
+    byId('mHedefDk').value = hedef.gunlukDk;
+    byId('mHedefGun').value = hedef.haftalikGun;
+
+    var grafik = byId('mGunlukGrafik');
+    grafik.replaceChildren();
+    var gunler = Array.isArray(ozet.gunler) ? ozet.gunler : [];
+    var enYuksek = Math.max.apply(null, [60].concat(gunler.map(function (g) { return Number(g.sureSn) || 0; })));
+    var gunAdlari = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
+    gunler.forEach(function (g) {
+      var parca = String(g.tarih || '').split('-').map(Number);
+      var tarih = new Date(parca[0], parca[1] - 1, parca[2]);
+      var kutu = document.createElement('div');
+      kutu.className = 'm-gunluk-gun';
+      kutu.title = g.tarih + ' · ' + dakikaYaz(g.sureSn);
+      var cubuk = document.createElement('i');
+      cubuk.style.height = Math.max(3, Math.round(100 * (Number(g.sureSn) || 0) / enYuksek)) + '%';
+      var etiket = document.createElement('small');
+      etiket.textContent = gunAdlari[tarih.getDay()];
+      kutu.appendChild(cubuk); kutu.appendChild(etiket); grafik.appendChild(kutu);
+    });
+
+    var son = byId('mSonCalismalar');
+    son.replaceChildren();
+    var kayitlar = Array.isArray(ozet.sonKayitlar) ? ozet.sonKayitlar : [];
+    if (!kayitlar.length) {
+      var bos = document.createElement('span');
+      bos.className = 'alan-ipucu';
+      bos.textContent = 'İlk çalışmandan sonra kayıtlar burada görünecek.';
+      son.appendChild(bos);
+    }
+    kayitlar.forEach(function (k) {
+      var satir = document.createElement('div');
+      satir.className = 'm-son-calisma';
+      var baslik = document.createElement('strong');
+      baslik.textContent = k.baslik || (k.tur === 'setlist' ? 'Setlist çalışması' : 'Serbest metronom');
+      var sure = document.createElement('b');
+      sure.textContent = dakikaYaz(k.sure_sn);
+      var alt = document.createElement('small');
+      var bpm = k.bpm_min ? ' · ' + k.bpm_min + (k.bpm_max && k.bpm_max !== k.bpm_min ? '–' + k.bpm_max : '') + ' BPM' : '';
+      alt.textContent = String(k.created_at || '').slice(0, 16) + bpm;
+      satir.appendChild(baslik); satir.appendChild(sure); satir.appendChild(alt); son.appendChild(satir);
+    });
+  }
+
+  function geciciSet() {
+    return setlistCekirdegi.setNormalle({
+      id: duzenlenenSet ? duzenlenenSet.id : 0,
+      ad: byId('mSetAd').value,
+      aciklama: byId('mSetAciklama').value,
+      adimlar: duzenlenenSet ? duzenlenenSet.adimlar : []
+    });
+  }
+
+  function setSecenekleriniCiz(seciliId) {
+    var sec = byId('mSetSec');
+    sec.replaceChildren();
+    var bos = document.createElement('option');
+    bos.value = ''; bos.textContent = '— Yeni setlist —'; sec.appendChild(bos);
+    setler.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.id; o.textContent = s.ad + ' · ' + s.adimlar.length + ' adım';
+      sec.appendChild(o);
+    });
+    sec.value = seciliId ? String(seciliId) : '';
+  }
+
+  function setAdimlariniCiz() {
+    var kok = byId('mSetAdimlar');
+    kok.replaceChildren();
+    var adimlar = duzenlenenSet ? duzenlenenSet.adimlar : [];
+    byId('mSetBos').hidden = adimlar.length > 0;
+    byId('mSetToplam').textContent = adimlar.length + ' adım · ' + setlistCekirdegi.sureYaz(setlistCekirdegi.toplamSure(adimlar));
+    adimlar.forEach(function (adim, idx) {
+      var satir = document.createElement('div');
+      satir.className = 'm-set-adim' + (setAkis.aktif && setAkis.idx === idx ? ' aktif' : '');
+      satir.dataset.idx = idx;
+      satir.innerHTML =
+        '<span class="m-set-sira">' + (idx + 1) + '</span>' +
+        '<label>Adım adı<input type="text" class="girdi" data-alan="baslik" maxlength="60"></label>' +
+        '<label>BPM<input type="number" class="girdi" data-alan="bpm" min="30" max="240"></label>' +
+        '<label>Ölçü<select class="secim" data-alan="olcu">' +
+          '<option>2/4</option><option>3/4</option><option>4/4</option><option>5/4</option>' +
+          '<option>6/8</option><option>7/8</option><option>8/8</option><option>9/8</option>' +
+          '<option>10/8</option><option>11/8</option><option>12/8</option></select></label>' +
+        '<label>Süre (dk)<input type="number" class="girdi" data-alan="sure" min=".25" max="120" step=".25"></label>' +
+        '<label>Geçiş<select class="secim" data-alan="gecis"><option value="otomatik">Otomatik</option><option value="bekle">Bekle</option></select></label>' +
+        '<label>Alt bölünme<select class="secim" data-alan="alt"><option value="1">Kapalı</option><option value="2">Sekizlik</option><option value="3">Üçleme</option><option value="4">Onaltılık</option></select></label>' +
+        '<label>Poliritim<select class="secim" data-alan="poliritim"><option value="0">Kapalı</option>' +
+          Array.from({ length: 11 }, function (_, i) { return '<option value="' + (i + 2) + '">' + (i + 2) + '</option>'; }).join('') +
+          '</select></label>' +
+        '<div class="m-set-adim-islem"><button type="button" class="m-mini-btn" data-islem="yukari" title="Yukarı taşı">↑</button>' +
+          '<button type="button" class="m-mini-btn" data-islem="asagi" title="Aşağı taşı">↓</button>' +
+          '<button type="button" class="m-mini-btn" data-islem="sil" title="Adımı sil">×</button></div>';
+      satir.querySelector('[data-alan="baslik"]').value = adim.baslik;
+      satir.querySelector('[data-alan="bpm"]').value = adim.bpm;
+      satir.querySelector('[data-alan="olcu"]').value = adim.olcu + '/' + adim.payda;
+      satir.querySelector('[data-alan="sure"]').value = Math.round(adim.sureSn / 15) / 4;
+      satir.querySelector('[data-alan="gecis"]').value = adim.gecis;
+      satir.querySelector('[data-alan="alt"]').value = adim.alt;
+      satir.querySelector('[data-alan="poliritim"]').value = adim.poliritim;
+      kok.appendChild(satir);
+    });
+  }
+
+  function setYukle(set) {
+    duzenlenenSet = setlistCekirdegi.setNormalle(set || {});
+    byId('mSetAd').value = duzenlenenSet.id ? duzenlenenSet.ad : '';
+    byId('mSetAciklama').value = duzenlenenSet.aciklama;
+    byId('mSetSil').disabled = !duzenlenenSet.id;
+    setSecenekleriniCiz(duzenlenenSet.id);
+    setAdimlariniCiz();
+  }
+
+  function mevcutAyariAdimYap() {
+    var sira = duzenlenenSet ? duzenlenenSet.adimlar.length : 0;
+    return setlistCekirdegi.adimNormalle({
+      baslik: 'Bölüm ' + (sira + 1) + ' · ' + m.bpm + ' BPM',
+      bpm: m.bpm,
+      olcu: parseInt(m.el.olcu.value, 10) || 4,
+      payda: olcuPaydasi(),
+      gruplama: m.el.gruplama.value,
+      alt: parseInt(m.el.altBolunme.value, 10) || 1,
+      swing: parseFloat(m.el.swing.value) || 50,
+      poliritim: parseInt(m.el.poliritim.value, 10) || 0,
+      poliDuzey: parseInt(m.el.poliDuzey.value, 10) || 55,
+      girisOlcu: parseInt(m.el.girisOlcu.value, 10) || 0,
+      sureSn: 300,
+      gecis: 'otomatik',
+      desen: m.aksanDeseni.slice()
+    }, sira);
+  }
+
+  function adimAyarlariniUygula(adim) {
+    var hedefOlcu = String(adim.olcu);
+    Array.prototype.some.call(m.el.olcu.options, function (o) {
+      if (o.value === hedefOlcu && (parseInt(o.dataset.payda, 10) || 4) === adim.payda) {
+        m.el.olcu.value = o.value; return true;
+      }
+      return false;
+    });
+    gruplamaSecenekleriniKur(adim.gruplama, false);
+    if (secimdeVar(m.el.altBolunme, adim.alt)) { m.el.altBolunme.value = String(adim.alt); }
+    if (secimdeVar(m.el.swing, adim.swing)) { m.el.swing.value = String(adim.swing); }
+    if (secimdeVar(m.el.poliritim, adim.poliritim)) { m.el.poliritim.value = String(adim.poliritim); }
+    if (secimdeVar(m.el.girisOlcu, adim.girisOlcu)) { m.el.girisOlcu.value = String(adim.girisOlcu); }
+    m.el.poliDuzey.value = adim.poliDuzey;
+    m.aksanDeseni = adim.desen.slice();
+    noktalariKur();
+    poliritimNoktalariKur();
+    swingDurumunuGuncelle();
+    bpmAyarla(adim.bpm);
+  }
+
+  function setlistSegmentKapat() {
+    if (!setAkis.segmentBaslangicMs) { return; }
+    var sure = Date.now() - setAkis.segmentBaslangicMs;
+    setAkis.adimCalisilanMs += sure;
+    setAkis.toplamCalisilanMs += sure;
+    setAkis.segmentBaslangicMs = 0;
+  }
+
+  function setlistKalanMs() {
+    if (!setAkis.set || !setAkis.set.adimlar[setAkis.idx]) { return 0; }
+    var gecen = setAkis.adimCalisilanMs
+      + (setAkis.segmentBaslangicMs ? Date.now() - setAkis.segmentBaslangicMs : 0);
+    return Math.max(0, setAkis.set.adimlar[setAkis.idx].sureSn * 1000 - gecen);
+  }
+
+  function setlistOynaticiyiCiz() {
+    if (!setAkis.aktif || !setAkis.set) { return; }
+    var adim = setAkis.set.adimlar[setAkis.idx];
+    var kalan = setlistKalanMs();
+    var oran = Math.min(100, 100 * (1 - kalan / Math.max(1, adim.sureSn * 1000)));
+    byId('mSetOynaticiBaslik').textContent = (setAkis.idx + 1) + '/' + setAkis.set.adimlar.length + ' · ' + adim.baslik;
+    byId('mSetOynaticiAlt').textContent = adim.bpm + ' BPM · ' + adim.olcu + '/' + adim.payda +
+      (adim.poliritim ? ' · poliritim ' + adim.poliritim + ':' + adim.olcu : '') +
+      (setAkis.bekliyor ? ' · sonraki adım hazır' : setAkis.duraklatildi ? ' · duraklatıldı' : '');
+    byId('mSetSayac').textContent = setlistCekirdegi.sureYaz(Math.ceil(kalan / 1000));
+    byId('mSetIlerleme').style.width = oran + '%';
+    byId('mSetBaslat').textContent = setAkis.bekliyor
+      ? '▶ Sonraki Adım'
+      : (m.calisiyor ? '⏸ Duraklat' : '▶ Devam');
+    setAdimlariniCiz();
+  }
+
+  function setlistAdimBaslat(idx, devam) {
+    if (!setAkis.set || !setAkis.set.adimlar[idx]) { return; }
+    setAkis.idx = idx;
+    setAkis.bekliyor = false;
+    setAkis.duraklatildi = false;
+    if (!devam) {
+      setAkis.adimCalisilanMs = 0;
+      adimAyarlariniUygula(setAkis.set.adimlar[idx]);
+    }
+    setAkis.segmentBaslangicMs = Date.now();
+    metronomBaslat({ setlist: true, zamanlayiciYok: true, girisYok: !!devam });
+    setlistOynaticiyiCiz();
+  }
+
+  function setlistAdimTamam() {
+    var adim = setAkis.set.adimlar[setAkis.idx];
+    setlistSegmentKapat();
+    metronomDurdur('Setlist adımı tamamlandı', { setlistKor: true, kaydetme: true });
+    setAkis.tamamlanan = Math.max(setAkis.tamamlanan, setAkis.idx + 1);
+    if (setAkis.idx >= setAkis.set.adimlar.length - 1) {
+      setlistBitir('Setlist tamamlandı');
+      return;
+    }
+    if (adim.gecis === 'bekle') {
+      setAkis.bekliyor = true;
+      setAkis.duraklatildi = true;
+      zilCal();
+      setlistOynaticiyiCiz();
+      return;
+    }
+    setlistAdimBaslat(setAkis.idx + 1, false);
+  }
+
+  function setlistTik() {
+    if (!setAkis.aktif) { return; }
+    if (m.calisiyor && setlistKalanMs() <= 0) { setlistAdimTamam(); return; }
+    setlistOynaticiyiCiz();
+  }
+
+  function setlistBaslat() {
+    if (!duzenlenenSet || !duzenlenenSet.adimlar.length) {
+      cmDurum('Başlatmak için en az bir adım ekleyin.', 'hata'); return;
+    }
+    if (m.calisiyor) { metronomDurdur('Setlist hazırlanıyor'); }
+    setAkis.aktif = true;
+    setAkis.idx = 0;
+    setAkis.bekliyor = false;
+    setAkis.duraklatildi = false;
+    setAkis.segmentBaslangicMs = 0;
+    setAkis.adimCalisilanMs = 0;
+    setAkis.toplamCalisilanMs = 0;
+    setAkis.tamamlanan = 0;
+    setAkis.set = setlistCekirdegi.setNormalle(duzenlenenSet);
+    byId('mSetOynatici').hidden = false;
+    clearInterval(setAkis.tik);
+    setAkis.tik = setInterval(setlistTik, 250);
+    cmDurum('Setlist çalıyor', 'basarili');
+    setlistAdimBaslat(0, false);
+  }
+
+  function setlistDuraklatDevam() {
+    if (!setAkis.aktif) { setlistBaslat(); return; }
+    if (setAkis.bekliyor) {
+      setlistAdimBaslat(setAkis.idx + 1, false);
+      return;
+    }
+    if (m.calisiyor) {
+      setlistSegmentKapat();
+      metronomDurdur('Setlist duraklatıldı', { setlistKor: true, kaydetme: true });
+      setAkis.duraklatildi = true;
+      setlistOynaticiyiCiz();
+    } else {
+      setlistAdimBaslat(setAkis.idx, true);
+    }
+  }
+
+  function setlistAtla(yeniIdx) {
+    if (!setAkis.aktif || !setAkis.set || yeniIdx < 0 || yeniIdx >= setAkis.set.adimlar.length) { return; }
+    if (m.calisiyor) {
+      setlistSegmentKapat();
+      metronomDurdur('Setlist adımı değiştiriliyor', { setlistKor: true, kaydetme: true });
+    }
+    setlistAdimBaslat(yeniIdx, false);
+  }
+
+  function setlistBitir(mesaj) {
+    if (!setAkis || !setAkis.aktif) { return; }
+    if (m.calisiyor) {
+      setlistSegmentKapat();
+      metronomDurdur(mesaj || 'Setlist bitti', { setlistKor: true, kaydetme: true });
+    }
+    clearInterval(setAkis.tik);
+    var sureSn = Math.round(setAkis.toplamCalisilanMs / 1000);
+    var kayitSet = setAkis.set;
+    var tamamlanan = setAkis.tamamlanan;
+    setAkis.aktif = false;
+    setAkis.bekliyor = false;
+    setAkis.duraklatildi = false;
+    byId('mSetOynatici').hidden = true;
+    setAdimlariniCiz();
+    if (sureSn >= 10) {
+      var bpmler = kayitSet.adimlar.map(function (a) { return a.bpm; });
+      calismaKaydet({
+        tur: 'setlist',
+        setId: kayitSet.id || null,
+        baslik: kayitSet.ad || 'Setlist çalışması',
+        sureSn: sureSn,
+        bpmMin: Math.min.apply(null, bpmler),
+        bpmMax: Math.max.apply(null, bpmler),
+        detay: {
+          adimSayisi: kayitSet.adimlar.length,
+          tamamlananAdim: tamamlanan,
+          planlananSn: setlistCekirdegi.toplamSure(kayitSet.adimlar)
+        }
+      });
+    } else {
+      cmDurum(mesaj || 'Setlist kapatıldı');
+    }
+  }
+
+  if (cmVeri && setlistCekirdegi && byId('mCalismaMerkezi')) {
+    setler = (Array.isArray(cmVeri.setler) ? cmVeri.setler : []).map(setlistCekirdegi.setNormalle);
+    setSecenekleriniCiz(0);
+    setYukle(null);
+    gunlukCiz(cmVeri.ozet);
+
+    byId('mSetYeni').addEventListener('click', function () {
+      if (setAkis.aktif) { setlistBitir('Yeni setlist açıldı'); }
+      setYukle(null);
+      byId('mSetAd').focus();
+    });
+    byId('mSetSec').addEventListener('change', function () {
+      var id = parseInt(this.value, 10) || 0;
+      setYukle(setler.find(function (s) { return s.id === id; }) || null);
+    });
+    byId('mSetAdimEkle').addEventListener('click', function () {
+      if (!duzenlenenSet) { setYukle(null); }
+      duzenlenenSet.adimlar.push(mevcutAyariAdimYap());
+      setAdimlariniCiz();
+    });
+    byId('mSetAdimlar').addEventListener('input', function (ev) {
+      var satir = ev.target.closest('.m-set-adim');
+      if (!satir || !duzenlenenSet) { return; }
+      var idx = parseInt(satir.dataset.idx, 10);
+      var alan = ev.target.dataset.alan;
+      var a = duzenlenenSet.adimlar[idx];
+      if (alan === 'baslik') { a.baslik = ev.target.value.slice(0, 60); }
+      else if (alan === 'bpm') { a.bpm = Math.max(30, Math.min(240, parseInt(ev.target.value, 10) || 92)); }
+      else if (alan === 'sure') { a.sureSn = Math.max(15, Math.min(7200, Math.round((parseFloat(ev.target.value) || .25) * 60))); }
+      else if (alan === 'gecis') { a.gecis = ev.target.value === 'bekle' ? 'bekle' : 'otomatik'; }
+      else if (alan === 'alt') { a.alt = parseInt(ev.target.value, 10) || 1; }
+      else if (alan === 'poliritim') { a.poliritim = parseInt(ev.target.value, 10) || 0; }
+      else if (alan === 'olcu') {
+        var olcu = ev.target.value.split('/');
+        a.olcu = parseInt(olcu[0], 10); a.payda = parseInt(olcu[1], 10);
+        a.gruplama = 'ozel';
+        a.desen = metronomCekirdegi.gruplamaDeseni(a.olcu, '');
+      }
+      byId('mSetToplam').textContent = duzenlenenSet.adimlar.length + ' adım · ' +
+        setlistCekirdegi.sureYaz(setlistCekirdegi.toplamSure(duzenlenenSet.adimlar));
+    });
+    byId('mSetAdimlar').addEventListener('click', function (ev) {
+      var dugme = ev.target.closest('[data-islem]');
+      var satir = ev.target.closest('.m-set-adim');
+      if (!dugme || !satir || !duzenlenenSet) { return; }
+      var idx = parseInt(satir.dataset.idx, 10);
+      if (dugme.dataset.islem === 'sil') { duzenlenenSet.adimlar.splice(idx, 1); }
+      else if (dugme.dataset.islem === 'yukari') { duzenlenenSet.adimlar = setlistCekirdegi.adimTasi(duzenlenenSet.adimlar, idx, idx - 1); }
+      else if (dugme.dataset.islem === 'asagi') { duzenlenenSet.adimlar = setlistCekirdegi.adimTasi(duzenlenenSet.adimlar, idx, idx + 1); }
+      setAdimlariniCiz();
+    });
+    byId('mSetKaydet').addEventListener('click', function () {
+      var set = geciciSet();
+      if (!set.ad) { cmDurum('Setlist adı yazın.', 'hata'); byId('mSetAd').focus(); return; }
+      if (!set.adimlar.length) { cmDurum('En az bir adım ekleyin.', 'hata'); return; }
+      cmDurum('Setlist kaydediliyor…');
+      apiGonder({ islem: 'set_kaydet', id: set.id, ad: set.ad, aciklama: set.aciklama, adimlar: set.adimlar })
+        .then(function (sonuc) {
+          var kayit = setlistCekirdegi.setNormalle(sonuc.set);
+          var idx = setler.findIndex(function (s) { return s.id === kayit.id; });
+          if (idx >= 0) { setler[idx] = kayit; } else { setler.unshift(kayit); }
+          setYukle(kayit);
+          cmDurum('Setlist kaydedildi', 'basarili');
+        }).catch(function (hata) { cmDurum(hata.message, 'hata'); });
+    });
+    byId('mSetCalistir').addEventListener('click', setlistBaslat);
+    byId('mSetSil').addEventListener('click', function () {
+      if (!duzenlenenSet || !duzenlenenSet.id || !window.confirm('Bu setlist silinsin mi? Geçmiş çalışma kayıtları korunur.')) { return; }
+      var id = duzenlenenSet.id;
+      apiGonder({ islem: 'set_sil', id: id }).then(function () {
+        setler = setler.filter(function (s) { return s.id !== id; });
+        setYukle(null);
+        cmDurum('Setlist silindi', 'basarili');
+      }).catch(function (hata) { cmDurum(hata.message, 'hata'); });
+    });
+    byId('mSetBaslat').addEventListener('click', setlistDuraklatDevam);
+    byId('mSetBitir').addEventListener('click', function () { setlistBitir('Setlist bitirildi'); });
+    byId('mSetOnceki').addEventListener('click', function () { setlistAtla(setAkis.idx - 1); });
+    byId('mSetSonraki').addEventListener('click', function () { setlistAtla(setAkis.idx + 1); });
+    byId('mHedefKaydet').addEventListener('click', function () {
+      apiGonder({
+        islem: 'hedef_kaydet',
+        gunlukDk: parseInt(byId('mHedefDk').value, 10) || 20,
+        haftalikGun: parseInt(byId('mHedefGun').value, 10) || 5
+      }).then(function (sonuc) {
+        gunlukCiz(sonuc.ozet);
+        cmDurum('Çalışma hedefi kaydedildi', 'basarili');
+      }).catch(function (hata) { cmDurum(hata.message, 'hata'); });
+    });
+  }
 
   /* ---- ⛶ Tam ekran ---- */
   m.el.tamEkran.addEventListener('click', function () {
@@ -575,7 +1498,12 @@
       b.addEventListener('click', function () {
         bpmAyarla(s.bpm > 240 ? 240 : s.bpm);
         if (s.bpm > 240) { window.alert(s.ad + ' aslında ' + s.bpm + ' BPM — metronom üst sınırı 240 olarak ayarlandı.'); }
-        if (s.olcu) { m.el.olcu.value = String(s.olcu); noktalariKur(); }
+        if (s.olcu) {
+          m.el.olcu.value = String(s.olcu);
+          gruplamaSecenekleriniKur('', true);
+          noktalariKur();
+          poliritimNoktalariKur();
+        }
         document.querySelectorAll('.m-sarki').forEach(function (x) { x.classList.remove('secili'); });
         b.classList.add('secili');
         if (!m.calisiyor) { metronomBaslat(); } /* seçince direkt çalsın */
@@ -610,8 +1538,12 @@
     m.el.sarkiAra.addEventListener('input', sarkilariCiz);
   }
 
-  bpmAyarla(92);
+  var ilkBpm = ayarYukle();
+  gruplamaSecenekleriniKur(m.yuklenenGruplama || '', m.yuklenenGruplama !== 'ozel');
   noktalariKur();
+  poliritimNoktalariKur();
+  swingDurumunuGuncelle();
+  bpmAyarla(ilkBpm);
   presetCiz();
 
   /* ================================================================
@@ -622,10 +1554,17 @@
   document.querySelectorAll('.m-sekme').forEach(function (s) {
     s.addEventListener('click', function () {
       if (!s.classList.contains('aktif')) { digerleriniIptalEt(''); }
-      document.querySelectorAll('.m-sekme').forEach(function (x) { x.classList.remove('aktif'); });
+      document.querySelectorAll('.m-sekme').forEach(function (x) {
+        x.classList.remove('aktif');
+        x.setAttribute('aria-selected', 'false');
+      });
       s.classList.add('aktif');
+      s.setAttribute('aria-selected', 'true');
       document.querySelectorAll('.m-sekme-icerik').forEach(function (x) { x.hidden = true; });
       byId('sekme-' + s.dataset.sekme).hidden = false;
+      if (s.dataset.sekme === 'ritim' && byId('roKok').__roYenidenCiz) {
+        window.requestAnimationFrame(function () { byId('roKok').__roYenidenCiz(); });
+      }
     });
   });
 
@@ -644,6 +1583,25 @@
       }
     }
   })();
+
+  /*
+   * Ölçümle birlikte KARARLILIK ve KALİBRASYON KALİTESİ de kaydedilir.
+   * Skor, sabit kaymayı (cihaz gecikmesi + kişisel erken/geç vurma eğilimi)
+   * içinde taşır; asenkroni standart sapması taşımaz. Dönem karşılaştırması
+   * bu yüzden SD'den okunmalıdır. Kalite kodu, sonradan "yalnız güvenilir
+   * ölçümler" diye süzebilmek için saklanır.
+   */
+  function olcumEkBilgisiYaz(onek, sapmalar) {
+    var sdAlan = byId(onek + 'FormSd');
+    var kaliteAlan = byId(onek + 'FormKalite');
+    if (sdAlan) {
+      var sd = (sapmalar && sapmalar.length >= 2) ? zaman.standartSapma(sapmalar) : null;
+      sdAlan.value = sd === null ? '' : Math.round(sd);
+    }
+    if (kaliteAlan) {
+      kaliteAlan.value = (ses.ctx ? zaman.kaliteDurumu(ses.ctx).kod : '') || '';
+    }
+  }
 
   /* Kaydet formu: öğrenci seçilmeden gönderilmesin */
   function kaydetFormuBagla(onek, ogrenciSelId) {
@@ -666,13 +1624,14 @@
   var vt = {
     aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
     vuruslar: [], taplar: [], bpm: 72, fazVurus: 16, toplamVurus: 0, bitisZamani: 0,
-    gosterilenFaz: -1
+    gosterilenFaz: -1, vurusAcik: false, kapiZamanlayici: null
   };
 
   function vtBaslat() {
     if (m.calisiyor) { metronomDurdur(); }
     digerleriniIptalEt('vt');
     ses.hazirla();
+    if (!olcumIcinKalibrasyonHazir()) { return; }
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     vt.bpm = parseInt(byId('vtBpm').value, 10);
     vt.fazVurus = parseInt(byId('vtVurusSayisi').value, 10);
@@ -682,19 +1641,26 @@
     vt.vurusNo = 0;
     vt.sonrakiZaman = ses.ctx.currentTime + 0.6;
     vt.gosterilenFaz = -1;
+    vt.vurusAcik = false;
     vt.aktif = true;
     byId('vtSahne').hidden = false;
     byId('vtSonuc').hidden = true;
+    byId('vtPad').classList.add('m-pad-hazir');
+    clearTimeout(vt.kapiZamanlayici);
+    vt.kapiZamanlayici = setTimeout(function () {
+      if (vt.aktif) { vt.vurusAcik = true; }
+    }, Math.max(0, (vt.sonrakiZaman + 4 * 60 / vt.bpm - ses.ctx.currentTime) * 1000
+      - zaman.BASLANGIC_KAPISI_MS));
     ilerlemeAkit('vtIlerleme', vt.toplamVurus * 60 / vt.bpm,
                  (vt.sonrakiZaman - ses.ctx.currentTime) * 1000);
     vtFazEtiketi(0);
     vt.zamanlayici = setInterval(vtPlanla, 25);
   }
 
-  function vtFazEtiketi(faz) {
+  function vtFazEtiketi(faz, kalan) {
     var el = byId('vtFaz');
     el.classList.toggle('sessiz-faz', faz === 2);
-    el.textContent = faz === 0 ? '🎧 Hazırlık — yalnız dinle'
+    el.textContent = faz === 0 ? '🎧 Hazırlık · ' + (kalan || 4) + ' → geri sayım bitince vur'
       : faz === 1 ? '🔊 Sesli faz — metronomla birlikte vur'
       : '🔇 Sessiz faz — içinden say, vurmaya devam et';
   }
@@ -703,17 +1669,27 @@
     while (vt.aktif && vt.sonrakiZaman < ses.ctx.currentTime + 0.12 && vt.vurusNo < vt.toplamVurus) {
       var faz = vt.vurusNo < 4 ? 0 : (vt.vurusNo < 4 + vt.fazVurus ? 1 : 2);
       if (faz < 2) {
-        ses.vur(vt.sonrakiZaman, vt.vurusNo % 4 === 0, m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value);
+        ses.vur(vt.sonrakiZaman, vt.vurusNo % 4 === 0, m.el.ses.value);
       }
-      vt.vuruslar.push({ zaman: vt.sonrakiZaman, faz: faz });
-      (function (f, zamanX) {
-        var gecikme = Math.max(0, (zamanX - ses.ctx.currentTime) * 1000);
+      var hazirlikKalan = faz === 0 ? 4 - vt.vurusNo : 0;
+      vt.vuruslar.push({ zaman: vt.sonrakiZaman, faz: faz, hazirlikKalan: hazirlikKalan });
+      (function (vurus) {
+        var gecikme = Math.max(0, (vurus.zaman - ses.ctx.currentTime) * 1000);
         setTimeout(function () {
-          if (!vt.aktif || vt.gosterilenFaz === f) { return; }
-          vt.gosterilenFaz = f;       // etiket yalnız faz değişiminde güncellenir
-          vtFazEtiketi(f);
+          if (!vt.aktif) { return; }
+          if (vurus.faz === 0) {
+            vtFazEtiketi(0, vurus.hazirlikKalan);
+            return;
+          }
+          if (vt.gosterilenFaz === vurus.faz) { return; }
+          vt.gosterilenFaz = vurus.faz;
+          if (vurus.faz === 1) {
+            vt.vurusAcik = true;
+            byId('vtPad').classList.remove('m-pad-hazir');
+          }
+          vtFazEtiketi(vurus.faz);
         }, gecikme);
-      })(faz, vt.sonrakiZaman);
+      })(vt.vuruslar[vt.vuruslar.length - 1]);
       vt.sonrakiZaman += 60 / vt.bpm;
       vt.vurusNo++;
     }
@@ -721,15 +1697,17 @@
       vt.bitisZamani = vt.vuruslar[vt.vuruslar.length - 1].zaman + 60 / vt.bpm;
       if (ses.ctx.currentTime > vt.bitisZamani + 0.3) {
         clearInterval(vt.zamanlayici);
+        clearTimeout(vt.kapiZamanlayici);
         vt.aktif = false;
+        vt.vurusAcik = false;
         vtDegerlendir();
       }
     }
   }
 
-  function vtTap() {
-    if (!vt.aktif) { return; }
-    vt.taplar.push(ses.ctx.currentTime);
+  function vtTap(olay) {
+    if (!vt.aktif || !vt.vurusAcik) { return; }
+    vt.taplar.push(zaman.olayZamani(ses.ctx, olay));
     var pad = byId('vtPad');
     pad.classList.add('vurdum');
     setTimeout(function () { pad.classList.remove('vurdum'); }, 90);
@@ -737,36 +1715,35 @@
 
   function vtDegerlendir() {
     var aralikMs = 60000 / vt.bpm;
-    var fazlar = { 1: { sapmalar: [], vurulan: {} }, 2: { sapmalar: [], vurulan: {} } };
+    var fazlar = { 1: { sapmalar: [], vurulan: {}, deneme: 0 }, 2: { sapmalar: [], vurulan: {}, deneme: 0 } };
     var grafik = [];
 
-    vt.taplar.forEach(function (tap) {
-      var enYakin = null, enKucukFark = Infinity, enYakinIdx = -1;
-      vt.vuruslar.forEach(function (v, i) {
-        var fark = Math.abs(tap - v.zaman);
-        if (fark < enKucukFark) { enKucukFark = fark; enYakin = v; enYakinIdx = i; }
-      });
-      if (!enYakin || enYakin.faz === 0) { return; }
-      var sapmaMs = (tap - enYakin.zaman) * 1000;
-      var kacik = Math.abs(sapmaMs) > aralikMs * 0.45;
-      if (!kacik) {
-        fazlar[enYakin.faz].sapmalar.push(sapmaMs);
-        fazlar[enYakin.faz].vurulan[enYakinIdx] = true;
+    var eslesme = vuruslariEsle(vt.taplar, vt.vuruslar, aralikMs * 0.45 / 1000, function (v) {
+      return v.faz === 1 || v.faz === 2;
+    });
+    eslesme.denemeler.forEach(function (d) {
+      var faz = d.hedef.faz;
+      fazlar[faz].deneme++;
+      if (d.eslesti) {
+        fazlar[faz].sapmalar.push(d.sapmaMs);
+        fazlar[faz].vurulan[d.hedefIdx] = true;
       }
-      grafik.push({ sapma: sapmaMs, faz: enYakin.faz, kacik: kacik });
+      grafik.push({ sapma: d.sapmaMs, faz: faz, kacik: !d.eslesti });
     });
 
     function fazOzet(f) {
       var s = fazlar[f].sapmalar;
       var vurulanAdet = Object.keys(fazlar[f].vurulan).length;
       var kacirilan = vt.fazVurus - vurulanAdet;
+      var fazla = Math.max(0, fazlar[f].deneme - vurulanAdet);
       var mutlak = ort(s.map(Math.abs));
       var hamSkor = s.length ? Math.max(0, 1 - mutlak / (0.30 * aralikMs)) : 0;
       var isabet = vurulanAdet / vt.fazVurus;
+      var dogruluk = vurulanAdet / Math.max(1, fazlar[f].deneme);
       return {
-        n: s.length, kacirilan: kacirilan,
+        n: s.length, kacirilan: kacirilan, fazla: fazla,
         ortSapma: Math.round(ort(s)), ortMutlak: Math.round(mutlak),
-        skor: Math.round(100 * hamSkor * isabet)
+        skor: Math.round(100 * hamSkor * isabet * dogruluk)
       };
     }
     var f1 = fazOzet(1), f2 = fazOzet(2);
@@ -777,10 +1754,10 @@
     byId('vtSkor').textContent = genel;
     byId('vtTablo').innerHTML =
       '<tr><td>🔊 Sesli (metronomla)</td><td class="sayi">' + f1.n + '/' + vt.fazVurus + '</td>' +
-      '<td class="sayi">' + f1.kacirilan + '</td><td class="sayi">' + (f1.ortSapma > 0 ? '+' : '') + f1.ortSapma + ' ms</td>' +
+      '<td class="sayi">' + f1.kacirilan + '</td><td class="sayi">' + f1.fazla + '</td><td class="sayi">' + (f1.ortSapma > 0 ? '+' : '') + f1.ortSapma + ' ms</td>' +
       '<td class="sayi">' + f1.ortMutlak + ' ms</td><td class="sayi"><strong>' + f1.skor + '</strong></td></tr>' +
       '<tr><td>🔇 Sessiz (içsel tempo)</td><td class="sayi">' + f2.n + '/' + vt.fazVurus + '</td>' +
-      '<td class="sayi">' + f2.kacirilan + '</td><td class="sayi">' + (f2.ortSapma > 0 ? '+' : '') + f2.ortSapma + ' ms</td>' +
+      '<td class="sayi">' + f2.kacirilan + '</td><td class="sayi">' + f2.fazla + '</td><td class="sayi">' + (f2.ortSapma > 0 ? '+' : '') + f2.ortSapma + ' ms</td>' +
       '<td class="sayi">' + f2.ortMutlak + ' ms</td><td class="sayi"><strong>' + f2.skor + '</strong></td></tr>';
 
     var g = byId('vtGrafik');
@@ -799,6 +1776,9 @@
     if (bias > 15) { yorum.push('Vuruşlar geç kalma eğiliminde.'); }
     else if (bias < -15) { yorum.push('Vuruşlar erken gelme eğiliminde.'); }
     else { yorum.push('Erken/geç dengesi iyi.'); }
+    if (f1.fazla + f2.fazla > 0) {
+      yorum.push((f1.fazla + f2.fazla) + ' fazla vuruş puana doğruluk cezası olarak yansıdı.');
+    }
     if (f2.ortMutlak > f1.ortMutlak * 1.5 && f1.n > 0) {
       yorum.push('Metronom susunca sapma belirgin arttı — sessiz sürdürme çalışılabilir.');
     } else if (f2.n > 0 && f1.n > 0) {
@@ -808,13 +1788,22 @@
 
     byId('vtFormBpm').value = vt.bpm;
     byId('vtFormSkor').value = genel;
-    byId('vtFormDetay').value = JSON.stringify({ bpm: vt.bpm, fazVurus: vt.fazVurus, sesli: f1, sessiz: f2 });
+    var kal = zaman.kalibrasyonOku();
+    byId('vtFormDetay').value = JSON.stringify({
+      bpm: vt.bpm, fazVurus: vt.fazVurus, sesli: f1, sessiz: f2,
+      zamanlamaSurumu: zaman.SURUM, telafiMs: kal.telafiMs,
+      kalibrasyonDagilimMs: kal.dagilimMs
+    });
     byId('vtFormStandart').value = (vt.bpm === 72 && vt.fazVurus === 16) ? '1' : '0';
+    olcumEkBilgisiYaz('vt', [].concat(fazlar[1].sapmalar, fazlar[2].sapmalar));
   }
 
   function vtIptalEt() {
     clearInterval(vt.zamanlayici);
+    clearTimeout(vt.kapiZamanlayici);
     vt.aktif = false;
+    vt.vurusAcik = false;
+    byId('vtPad').classList.remove('m-pad-hazir');
     ses.sustur();
     ilerlemeDondur('vtIlerleme');
     byId('vtSahne').hidden = true;
@@ -823,7 +1812,7 @@
   byId('vtBaslat').addEventListener('click', vtBaslat);
   byId('vtIptal').addEventListener('click', vtIptalEt);
   byId('vtTekrar').addEventListener('click', function () { byId('vtSonuc').hidden = true; vtBaslat(); });
-  byId('vtPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); vtTap(); });
+  byId('vtPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); vtTap(ev); });
   kaydetFormuBagla('vt', 'vtOgrenci');
 
   /* ================================================================
@@ -858,7 +1847,7 @@
     var aralik = BF_ARALIK[byId('bfZorluk').value] || BF_ARALIK.kolay;
     bf.gercekBpm = Math.round(aralik[0] + Math.random() * (aralik[1] - aralik[0]));
     var baslangic = ses.ctx.currentTime + 0.5;
-    var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
+    var kit = m.el.ses.value;
     for (var i = 0; i < 8; i++) {
       ses.vur(baslangic + i * 60 / bf.gercekBpm, false, kit);
     }
@@ -872,9 +1861,9 @@
     }, (bitis - ses.ctx.currentTime) * 1000);
   }
 
-  function bfTap() {
+  function bfTap(olay) {
     if (!bf.aktif || bf.dinlemede) { return; }
-    bf.taplar.push(ses.ctx.currentTime);
+    bf.taplar.push(zaman.olayZamani(ses.ctx, olay));
     var pad = byId('bfPad');
     pad.classList.add('vurdum');
     setTimeout(function () { pad.classList.remove('vurdum'); }, 90);
@@ -913,6 +1902,7 @@
     byId('bfFormSkor').value = ortSkor;
     byId('bfFormDetay').value = JSON.stringify({ turlar: bf.sonuclar, zorluk: byId('bfZorluk').value });
     byId('bfFormStandart').value = byId('bfZorluk').value === 'orta' ? '1' : '0';
+    olcumEkBilgisiYaz('bf', null);   // tempo tahmini: asenkroni SD'si tanımsız
   }
 
   function bfIptalEt() {
@@ -925,7 +1915,7 @@
   byId('bfBaslat').addEventListener('click', bfBaslatOyun);
   byId('bfIptal').addEventListener('click', bfIptalEt);
   byId('bfTekrar').addEventListener('click', function () { byId('bfSonuc').hidden = true; bfBaslatOyun(); });
-  byId('bfPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); bfTap(); });
+  byId('bfPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); bfTap(ev); });
   kaydetFormuBagla('bf', 'bfOgrenci');
 
   /* ================================================================
@@ -938,28 +1928,36 @@
     window.RitimOkuma.baslat(roKok, {
       seviye: parseInt(byId('roSeviye').value, 10),
       bpm: parseInt(byId('roBpm').value, 10),
+      rehber: byId('roRehber').value,
       onBitti: function (sonuc) {
         byId('roFormBpm').value = sonuc.bpm;
         byId('roFormSkor').value = sonuc.skor;
         byId('roFormDetay').value = JSON.stringify(sonuc);
         byId('roFormStandart').value =
-          (parseInt(byId('roSeviye').value, 10) === 1 && parseInt(byId('roBpm').value, 10) === 60) ? '1' : '0';
+          (parseInt(byId('roSeviye').value, 10) === 1 &&
+           parseInt(byId('roBpm').value, 10) === 60 &&
+           byId('roRehber').value === 'tam') ? '1' : '0';
+        byId('roFormSd').value = Number.isFinite(sonuc.sapmaSdMs) ? sonuc.sapmaSdMs : '';
+        byId('roFormKalite').value = (ses.ctx ? zaman.kaliteDurumu(ses.ctx).kod : '') || '';
         byId('roKaydetSatir').hidden = false;
       }
     });
   }
   if (roKok) {
     roKur();
-    byId('roYenile').addEventListener('click', roKur);
+    byId('roYenile').addEventListener('click', function () {
+      if (roKok.__roYeni) { roKok.__roYeni(1); }
+    });
     byId('roSeviye').addEventListener('change', roKur);
     byId('roBpm').addEventListener('change', roKur);
+    byId('roRehber').addEventListener('change', roKur);
     kaydetFormuBagla('ro', 'roOgrenci');
   }
 
   /* ================================================================
      E) SPONTAN TEMPO (BAASTA: unpaced tapping)
      ================================================================ */
-  var st = { aktif: false, taplar: [], HEDEF: 21 };
+  var st = { aktif: false, vurusAcik: false, taplar: [], HEDEF: 21, baslangicZamanlayici: null };
 
   function stBaslat() {
     if (m.calisiyor) { metronomDurdur(); }
@@ -967,15 +1965,24 @@
     ses.hazirla();
     st.taplar = [];
     st.aktif = true;
+    st.vurusAcik = false;
     byId('stSahne').hidden = false;
     byId('stSonuc').hidden = true;
     byId('stSayac').textContent = '0 / ' + st.HEDEF;
-    byId('stFaz').textContent = 'Kendi hızında vur — acele yok';
+    byId('stPad').classList.add('m-pad-hazir');
+    byId('stFaz').textContent = 'Hazır ol · rahat nefes al';
+    clearTimeout(st.baslangicZamanlayici);
+    st.baslangicZamanlayici = setTimeout(function () {
+      if (!st.aktif) { return; }
+      st.vurusAcik = true;
+      byId('stPad').classList.remove('m-pad-hazir');
+      byId('stFaz').textContent = 'ŞİMDİ · kendi rahat hızında vur';
+    }, 1200);
   }
 
-  function stTap() {
-    if (!st.aktif) { return; }
-    st.taplar.push(ses.ctx.currentTime);
+  function stTap(olay) {
+    if (!st.aktif || !st.vurusAcik) { return; }
+    st.taplar.push(zaman.olayZamani(ses.ctx, olay));
     var pad = byId('stPad');
     pad.classList.add('vurdum');
     setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
@@ -985,6 +1992,8 @@
 
   function stBitir() {
     st.aktif = false;
+    st.vurusAcik = false;
+    byId('stPad').classList.remove('m-pad-hazir');
     byId('stSahne').hidden = true;
     byId('stSonuc').hidden = false;
 
@@ -1016,17 +2025,21 @@
     byId('stFormSkor').value = skor;
     byId('stFormDetay').value = JSON.stringify({ smt: smt, ortMs: Math.round(ortMs), cv: Math.round(cv * 1000) / 1000, vurus: st.taplar.length });
     byId('stFormStandart').value = '1'; // parametresiz ölçüm: koşullar hep aynı
+    olcumEkBilgisiYaz('st', araliklar);   // serbest tempoda kararlılık = aralık SD'si
   }
 
   function stIptalEt() {
+    clearTimeout(st.baslangicZamanlayici);
     st.aktif = false;
+    st.vurusAcik = false;
+    byId('stPad').classList.remove('m-pad-hazir');
     byId('stSahne').hidden = true;
   }
 
   byId('stBaslat').addEventListener('click', stBaslat);
   byId('stIptal').addEventListener('click', stIptalEt);
   byId('stTekrar').addEventListener('click', function () { byId('stSonuc').hidden = true; stBaslat(); });
-  byId('stPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); stTap(); });
+  byId('stPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); stTap(ev); });
   kaydetFormuBagla('st', 'stOgrenci');
 
   /* ================================================================
@@ -1060,7 +2073,7 @@
     var aksakIdx = 2 + Math.floor(Math.random() * 3); /* 3.–5. vuruş */
     var yon = Math.random() < 0.5 ? -1 : 1;
     var t = ses.ctx.currentTime + 0.5;
-    var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
+    var kit = m.el.ses.value;
     var zamanlar = [];
     for (var i = 0; i < 6; i++) {
       var z = t + i * IOI;
@@ -1107,6 +2120,7 @@
     byId('abFormSkor').value = skor;
     byId('abFormDetay').value = JSON.stringify({ zorluk: byId('abZorluk').value, dogru: ab.dogru, tur: ab.TOPLAM, sonuclar: ab.sonuclar });
     byId('abFormStandart').value = byId('abZorluk').value === 'orta' ? '1' : '0';
+    olcumEkBilgisiYaz('ab', null);   // saf algı testi: motor asenkroni yok
   }
 
   function abIptalEt() {
@@ -1136,7 +2150,8 @@
   var ir = {
     aktif: false, zamanlayici: null, sonrakiZaman: 0, vurusNo: 0,
     vuruslar: [], taplar: [], bpm: 72, profil: 'standart',
-    FAZ_YUZDE: IR_PROFILLER.standart, FAZ_VURUS: 8, gosterilenFaz: -2
+    FAZ_YUZDE: IR_PROFILLER.standart, FAZ_VURUS: 8, gosterilenFaz: -2,
+    vurusAcik: false, kapiZamanlayici: null
   };
 
   /* Uyarlanan zorluk: öğrenci seçilince son İçsel Ritim skoruna göre profil öner */
@@ -1160,7 +2175,9 @@
     /* 4 hazırlık + 4 faz × 8 vuruş; her fazda tam yüzde kadar vuruş susturulur
        (fazın ilk vuruşu çapa olarak daima seslidir). */
     ir.vuruslar = [];
-    for (var h = 0; h < 4; h++) { ir.vuruslar.push({ faz: -1, sessiz: false }); }
+    for (var h = 0; h < 4; h++) {
+      ir.vuruslar.push({ faz: -1, sessiz: false, hazirlikNo: h });
+    }
     ir.FAZ_YUZDE.forEach(function (yuzde, fazNo) {
       var susAdet = Math.round(ir.FAZ_VURUS * yuzde / 100);
       var adaylar = [];
@@ -1182,6 +2199,7 @@
     if (m.calisiyor) { metronomDurdur(); }
     digerleriniIptalEt('ir');
     ses.hazirla();
+    if (!olcumIcinKalibrasyonHazir()) { return; }
     ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
     ir.bpm = parseInt(byId('irBpm').value, 10);
     ir.profil = byId('irProfil').value;
@@ -1189,10 +2207,17 @@
     irPlanOlustur();
     ir.taplar = [];
     ir.vurusNo = 0;
+    ir.vurusAcik = false;
     ir.sonrakiZaman = ses.ctx.currentTime + 0.6;
     ir.aktif = true;
     byId('irSahne').hidden = false;
     byId('irSonuc').hidden = true;
+    byId('irPad').classList.add('m-pad-hazir');
+    clearTimeout(ir.kapiZamanlayici);
+    ir.kapiZamanlayici = setTimeout(function () {
+      if (ir.aktif) { ir.vurusAcik = true; }
+    }, Math.max(0, (ir.sonrakiZaman + 4 * 60 / ir.bpm - ses.ctx.currentTime) * 1000
+      - zaman.BASLANGIC_KAPISI_MS));
     ir.gosterilenFaz = -2;
     ilerlemeAkit('irIlerleme', ir.vuruslar.length * 60 / ir.bpm,
                  (ir.sonrakiZaman - ses.ctx.currentTime) * 1000);
@@ -1201,7 +2226,7 @@
   }
 
   function irPlanla() {
-    var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
+    var kit = m.el.ses.value;
     while (ir.aktif && ir.sonrakiZaman < ses.ctx.currentTime + 0.12 && ir.vurusNo < ir.vuruslar.length) {
       var v = ir.vuruslar[ir.vurusNo];
       v.zaman = ir.sonrakiZaman;
@@ -1213,8 +2238,18 @@
         setTimeout(function () {
           // Etiket yalnız faz değişiminde güncellenir: her vuruşta yazmak
           // sessiz vuruşu ele veren görsel bir işaret olur.
-          if (!ir.aktif || vv.faz < 0 || ir.gosterilenFaz === vv.faz) { return; }
+          if (!ir.aktif) { return; }
+          if (vv.faz < 0) {
+            byId('irFaz').textContent = '🎧 Hazırlık · ' + (4 - vv.hazirlikNo)
+              + ' → geri sayım bitince vur';
+            return;
+          }
+          if (ir.gosterilenFaz === vv.faz) { return; }
           ir.gosterilenFaz = vv.faz;
+          if (vv.faz === 0) {
+            ir.vurusAcik = true;
+            byId('irPad').classList.remove('m-pad-hazir');
+          }
           byId('irFaz').textContent = '🥁 Faz ' + (vv.faz + 1) + ' — %' + ir.FAZ_YUZDE[vv.faz] + ' sessiz · vurmaya devam';
         }, gecikme);
       })(v);
@@ -1225,15 +2260,17 @@
       var bitis = ir.vuruslar[ir.vuruslar.length - 1].zaman + 60 / ir.bpm;
       if (ses.ctx.currentTime > bitis + 0.3) {
         clearInterval(ir.zamanlayici);
+        clearTimeout(ir.kapiZamanlayici);
         ir.aktif = false;
+        ir.vurusAcik = false;
         irDegerlendir();
       }
     }
   }
 
-  function irTap() {
-    if (!ir.aktif) { return; }
-    ir.taplar.push(ses.ctx.currentTime);
+  function irTap(olay) {
+    if (!ir.aktif || !ir.vurusAcik) { return; }
+    ir.taplar.push(zaman.olayZamani(ses.ctx, olay));
     var pad = byId('irPad');
     pad.classList.add('vurdum');
     setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
@@ -1241,25 +2278,22 @@
 
   function irDegerlendir() {
     var aralikMs = 60000 / ir.bpm;
-    var fazVeri = ir.FAZ_YUZDE.map(function () { return { sapmalar: [], vurulan: {} }; });
+    var fazVeri = ir.FAZ_YUZDE.map(function () { return { sapmalar: [], vurulan: {}, deneme: 0 }; });
     var sesliSapma = [], sessizSapma = [];
     var grafik = [];
 
-    ir.taplar.forEach(function (tap) {
-      var enYakin = null, enKucuk = Infinity, enIdx = -1;
-      ir.vuruslar.forEach(function (v, i) {
-        var fark = Math.abs(tap - v.zaman);
-        if (fark < enKucuk) { enKucuk = fark; enYakin = v; enIdx = i; }
-      });
-      if (!enYakin || enYakin.faz < 0) { return; }
-      var sapmaMs = (tap - enYakin.zaman) * 1000;
-      var kacik = Math.abs(sapmaMs) > aralikMs * 0.45;
-      if (!kacik) {
-        fazVeri[enYakin.faz].sapmalar.push(sapmaMs);
-        fazVeri[enYakin.faz].vurulan[enIdx] = true;
-        (enYakin.sessiz ? sessizSapma : sesliSapma).push(Math.abs(sapmaMs));
+    var eslesme = vuruslariEsle(ir.taplar, ir.vuruslar, aralikMs * 0.45 / 1000, function (v) {
+      return v.faz >= 0;
+    });
+    eslesme.denemeler.forEach(function (d) {
+      var hedef = d.hedef;
+      fazVeri[hedef.faz].deneme++;
+      if (d.eslesti) {
+        fazVeri[hedef.faz].sapmalar.push(d.sapmaMs);
+        fazVeri[hedef.faz].vurulan[d.hedefIdx] = true;
+        (hedef.sessiz ? sessizSapma : sesliSapma).push(Math.abs(d.sapmaMs));
       }
-      grafik.push({ sapma: sapmaMs, sessiz: enYakin.sessiz, kacik: kacik });
+      grafik.push({ sapma: d.sapmaMs, sessiz: hedef.sessiz, kacik: !d.eslesti });
     });
 
     var AGIRLIK = [0.1, 0.2, 0.3, 0.4];
@@ -1267,11 +2301,13 @@
       var mutlak = ort(f.sapmalar.map(Math.abs));
       var vurulanAdet = Object.keys(f.vurulan).length;
       var hamSkor = f.sapmalar.length ? Math.max(0, 1 - mutlak / (0.30 * aralikMs)) : 0;
+      var dogruluk = vurulanAdet / Math.max(1, f.deneme);
       return {
         yuzde: ir.FAZ_YUZDE[i], n: f.sapmalar.length,
         kacirilan: ir.FAZ_VURUS - vurulanAdet,
+        fazla: Math.max(0, f.deneme - vurulanAdet),
         ortMutlak: Math.round(mutlak),
-        skor: Math.round(100 * hamSkor * (vurulanAdet / ir.FAZ_VURUS))
+        skor: Math.round(100 * hamSkor * (vurulanAdet / ir.FAZ_VURUS) * dogruluk)
       };
     });
     var genel = Math.round(fazlar.reduce(function (t, f, i) { return t + f.skor * AGIRLIK[i]; }, 0));
@@ -1283,6 +2319,7 @@
       return '<tr><td>Faz ' + (i + 1) + ' — %' + f.yuzde + ' sessiz</td>' +
         '<td class="sayi">' + f.n + '/' + ir.FAZ_VURUS + '</td>' +
         '<td class="sayi">' + f.kacirilan + '</td>' +
+        '<td class="sayi">' + f.fazla + '</td>' +
         '<td class="sayi">' + f.ortMutlak + ' ms</td>' +
         '<td class="sayi"><strong>' + f.skor + '</strong></td></tr>';
     }).join('');
@@ -1310,19 +2347,28 @@
     } else {
       yorum = 'Metronom susunca sapma belirgin arttı (' + sesliOrt + ' → ' + sessizOrt + ' ms) — düşük yüzdelerle çalışmaya devam.';
     }
+    var toplamFazla = fazlar.reduce(function (t, f) { return t + f.fazla; }, 0);
+    if (toplamFazla > 0) { yorum += ' ' + toplamFazla + ' fazla vuruş doğruluk cezasına katıldı.'; }
     byId('irYorum').textContent = yorum;
 
     byId('irFormBpm').value = ir.bpm;
     byId('irFormSkor').value = genel;
+    var kal = zaman.kalibrasyonOku();
     byId('irFormDetay').value = JSON.stringify({
-      bpm: ir.bpm, profil: ir.profil, fazlar: fazlar, sesliOrtMs: sesliOrt, sessizOrtMs: sessizOrt
+      bpm: ir.bpm, profil: ir.profil, fazlar: fazlar, sesliOrtMs: sesliOrt, sessizOrtMs: sessizOrt,
+      zamanlamaSurumu: zaman.SURUM, telafiMs: kal.telafiMs,
+      kalibrasyonDagilimMs: kal.dagilimMs
     });
     byId('irFormStandart').value = (ir.bpm === 72 && ir.profil === 'standart') ? '1' : '0';
+    olcumEkBilgisiYaz('ir', fazVeri.reduce(function (t, f) { return t.concat(f.sapmalar); }, []));
   }
 
   function irIptalEt() {
     clearInterval(ir.zamanlayici);
+    clearTimeout(ir.kapiZamanlayici);
     ir.aktif = false;
+    ir.vurusAcik = false;
+    byId('irPad').classList.remove('m-pad-hazir');
     ses.sustur();
     ilerlemeDondur('irIlerleme');
     byId('irSahne').hidden = true;
@@ -1331,12 +2377,14 @@
   byId('irBaslat').addEventListener('click', irBaslat);
   byId('irIptal').addEventListener('click', irIptalEt);
   byId('irTekrar').addEventListener('click', function () { byId('irSonuc').hidden = true; irBaslat(); });
-  byId('irPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); irTap(); });
+  byId('irPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); irTap(ev); });
   kaydetFormuBagla('ir', 'irOgrenci');
 
   /* Bir test başlarken (veya sekme değişince) diğerlerini iptal et.
      haric boş bırakılırsa hepsi durur. */
   function digerleriniIptalEt(haric) {
+    if (haric !== 'setlist' && setAkis && setAkis.aktif) { setlistBitir('Protokol açıldığı için setlist durduruldu'); }
+    if (haric !== 'zk' && zkKalibrator) { zkIptalEt(); }
     if (haric !== 'vt' && vt.aktif) { vtIptalEt(); }
     if (haric !== 'bf' && bf.aktif) { bfIptalEt(); }
     if (haric !== 'st' && st.aktif) { stIptalEt(); }
@@ -1353,7 +2401,7 @@
   var STD_AYAR = {
     vtBpm: '72', vtVurusSayisi: '16',
     bfZorluk: 'orta',
-    roSeviye: '1', roBpm: '60',
+    roSeviye: '1', roBpm: '60', roRehber: 'tam',
     abZorluk: 'orta',
     irBpm: '72', irProfil: 'standart'
   };
@@ -1370,14 +2418,14 @@
           stdOnceki[id] = el.value;
           if (el.value !== STD_AYAR[id]) {
             el.value = STD_AYAR[id];
-            if (id === 'roSeviye' || id === 'roBpm') { roDegisti = true; }
+            if (id === 'roSeviye' || id === 'roBpm' || id === 'roRehber') { roDegisti = true; }
           }
           el.disabled = true;
         } else {
           el.disabled = false;
           if (stdOnceki[id] !== undefined && el.value !== stdOnceki[id]) {
             el.value = stdOnceki[id];
-            if (id === 'roSeviye' || id === 'roBpm') { roDegisti = true; }
+            if (id === 'roSeviye' || id === 'roBpm' || id === 'roRehber') { roDegisti = true; }
           }
         }
       });
@@ -1510,11 +2558,13 @@
     if (etiket === 'input' || etiket === 'select' || etiket === 'textarea') { return; }
     if (ev.code === 'Space') {
       ev.preventDefault();
-      if (vt.aktif) { vtTap(); }
-      else if (bf.aktif) { bfTap(); }
-      else if (st.aktif) { stTap(); }
-      else if (ir.aktif) { irTap(); }
-      else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(); }
+      if (zkKalibrator) { zkKalibrator.tap(ev); }
+      else if (vt.aktif) { vtTap(ev); }
+      else if (bf.aktif) { bfTap(ev); }
+      else if (st.aktif) { stTap(ev); }
+      else if (ir.aktif) { irTap(ev); }
+      else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(ev); }
+      else if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
       else if (m.calisiyor) { metronomDurdur(); }
       else { metronomBaslat(); }
     } else if (ev.key === 't' || ev.key === 'T') {
