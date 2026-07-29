@@ -272,6 +272,21 @@
 .m-sapma-cubuk.sessizv { background: #8b5cf6; }
 .m-kaydet-form { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-top: .6rem; }
 
+/* ---------- Şarkı BPM tahmin oyunu ---------- */
+.oyun-kart {
+  margin-top: 1.1rem; border: 1px dashed rgba(251, 191, 36, .45);
+  border-radius: 12px; padding: .9rem 1rem;
+}
+.oyun-sarki {
+  font-size: 1.25rem; font-weight: 800; text-align: center;
+  color: #fbbf24; margin: .3rem 0 .1rem;
+}
+.oyun-alt {
+  display: flex; gap: .8rem; align-items: center; justify-content: center;
+  flex-wrap: wrap; margin: .4rem 0;
+}
+.oyun-sayac { font-variant-numeric: tabular-nums; font-weight: 700; color: #e7e5e4; }
+
 /* ---------- Standart ölçüm modu ---------- */
 .m-standart-satir {
   display: flex; gap: .7rem; align-items: flex-start; flex-wrap: wrap;

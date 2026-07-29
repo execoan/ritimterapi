@@ -148,6 +148,13 @@ Menüdeki **Metronom** sayfası tek ses motoru üzerinde çalışır
   çalar; arama ve tür filtresi vardır. Son ayarlar cihazda hatırlanır, çalışırken
   desteklenen cihazlarda ekran açık tutulur; paydası 8 olan ölçülerde vuruş birimi
   sekizlik nota olarak hesaplanır. Kısayollar: Boşluk, T, ↑↓.
+  **🎯 BPM Tahmin Oyunu:** kütüphaneden rastgele 5 şarkı, iki mod — *Önce dinle*
+  (temposu 10 sn metronomla dinletilir, sonra hatırlayıp tap'lersin) ve
+  *Hafızadan* (şarkıyı zihninde canlandırıp süre içinde tap'lersin; 15/20/30 sn).
+  Tahmin, tap aralıklarının **medyanından** hesaplanır; yarı/çift tempo müzikal
+  sayılır (en yakın oktava göre puan, küçük kesintiyle). Tür filtresi ve cihazda
+  saklanan mod bazlı rekor vardır. Şarkının kendisi çalınmaz; skorlar oyun
+  amaçlıdır ve **protokol ölçümlerine karışmaz**.
 - **Çalışma Merkezi:** Hesaba bağlı setlistlerde BPM, ölçü, gruplama, swing,
   poliritim, alt bölünme, sayarak giriş ve süre adım başına saklanır. Adımlar
   otomatik geçebilir veya müzisyeni bekleyebilir; duraklatma süresi çalışmaya
@@ -257,10 +264,21 @@ Sonuçlar öğrenci detay sayfasında zaman içinde skor çubuklarıyla görün�
 
 ## Belgeler: raporlar ve katılım sertifikası
 
-Raporlar sayfasından dört yazdırılabilir belge hazırlanır: haftalık eğitmen
-raporu, dönemlik grup raporu, veli raporu ve **Katılım Belgesi (sertifika)**.
-Ayrıca **CSV dışa aktarma** (protokol sonuçları + yoklama; UTF-8 BOM, noktalı
-virgül ayraç — Türkçe Excel ile doğrudan açılır) kendi analizleriniz içindir.
+Raporlar sayfasından beş yazdırılabilir belge hazırlanır: **Öğrenci Rapor
+Merkezi**, haftalık eğitmen raporu, dönemlik grup raporu, veli raporu ve
+**Katılım Belgesi (sertifika)**. Ayrıca **CSV dışa aktarma** (protokol
+sonuçları + yoklama; UTF-8 BOM, noktalı virgül ayraç — Türkçe Excel ile
+doğrudan açılır) kendi analizleriniz içindir.
+
+- **Öğrenci Rapor Merkezi** (`ogrenci-rapor.php`): listeden öğrenci seç →
+  tek sayfada dönem görünümü. Protokol başına **SVG çizgi grafik** (dolu
+  nokta = 📏 standart, halka = koşul farklı, 🏠 = ev ölçümü) + kararlılık (SD)
+  mini grafiği + gürültü bandı yorumlu dönem başı/sonu karşılaştırması;
+  katılım çizelgesi, ev pratiği haftalık çubukları, çalışılan teknikler,
+  gözlem notları. **Bölümler seçilebilir** (Egitimgen V2 deseni), belge
+  ekranda **düzenlenip** Yazdır/PDF ile çıkarılır; "Eğitmen değerlendirmesi"
+  bölümüne **hazır cümle havuzundan** (kilitli dile uygun, gözlemsel) tıklayıp
+  ekleme yapılır. **İç rapordur** — skor içerdiği için veliye verilmez.
 
 - **Katılım Belgesi** (`sertifika.php`): dönem sonu için şık, çerçeveli ve
   yatay (A4 landscape) belge — marka "Ritim Atölyesi", katılımcı kodu, tarih

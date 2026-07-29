@@ -33,7 +33,7 @@ $navYapisi = [
     ['tur' => 'tek', 'dosya' => 'metronom.php', 'ikon' => '🎛', 'etiket' => 'Metronom'],
 
     ['tur' => 'menu', 'ikon' => '📊', 'etiket' => 'Raporlar', 'ogeler' => [
-        ['dosya' => 'raporlar.php',       'ikon' => '📋', 'etiket' => 'Rapor Merkezi',   'not' => 'Veli raporu, sertifika, dönemlik'],
+        ['dosya' => 'raporlar.php',       'ikon' => '📋', 'etiket' => 'Rapor Merkezi',   'not' => 'Öğrenci raporu, veli raporu, sertifika'],
         ['dosya' => 'rapor-haftalik.php', 'ikon' => '🗓', 'etiket' => 'Haftalık Rapor',  'not' => 'Bu haftanın oturumları'],
         ['ayrac' => true],
         ['dosya' => 'disa-aktar.php?tur=protokol', 'ikon' => '📈', 'etiket' => 'Protokol CSV', 'not' => 'Ölçüm sonuçlarını indir'],
@@ -53,7 +53,7 @@ $navesle = [
     'grup.php' => 'gruplar.php', 'ogrenci.php' => 'ogrenciler.php', 'teknik.php' => 'teknikler.php',
     'oturum.php' => 'oturumlar.php', 'sablon-oturum.php' => 'sablonlar.php',
     'rapor-donemlik.php' => 'raporlar.php', 'rapor-veli.php' => 'raporlar.php',
-    'sertifika.php' => 'raporlar.php',
+    'sertifika.php' => 'raporlar.php', 'ogrenci-rapor.php' => 'raporlar.php',
 ];
 $aktifNav = $navesle[$aktifSayfa] ?? $aktifSayfa;
 

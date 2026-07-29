@@ -1304,6 +1304,50 @@ function report_group_practice(int $grupId, string $from, string $to): array
 }
 
 /**
+ * Öğrenci rapor merkezi için kronolojik tam ölçüm serisi.
+ * Dönüş: [protokol => [['tarih','skor','sd_ms','standart','kalite','kaynak'], …]]
+ * (PROTOKOL_LABELS sırasıyla; grafik ve measure_compare girdisi olarak kullanılır)
+ */
+function student_protocol_series(int $ogrenciId, string $from, string $to): array
+{
+    $st = db()->prepare('SELECT protokol, skor, sd_ms, standart, kalite, kaynak, created_at
+                           FROM protokol_sonuclari
+                          WHERE ogrenci_id = ? AND date(created_at) BETWEEN ? AND ?
+                          ORDER BY created_at, id');
+    $st->execute([$ogrenciId, $from, $to]);
+    $seriler = [];
+    foreach ($st->fetchAll() as $r) {
+        $seriler[$r['protokol']][] = [
+            'tarih'    => substr((string)$r['created_at'], 0, 10),
+            'skor'     => (int)$r['skor'],
+            'sd_ms'    => $r['sd_ms'] !== null ? (int)$r['sd_ms'] : null,
+            'standart' => (int)$r['standart'],
+            'kalite'   => (string)($r['kalite'] ?? ''),
+            'kaynak'   => (string)($r['kaynak'] ?? 'atolye'),
+        ];
+    }
+    uksort($seriler, fn($a, $b) => array_search($a, array_keys(PROTOKOL_LABELS)) <=> array_search($b, array_keys(PROTOKOL_LABELS)));
+    return $seriler;
+}
+
+/** Öğrencinin haftalık ev pratiği günleri: [haftaPzt => gün]. */
+function student_practice_weekly(int $ogrenciId, string $from, string $to): array
+{
+    $st = db()->prepare('SELECT DISTINCT t.tarih
+                           FROM ev_tamamlama t
+                           JOIN ev_odevleri o ON o.id = t.odev_id
+                          WHERE o.ogrenci_id = ? AND t.tarih BETWEEN ? AND ?');
+    $st->execute([$ogrenciId, $from, $to]);
+    $haftalar = [];
+    foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $tarih) {
+        [$pzt] = week_bounds((string)$tarih);
+        $haftalar[$pzt] = ($haftalar[$pzt] ?? 0) + 1;
+    }
+    ksort($haftalar);
+    return $haftalar;
+}
+
+/**
  * Sertifika için tek öğrencinin protokol başına dönem başı/sonu ölçümü.
  * Uçlardan blok medyanı alınır (measure_compare); en az iki STANDART ölçüm
  * varsa karşılaştırma yalnız onlardan yapılır ('standart' => 1).

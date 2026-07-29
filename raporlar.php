@@ -13,6 +13,34 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik"><h1>Raporlar</h1></div>
 
 <div class="kart">
+  <h2>📊 Öğrenci Rapor Merkezi</h2>
+  <p class="alan-ipucu">Tek öğrencinin dönem görünümü: protokol trend grafikleri (gürültü bandı yorumlu),
+     katılım çizelgesi, ev pratiği, teknikler ve gözlemler. Bölümler seçilebilir; belge ekranda
+     düzenlenip <strong>Yazdır / PDF</strong> ile çıkarılır. <strong>İç rapordur</strong> — skor içerdiği
+     için veliye verilmez; veli çıktısı aşağıdaki veli raporudur.</p>
+  <?php if (!$ogrenciler): ?>
+    <div class="bos-durum">Önce bir öğrenci kaydedin.</div>
+  <?php else: ?>
+  <form method="get" action="<?= e(url('ogrenci-rapor.php')) ?>" class="filtre-satir">
+    <label class="form-alan">Öğrenci
+      <select name="ogrenci_id" class="secim" required>
+        <?php foreach ($ogrenciler as $o): ?>
+        <option value="<?= (int)$o['id'] ?>"><?= e($o['kod']) ?><?= $o['grup_ad'] ? ' — ' . e($o['grup_ad']) : '' ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <label class="form-alan">Başlangıç
+      <input type="date" name="from" class="girdi" value="<?= e($sekizHaftaOnce) ?>" required>
+    </label>
+    <label class="form-alan">Bitiş
+      <input type="date" name="to" class="girdi" value="<?= e(today()) ?>" required>
+    </label>
+    <button type="submit" class="btn btn-birincil">Raporu Aç</button>
+  </form>
+  <?php endif; ?>
+</div>
+
+<div class="kart">
   <h2>Haftalık eğitmen raporu</h2>
   <p class="alan-ipucu">Seçilen haftada hangi gruplarda ne işlendi, katılım ve notlar.</p>
   <form method="get" action="<?= e(url('rapor-haftalik.php')) ?>" class="filtre-satir">

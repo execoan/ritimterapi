@@ -2391,6 +2391,193 @@
     if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
     if (haric !== 'ir' && ir.aktif) { irIptalEt(); }
     if (haric !== 'ro' && roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roIptal(); }
+    if (haric !== 'oyun' && oyun.aktif) { oyunIptalEt(); }
+  }
+
+  /* ================================================================
+     ŞARKI BPM TAHMİN OYUNU
+     Şarkının kendisi ÇALINMAZ (telif + dosya yok): "önce dinle" modunda
+     temposu 10 sn metronom kliğiyle dinletilir. Skorlar oyunlaştırma
+     amaçlıdır; protokol ölçümlerine KARIŞMAZ (yalnız localStorage rekoru).
+     ================================================================ */
+  var OYUN_TUR_SAYISI = 5;
+  var OYUN_DINLETME_SN = 10;
+  var OYUN_REKOR_ANAHTARI = 'ritim_bpm_oyun_rekor_v1';
+  var oyun = {
+    aktif: false, faz: 'bos', tur: 0, sarkilar: [], sonuclar: [],
+    taplar: [], sureSn: 20, mod: 'dinle', sayacId: null, bitisMs: 0
+  };
+
+  function oyunRekorOku() {
+    try { return JSON.parse(localStorage.getItem(OYUN_REKOR_ANAHTARI) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+
+  function oyunRekorYaz() {
+    var r = oyunRekorOku();
+    var el = byId('oyunRekor');
+    if (!el) { return; }
+    var mod = byId('oyunMod').value;
+    el.textContent = r[mod] ? ('🏆 Rekorun: ' + r[mod] + ' puan') : '';
+  }
+
+  function oyunIptalEt() {
+    clearInterval(oyun.sayacId);
+    oyun.aktif = false;
+    oyun.faz = 'bos';
+    ses.sustur();   // dinletme vuruşları ileri tarihli zamanlanmıştır
+    byId('oyunSahne').hidden = true;
+  }
+
+  function oyunBaslat() {
+    digerleriniIptalEt('oyun');
+    if (m.calisiyor) { metronomDurdur(); }
+    ses.hazirla();
+    ses.duzey(parseInt(m.el.duzey.value, 10) / 100);
+    var tur = byId('oyunTur').value;
+    var havuz = SARKILAR.filter(function (s) { return !tur || s.tur === tur; });
+    for (var i = havuz.length - 1; i > 0; i--) {   // karıştır: aynı oyunda şarkı tekrarı olmasın
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = havuz[i]; havuz[i] = havuz[j]; havuz[j] = tmp;
+    }
+    oyun.sarkilar = havuz.slice(0, OYUN_TUR_SAYISI);
+    if (oyun.sarkilar.length < OYUN_TUR_SAYISI) { // tür havuzu küçükse tamamla
+      oyun.sarkilar = oyun.sarkilar.concat(SARKILAR.slice(0, OYUN_TUR_SAYISI - oyun.sarkilar.length));
+    }
+    oyun.mod = byId('oyunMod').value;
+    oyun.sureSn = parseInt(byId('oyunSure').value, 10) || 20;
+    oyun.tur = 0;
+    oyun.sonuclar = [];
+    oyun.aktif = true;
+    byId('oyunSahne').hidden = false;
+    byId('oyunSonuc').hidden = true;
+    oyunTurBaslat();
+  }
+
+  function oyunTurBaslat() {
+    oyun.tur++;
+    oyun.taplar = [];
+    var s = oyun.sarkilar[oyun.tur - 1];
+    byId('oyunTurGoster').textContent = 'Tur ' + oyun.tur + ' / ' + OYUN_TUR_SAYISI;
+    byId('oyunSarki').textContent = '🎵 ' + s.ad + ' — ' + s.sanatci;
+    byId('oyunTahmin').hidden = true;
+    byId('oyunSayac').textContent = '';
+    if (oyun.mod === 'dinle') {
+      oyun.faz = 'dinleme';
+      byId('oyunFaz').textContent = '🎧 Dinle — şarkının temposu ' + OYUN_DINLETME_SN + ' sn metronomla çalınıyor…';
+      var kit = m.el.ses.value === 'sayma' ? 'tahta' : m.el.ses.value;
+      var bas = ses.ctx.currentTime + 0.4;
+      var adet = Math.ceil(OYUN_DINLETME_SN * s.bpm / 60);
+      for (var i = 0; i < adet; i++) {
+        ses.vur(bas + i * 60 / s.bpm, i % 4 === 0, kit);
+      }
+      setTimeout(function () {
+        if (oyun.aktif && oyun.faz === 'dinleme') { oyunTahminFazi(); }
+      }, (bas - ses.ctx.currentTime + OYUN_DINLETME_SN) * 1000 + 200);
+    } else {
+      oyunTahminFazi();
+    }
+  }
+
+  function oyunTahminFazi() {
+    oyun.faz = 'tahmin';
+    ses.sustur();
+    byId('oyunFaz').textContent = oyun.mod === 'dinle'
+      ? '🥁 Şimdi hatırladığın tempoda vur!'
+      : '🧠 Şarkıyı zihninde canlandır, temposunda vur!';
+    oyun.bitisMs = Date.now() + oyun.sureSn * 1000;
+    clearInterval(oyun.sayacId);
+    oyun.sayacId = setInterval(function () {
+      var kalan = Math.max(0, (oyun.bitisMs - Date.now()) / 1000);
+      byId('oyunSayac').textContent = '⏱ ' + kalan.toFixed(1) + ' sn';
+      if (kalan <= 0) { oyunTurBitir(); }
+    }, 100);
+  }
+
+  function oyunTap(olay) {
+    if (!oyun.aktif || oyun.faz !== 'tahmin') { return; }
+    oyun.taplar.push(zaman.olayZamani(ses.ctx, olay));
+    var pad = byId('oyunPad');
+    pad.classList.add('vurdum');
+    setTimeout(function () { pad.classList.remove('vurdum'); }, 80);
+    byId('oyunFaz').textContent = '🥁 ' + oyun.taplar.length + ' vuruş' +
+      (oyun.taplar.length >= 4 ? ' — hazırsan tahminini onayla' : ' (en az 4)');
+    byId('oyunTahmin').hidden = oyun.taplar.length < 4;
+  }
+
+  function oyunTurBitir() {
+    clearInterval(oyun.sayacId);
+    var s = oyun.sarkilar[oyun.tur - 1];
+    var sonuc = { ad: s.ad, sanatci: s.sanatci, gercek: s.bpm, tahmin: null, esas: '', hata: null, puan: 0 };
+    if (oyun.taplar.length >= 4) {
+      var araliklar = [];
+      for (var i = 1; i < oyun.taplar.length; i++) { araliklar.push(oyun.taplar[i] - oyun.taplar[i - 1]); }
+      sonuc.tahmin = Math.round(60 / zaman.medyan(araliklar));   // medyan: tek bozuk vuruşa dayanıklı
+      /* Yarı/çift tempo müzikal olarak meşrudur (half/double-time hissi):
+         puan, {gerçek, yarısı, iki katı} içinden EN YAKININA göre hesaplanır. */
+      var adaylar = [
+        { bpm: s.bpm, etiket: '' },
+        { bpm: s.bpm / 2, etiket: '½ tempo' },
+        { bpm: s.bpm * 2, etiket: '2× tempo' }
+      ];
+      var enIyi = adaylar[0];
+      adaylar.forEach(function (a) {
+        if (Math.abs(sonuc.tahmin - a.bpm) < Math.abs(sonuc.tahmin - enIyi.bpm)) { enIyi = a; }
+      });
+      sonuc.esas = enIyi.etiket;
+      sonuc.hata = Math.round(Math.abs(sonuc.tahmin - enIyi.bpm) / enIyi.bpm * 1000) / 10;
+      sonuc.puan = Math.max(0, Math.round(100 - sonuc.hata * 4));
+      if (enIyi.etiket !== '') { sonuc.puan = Math.max(0, sonuc.puan - 10); } // oktav farkına küçük kesinti
+    }
+    oyun.sonuclar.push(sonuc);
+    if (oyun.tur < OYUN_TUR_SAYISI) {
+      byId('oyunFaz').textContent = sonuc.tahmin === null
+        ? '⌛ Süre doldu — yetersiz vuruş (0 puan). Sıradaki şarkı…'
+        : '✔ Gerçek: ' + sonuc.gercek + ' BPM · Tahminin: ' + sonuc.tahmin + ' BPM → ' + sonuc.puan + ' puan';
+      oyun.faz = 'ara';
+      setTimeout(function () { if (oyun.aktif) { oyunTurBaslat(); } }, 2200);
+    } else {
+      oyunBitir();
+    }
+  }
+
+  function oyunBitir() {
+    oyun.aktif = false;
+    oyun.faz = 'bos';
+    byId('oyunSahne').hidden = true;
+    byId('oyunSonuc').hidden = false;
+    var ortalama = Math.round(ort(oyun.sonuclar.map(function (x) { return x.puan; })));
+    byId('oyunSkor').textContent = ortalama;
+    byId('oyunTablo').innerHTML = oyun.sonuclar.map(function (x, i) {
+      return '<tr><td>' + (i + 1) + '</td><td>' + x.ad + ' — ' + x.sanatci + '</td>' +
+        '<td class="sayi">' + x.gercek + '</td>' +
+        '<td class="sayi">' + (x.tahmin === null ? '—' : x.tahmin + (x.esas ? ' <small>(' + x.esas + ')</small>' : '')) + '</td>' +
+        '<td class="sayi">' + (x.hata === null ? '—' : '%' + x.hata) + '</td>' +
+        '<td class="sayi"><strong>' + x.puan + '</strong></td></tr>';
+    }).join('');
+    var rekorlar = oyunRekorOku();
+    var eskiRekor = rekorlar[oyun.mod] || 0;
+    var yorum;
+    if (ortalama > eskiRekor) {
+      rekorlar[oyun.mod] = ortalama;
+      try { localStorage.setItem(OYUN_REKOR_ANAHTARI, JSON.stringify(rekorlar)); } catch (e) {}
+      yorum = '🏆 Yeni rekor! (önceki: ' + (eskiRekor || '—') + ')';
+    } else {
+      yorum = 'Rekorun: ' + eskiRekor + ' puan.';
+    }
+    yorum += ' Bu bir oyundur; sonuçlar protokol ölçümlerine kaydedilmez.';
+    byId('oyunYorum').textContent = yorum;
+    oyunRekorYaz();
+  }
+
+  if (byId('oyunKart')) {
+    byId('oyunBaslat').addEventListener('click', oyunBaslat);
+    byId('oyunIptal').addEventListener('click', oyunIptalEt);
+    byId('oyunTekrar').addEventListener('click', function () { byId('oyunSonuc').hidden = true; oyunBaslat(); });
+    byId('oyunTahmin').addEventListener('click', oyunTurBitir);
+    byId('oyunPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); oyunTap(ev); });
+    byId('oyunMod').addEventListener('change', oyunRekorYaz);
+    oyunRekorYaz();
   }
 
   /* ================================================================
@@ -2563,6 +2750,7 @@
       else if (bf.aktif) { bfTap(ev); }
       else if (st.aktif) { stTap(ev); }
       else if (ir.aktif) { irTap(ev); }
+      else if (oyun.aktif && oyun.faz === 'tahmin') { oyunTap(ev); }
       else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(ev); }
       else if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
       else if (m.calisiyor) { metronomDurdur(); }

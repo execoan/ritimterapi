@@ -310,6 +310,70 @@ require APP_DIR . '/includes/view/header.php';
     </div>
     <div class="m-sarki-turler" id="sarkiTurler"></div>
     <div class="m-sarki-liste" id="sarkiListe"></div>
+
+    <!-- ==================== ŞARKI BPM TAHMİN OYUNU ==================== -->
+    <div class="oyun-kart" id="oyunKart">
+      <div class="kart-baslik">
+        <h3>🎯 BPM Tahmin Oyunu</h3>
+        <span class="alan-ipucu">Listeden rastgele şarkı gelir; temposunu tahmin et. Şarkının kendisi
+          çalınmaz — "Önce dinle" modunda temposu metronomla dinletilir. 5 turluk oyun; skorlar
+          yalnız bu cihazda (rekor) tutulur, ölçüm kayıtlarına <strong>karışmaz</strong>.</span>
+      </div>
+      <div class="filtre-satir">
+        <label class="form-alan">Mod
+          <select id="oyunMod" class="secim">
+            <option value="dinle" selected>🎧 Önce dinle — 10 sn tempo dinlet, sonra tahmin et</option>
+            <option value="hafiza">🧠 Hafızadan — şarkıyı zihninde canlandır, tap'le</option>
+          </select>
+        </label>
+        <label class="form-alan">Tahmin süresi
+          <select id="oyunSure" class="secim">
+            <option value="15">15 sn</option>
+            <option value="20" selected>20 sn</option>
+            <option value="30">30 sn</option>
+          </select>
+        </label>
+        <label class="form-alan">Tür
+          <select id="oyunTur" class="secim">
+            <option value="" selected>Hepsi</option>
+            <option value="metal">Metal</option>
+            <option value="rock">Rock</option>
+            <option value="pop">Pop</option>
+            <option value="jazz">Jazz</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn-birincil" id="oyunBaslat">Oyunu Başlat</button>
+        <span class="alan-ipucu" id="oyunRekor"></span>
+      </div>
+
+      <div class="m-test-sahne" id="oyunSahne" hidden>
+        <div class="oyun-sarki" id="oyunSarki">—</div>
+        <div class="m-faz-etiket" id="oyunFaz">Hazır…</div>
+        <button type="button" class="m-pad" id="oyunPad">VUR<small>boşluk / dokun — en az 4 vuruş</small></button>
+        <div class="oyun-alt">
+          <span class="m-tur-goster" id="oyunTurGoster">Tur 1 / 5</span>
+          <span class="oyun-sayac" id="oyunSayac"></span>
+          <button type="button" class="btn btn-birincil btn-kucuk" id="oyunTahmin" hidden>Tahminim Bu ✓</button>
+        </div>
+        <button type="button" class="btn btn-golge btn-kucuk" id="oyunIptal">İptal</button>
+      </div>
+
+      <div class="m-sonuc" id="oyunSonuc" hidden>
+        <div class="m-skor-kart">
+          <div class="m-skor" id="oyunSkor">–</div>
+          <div class="m-skor-etiket">OYUN PUANI<br><small>5 turun ortalaması</small></div>
+        </div>
+        <div class="m-sonuc-detay">
+          <table class="tablo">
+            <thead><tr><th>Tur</th><th>Şarkı</th><th class="sayi">Gerçek</th>
+                       <th class="sayi">Tahminin</th><th class="sayi">Hata</th><th class="sayi">Puan</th></tr></thead>
+            <tbody id="oyunTablo"></tbody>
+          </table>
+          <p class="alan-ipucu" id="oyunYorum"></p>
+          <button type="button" class="btn btn-golge" id="oyunTekrar">Yeniden Oyna</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
