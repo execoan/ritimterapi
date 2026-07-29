@@ -451,12 +451,12 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 }
 .t-evre {
   position: relative; background: rgba(255, 255, 255, .035); border: 1px solid rgba(255, 255, 255, .09);
-  border-radius: 14px; padding: .9rem .9rem .8rem;
+  border-radius: 14px; padding: .9rem .9rem .8rem; cursor: default;
   opacity: 0; transform: translateY(14px);
   transition: opacity .6s ease, transform .6s ease, border-color .25s; transition-delay: var(--gecikme, 0s);
 }
 .gorunur.t-yolculuk .t-evre, .t-yolculuk.gorunur .t-evre { opacity: 1; transform: none; }
-.t-evre:hover { border-color: rgba(245, 158, 11, .5); }
+.t-evre:hover, .t-evre:focus-within { border-color: rgba(245, 158, 11, .5); outline: none; }
 .t-evre-nokta {
   display: block; width: 11px; height: 11px; border-radius: 50%;
   background: var(--t-amber); box-shadow: 0 0 10px rgba(245, 158, 11, .8); margin-bottom: .5rem;
@@ -464,6 +464,21 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 }
 .t-evre-hafta { display: block; color: var(--t-amber); font-size: .74rem; font-weight: 800; letter-spacing: 1px; }
 .t-evre-ad { color: var(--t-metin); font-size: .86rem; font-weight: 600; }
+/* Detay paragrafı: üstüne gelince / Tab ile odaklanınca açılır.
+   max-height ile daraltılıp genişletilir (height:auto transition edilemez);
+   grid'te her satır kendi yüksekliğine göre büyüdüğü için diğer kartları
+   ezmez, yalnız kendi satırını aşağı iter. */
+.t-evre-detay {
+  max-height: 0; opacity: 0; overflow: hidden;
+  transition: max-height .32s ease, opacity .22s ease, margin-top .32s ease;
+}
+.t-evre:hover .t-evre-detay, .t-evre:focus-within .t-evre-detay {
+  max-height: 220px; opacity: 1; margin-top: .55rem;
+}
+.t-evre-detay p {
+  margin: 0; padding-top: .55rem; border-top: 1px solid rgba(255, 255, 255, .1);
+  font-size: .82rem; line-height: 1.55; color: var(--t-soluk);
+}
 
 /* ---------- MOXO bölümü ---------- */
 .t-moxo-dizi { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; align-items: start; }

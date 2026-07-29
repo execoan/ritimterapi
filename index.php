@@ -453,14 +453,26 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <h3 class="t-alt-baslik kayarak">12 haftalık yolculuk</h3>
     <div class="t-yolculuk kayarak">
       <?php
-      $evreler = [['1–2', 'Temel ritim ve güvenli katılım'], ['3–4', 'Bellek ve koordinasyon'],
-                  ['5–6', 'Seçici dikkat ve dürtü kontrolü'], ['7–8', 'Esneklik ve çift görev'],
-                  ['9–10', 'Senkroni ve liderlik'], ['11–12', 'Aktarım ve kapanış']];
-      foreach ($evreler as $i => [$hafta, $ad]): ?>
-      <div class="t-evre" style="--gecikme:<?= $i * .1 ?>s">
+      $evreler = [
+        ['1–2', 'Temel ritim ve güvenli katılım',
+         'İlk iki hafta güven inşa etmeye ayrılır: metronoma eşlik ile sabit vuruşu bulma, vücut perküsyonuyla ısınma ve dur–devam oyunlarıyla işaretle başlayıp işaretle durma. Amaç, katılımcının odaya ve gruba güvenle katılabileceği, hatanın rahat karşılandığı bir zemin kurmaktır.'],
+        ['3–4', 'Bellek ve koordinasyon',
+         'Bu haftalarda ritmik dizi tekrarı ile kısa kalıpları ezberden yeniden çalma ve iki el/ayak koordinasyonu gerektiren vücut perküsyonu kombinasyonları çalışılır. Kalıplar kademeli uzar; bir sonrakine geçmeden önce mevcut kalıp rahatça tekrarlanabilmelidir.'],
+        ['5–6', 'Seçici dikkat ve dürtü kontrolü',
+         'Hedef Tını çalışmasında yalnız belirli bir sese tepki verilir, diğerleri göz ardı edilir; Bekle–Dinle–Vur kartlarıyla da tepkiyi erteleme pratiği yapılır. Amaç, her uyarana anında tepki vermek yerine seçerek ve bekleyerek katılabilmektir.'],
+        ['7–8', 'Esneklik ve çift görev',
+         'Kural Değiştir çalışmasında işaretle birlikte önceden öğrenilen kural aniden tersine döner; Çift Hat çalışmasında ise ritim tutarken aynı anda ikinci bir görev (ör. kategori sayma) eklenir. İkisi de değişen koşullara uyum sağlama pratiğidir.'],
+        ['9–10', 'Senkroni ve liderlik',
+         'Daire Senkronisi çalışmasıyla grup içinde giriş sırasını dinleyerek yakalama, Ritim Planla–Uygula–Onar çalışmasıyla da kendi kısa ritmini tasarlayıp grupla paylaşma pratiği yapılır. Katılımcı burada hem takip eden hem yön veren tarafı dener.'],
+        ['11–12', 'Aktarım ve kapanış',
+         'Ritimden Sessiz Göreve çalışmasında kısa bir ritim eşliğinin ardından sessiz bir iş/görev bloğuna geçilir — atölyede kurulan düzenin oda dışına taşınması denenir. Son iki hafta ayrıca dönem boyunca çalışılanların gözden geçirildiği kapanış haftalarıdır.'],
+      ];
+      foreach ($evreler as $i => [$hafta, $ad, $detay]): ?>
+      <div class="t-evre" tabindex="0" style="--gecikme:<?= $i * .1 ?>s">
         <span class="t-evre-nokta"></span>
         <span class="t-evre-hafta">Hafta <?= e($hafta) ?></span>
         <span class="t-evre-ad"><?= e($ad) ?></span>
+        <div class="t-evre-detay"><p><?= e($detay) ?></p></div>
       </div>
       <?php endforeach; ?>
     </div>
