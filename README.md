@@ -70,10 +70,18 @@ Aynı test her push'ta GitHub Actions'ta da otomatik koşar
   temposunda** atar (CSS'te `--sure = 60/bpm`); dokununca o tempo çalar.
   Sayfadaki tüm sesler tek bir ses bağlamını paylaşır — yeni bir deney
   başlayınca diğerleri otomatik susar.
-- **🎧 Ritim Profili**: üç deneyin sonucu tek kartta birleşir (eşik Hz ·
-  sapma ms · aksak algısı). Profil **hiçbir yere kaydedilmez**, yalnız
-  tarayıcıda yaşar; ziyaretçi isterse tek cümlelik özeti ön kayıt formuna
-  taşır. Deneyler → profil → talep şeklinde bir huni kurar.
+- **🎯 Tempoyu Yakala** (hero, eski "Ritmi Hisset" toggle'ının yerine): sürgü
+  yok, sabit sayı yok. Gizli bir tempo (60–180 BPM havuzundan) hazırlık +
+  10 ölçüm vuruşuyla çalınır, ardından dört seçenekten biri işaretlenir;
+  doğru cevap ve skor (X/Y) anında gösterilir, "Yeni Gizli Tempo" ile
+  tekrar oynanır. Havuzdaki 60/120/180 değerleri saniyede 1/2/3 vuruşa denk
+  gelir — Deney 1'deki "saniyede kaç ses duyuyorsunuz" sorusuyla aynı ekseni
+  taşır. Başka bir demo başlatılırsa yarım kalan tur temiz biçimde iptal
+  edilip kart yeniden başlatılabilir hâle döner.
+- **🎧 Ritim Profili**: dört deneyin sonucu (eşik Hz · sapma ms · aksak
+  algısı · tempo tahmini) tek kartta birleşir. Profil **hiçbir yere
+  kaydedilmez**, yalnız tarayıcıda yaşar; ziyaretçi isterse tek cümlelik
+  özeti ön kayıt formuna taşır. Deneyler → profil → talep şeklinde bir huni kurar.
 - **⏱ Zaman ölçeği anlatısı**: kaydırdıkça ölçek 12 haftadan (7,2 milyar ms)
   bir oturuma, bir vuruşa (833 ms) ve nihayet ölçtüğümüz büyüklüğe (±25 ms)
   iner. Yapışkan sahne + halka çöküşü; ürünün hangi zaman ölçeğinde

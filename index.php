@@ -117,8 +117,20 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <a class="t-btn t-btn-dolu t-btn-buyuk" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
           <?= $girisli ? '→ Panele Git' : '→ Giriş Yap' ?>
         </a>
-        <button type="button" class="t-btn t-btn-cerceve t-btn-buyuk" id="ritimBtn">▶ Ritmi Hisset</button>
       </div>
+
+      <!-- ===== Tempoyu Yakala: gizli tempo, ayarlanamaz, çoktan seçmeli tahmin ===== -->
+      <div class="t-tempo-oyun" id="tempoOyun">
+        <p class="t-tempo-oyun-ust">🎯 TEMPOYU YAKALA</p>
+        <p class="t-tempo-oyun-durum" id="tempoDurum">
+          Gizli bir tempo çalacağız — hızını göstermeyeceğiz. Sonra dört seçenekten birini işaretleyin.
+        </p>
+        <button type="button" class="t-btn t-btn-cerceve" id="tempoBaslat">▶ Gizli Tempoyu Çal</button>
+        <div class="t-tempo-secenekler" id="tempoSecenekler" hidden></div>
+        <p class="t-tempo-sonuc" id="tempoSonuc" hidden></p>
+        <p class="t-tempo-skor" id="tempoSkor" hidden></p>
+      </div>
+
       <a class="t-hero-davet" href="#deney">
         <span class="t-hero-davet-nokta" aria-hidden="true"></span>
         Şimdi dinleyin: saniyede kaç ses duyuyorsunuz? <b>Deneyi aç ↓</b>

@@ -88,7 +88,40 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 .t-hero h1 em { font-style: normal; color: var(--t-amber); }
 .t-aciklama { color: var(--t-soluk); font-size: 1.05rem; max-width: 34rem; margin: 0 0 1.6rem; }
 .t-aciklama strong { color: var(--t-metin); }
-.t-cta-satir { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 1.8rem; }
+.t-cta-satir { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+
+/* ---------- Hero: Tempoyu Yakala (gizli tempo tahmin oyunu) ---------- */
+.t-tempo-oyun {
+  max-width: 420px; margin: 0 0 1.6rem; padding: 1.1rem 1.25rem; border-radius: 16px;
+  background: rgba(255, 255, 255, .04); border: 1px solid var(--t-cizgi);
+}
+.t-tempo-oyun-ust {
+  margin: 0 0 .4rem; font-size: .74rem; font-weight: 800; letter-spacing: .26em; text-indent: .26em;
+  color: var(--t-amber);
+}
+.t-tempo-oyun-durum { margin: 0 0 .85rem; font-size: .92rem; color: var(--t-soluk); min-height: 2.5em; }
+.t-tempo-secenekler { display: grid; grid-template-columns: repeat(2, 1fr); gap: .55rem; margin-top: .1rem; }
+.t-tempo-secenek {
+  padding: .65rem .5rem; border-radius: 11px; font-family: inherit; font-weight: 700; font-size: .98rem;
+  color: var(--t-metin); background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .16);
+  cursor: pointer; transition: border-color .15s, background .15s, transform .1s, opacity .15s;
+}
+.t-tempo-secenek:hover:not(:disabled) {
+  border-color: var(--t-amber); background: rgba(245, 158, 11, .1); transform: translateY(-1px);
+}
+.t-tempo-secenek:disabled { cursor: default; }
+.t-tempo-secenek.dogru {
+  background: rgba(34, 197, 94, .18); border-color: rgba(74, 222, 128, .55); color: #86efac; opacity: 1;
+}
+.t-tempo-secenek.yanlis {
+  background: rgba(185, 28, 28, .18); border-color: rgba(248, 113, 113, .5); color: #fca5a5; opacity: 1;
+}
+.t-tempo-secenek:disabled:not(.dogru):not(.yanlis) { opacity: .45; }
+.t-tempo-sonuc { margin: .85rem 0 0; font-size: .95rem; font-weight: 700; }
+.t-tempo-sonuc.basari { color: #86efac; }
+.t-tempo-sonuc.hata { color: #fca5a5; }
+.t-tempo-skor { margin: .3rem 0 0; font-size: .8rem; color: var(--t-soluk); }
+@media (max-width: 380px) { .t-tempo-secenekler { grid-template-columns: 1fr; } }
 
 /* Vuruş halkaları */
 .t-halka {

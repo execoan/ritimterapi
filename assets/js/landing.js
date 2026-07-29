@@ -776,7 +776,7 @@
      Hiçbir yere kaydedilmez; yalnız sayfada yaşar. Kullanıcı isterse
      tek cümlelik özeti ön kayıt formuna taşır.
      ================================================================ */
-  var profil = { esik: null, sapma: null, algi: null };
+  var profil = { esik: null, sapma: null, algi: null, tempo: null };
 
   function profilBildir(alan, deger) {
     profil[alan] = deger;
@@ -812,6 +812,10 @@
       rozet(profil.algi + '/3', 'aksak vuruşu yakalama');
       dolu.push('aksak algısı ' + profil.algi + '/3');
     }
+    if (profil.tempo !== null) {
+      rozet(profil.tempo, 'gizli tempo tahmini');
+      dolu.push('tempo tahmini ' + profil.tempo);
+    }
     if (!dolu.length) { kutu.hidden = true; return; }
 
     kutu.hidden = false;
@@ -831,6 +835,13 @@
         ? 'Aksayan diziyi ' + profil.algi + '/3 yakaladınız; kulağınız uyanık.'
         : 'Aksak diziyi ayırmak zorlandı — bu tam olarak pratikle gelişen beceri.');
     }
+    if (profil.tempo !== null) {
+      var parcalar = profil.tempo.split('/');
+      var oran = parseInt(parcalar[0], 10) / Math.max(1, parseInt(parcalar[1], 10));
+      cumleler.push(oran >= 0.6
+        ? 'Gizli tempo oyununda ' + profil.tempo + ' doğru bildiniz — tempo hafızanız güçlü.'
+        : 'Gizli tempo oyununda ' + profil.tempo + ' bildiniz; kulak bu işte pratikle keskinleşir.');
+    }
     metin.textContent = cumleler.join(' ');
 
     // Forma taşınacak özet
@@ -846,7 +857,7 @@
     var sifirla = document.getElementById('profilSifirla');
     if (!sifirla) { return; }
     sifirla.addEventListener('click', function () {
-      profil = { esik: null, sapma: null, algi: null };
+      profil = { esik: null, sapma: null, algi: null, tempo: null };
       document.getElementById('ritimProfil').hidden = true;
       var alan = document.getElementById('kayitProfil');
       var bilgi = document.getElementById('profilEklendi');
@@ -855,55 +866,140 @@
     });
   })();
 
-  /* "Ritmi Hisset" — Web Audio ile 4/4 vuruş, halka nabzı eşliğinde */
-  var btn = document.getElementById('ritimBtn');
-  var halka = document.getElementById('vurusHalkasi');
-  if (!btn) { return; }
+  /* ================================================================
+     HERO — "TEMPOYU YAKALA": gizli, ayarlanamaz tempo tahmin oyunu
+     Eski "Ritmi Hisset" (sabit 96 BPM'de yalnız hissettiren toggle)
+     yerine geldi. Burada sürgü YOK: tempo sabit bir havuzdan gizlice
+     seçilir, dinletilir, ardından dört seçenekten biri işaretlenir.
+     Havuzdaki değerler bilhassa "saniyede kaç vuruş" ile okunabilir:
+     60 = saniyede 1, 120 = saniyede 2, 180 = saniyede 3 — Deney 1'deki
+     "saniyede kaç ses duyuyorsunuz" sorusuyla aynı ekseni sağda taşır.
+     Aynı ses bağlamını ve sağdaki halka/canvas görsellerini paylaşır.
+     ================================================================ */
+  (function tempoOyunu() {
+    var kok = document.getElementById('tempoOyun');
+    if (!kok) { return; }
+    var durumEl = document.getElementById('tempoDurum');
+    var baslatBtn = document.getElementById('tempoBaslat');
+    var secenekKutu = document.getElementById('tempoSecenekler');
+    var sonucEl = document.getElementById('tempoSonuc');
+    var skorEl = document.getElementById('tempoSkor');
+    var halka = document.getElementById('vurusHalkasi');
 
-  var calıyor = false;
-  var zamanlayici = null;
-  var sonrakiVurusZamani = 0;
-  var vurusNo = 0;
-  var BPM = 96;
+    var HAVUZ = [60, 80, 100, 120, 140, 160, 180];
+    var HAZIRLIK = 4, OLCUM = 10;
 
-  function planla() {
-    while (sonrakiVurusZamani < ctx.currentTime + 0.12) {
-      var aksan = vurusNo % 4 === 0;
-      klik(sonrakiVurusZamani, aksan, 'klik');
-      gorselVurus(sonrakiVurusZamani);
-      sonrakiVurusZamani += 60 / BPM;
-      vurusNo++;
+    var calisiyor = false, hedef = null, sonrakiZaman = 0, vurusNo = 0, zamanlayici = null;
+    var dogru = 0, toplam = 0;
+
+    function gorselVurus(zaman) {
+      var gecikme = Math.max(0, (zaman - ctx.currentTime) * 1000);
+      setTimeout(function () {
+        vurusuDuyur(1);
+        if (!halka) { return; }
+        halka.classList.add('vur');
+        setTimeout(function () { halka.classList.remove('vur'); }, 110);
+      }, gecikme);
     }
-  }
 
-  function gorselVurus(zaman) {
-    var gecikme = Math.max(0, (zaman - ctx.currentTime) * 1000);
-    setTimeout(function () {
-      vurusuDuyur(1);          // canvas ritim alanına basınç dalgası gönder
-      if (!halka) { return; }
-      halka.classList.add('vur');
-      setTimeout(function () { halka.classList.remove('vur'); }, 110);
-    }, gecikme);
-  }
+    function planla() {
+      while (calisiyor && sonrakiZaman < ctx.currentTime + 0.12 && vurusNo < HAZIRLIK + OLCUM) {
+        klik(sonrakiZaman, vurusNo % 4 === 0, 'klik');
+        gorselVurus(sonrakiZaman);
+        sonrakiZaman += 60 / hedef;
+        vurusNo++;
+      }
+      if (calisiyor && vurusNo >= HAZIRLIK + OLCUM) { bitirVeSor(); }
+    }
 
-  function heroDurdur() {
-    clearInterval(zamanlayici);
-    calıyor = false;
-    sesKes();
-    btn.textContent = '▶ Ritmi Hisset';
-  }
+    /** Dört seçenek: gizli tempo + havuzdan karışık 3 çeldirici. */
+    function secenekleriKur() {
+      var digerleri = HAVUZ.filter(function (b) { return b !== hedef; });
+      for (var i = digerleri.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = digerleri[i]; digerleri[i] = digerleri[j]; digerleri[j] = t;
+      }
+      var secenekler = [hedef].concat(digerleri.slice(0, 3));
+      for (i = secenekler.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        t = secenekler[i]; secenekler[i] = secenekler[j]; secenekler[j] = t;
+      }
+      secenekKutu.innerHTML = '';
+      secenekler.forEach(function (bpm) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 't-tempo-secenek';
+        b.textContent = bpm + ' BPM';
+        b.dataset.bpm = bpm;
+        secenekKutu.appendChild(b);
+      });
+      secenekKutu.hidden = false;
+    }
 
-  btn.addEventListener('click', function () {
-    if (calıyor) { heroDurdur(); return; }
-    digerleriniKapat('hero');
-    sesHazirla();
-    sesKes();
-    vurusNo = 0;
-    sonrakiVurusZamani = ctx.currentTime + 0.1;
-    zamanlayici = setInterval(planla, 25);
-    calıyor = true;
-    btn.textContent = '⏸ Durdur';
-  });
+    function bitirVeSor() {
+      clearInterval(zamanlayici);
+      calisiyor = false;
+      sesKes();
+      durumEl.textContent = 'Sence bu hangi tempoydu?';
+      baslatBtn.hidden = true;
+      secenekleriKur();
+    }
 
-  acikModuller.push({ ad: 'hero', durdur: function () { if (calıyor) { heroDurdur(); } } });
+    function baslat() {
+      digerleriniKapat('herotempo');
+      sesHazirla();
+      sesKes();
+      hedef = HAVUZ[Math.floor(Math.random() * HAVUZ.length)];
+      vurusNo = 0;
+      sonrakiZaman = ctx.currentTime + 0.15;
+      calisiyor = true;
+      sonucEl.hidden = true;
+      secenekKutu.hidden = true;
+      baslatBtn.hidden = true;
+      durumEl.textContent = '🎧 Dinle…';
+      zamanlayici = setInterval(planla, 25);
+    }
+
+    /* Başka bir demo başlatılınca dışarıdan çağrılır: yarım kalan turu
+       iptal edip kartı "yeniden başlat" durumuna döndürür — aksi hâlde
+       "🎧 Dinle…" yazısında donup kalır ve kullanıcı devam edemez. */
+    function durdur() {
+      clearInterval(zamanlayici);
+      calisiyor = false;
+      sesKes();
+      secenekKutu.hidden = true;
+      sonucEl.hidden = true;
+      baslatBtn.hidden = false;
+      baslatBtn.textContent = '▶ Gizli Tempoyu Çal';
+      durumEl.textContent = 'Başka bir ses çalındığı için tur iptal edildi. Tekrar deneyin.';
+    }
+
+    secenekKutu.addEventListener('click', function (ev) {
+      var b = ev.target.closest('.t-tempo-secenek');
+      if (!b) { return; }
+      var secilen = parseInt(b.dataset.bpm, 10);
+      var dogruMu = secilen === hedef;
+      toplam++;
+      if (dogruMu) { dogru++; }
+      Array.prototype.slice.call(secenekKutu.children).forEach(function (x) {
+        x.disabled = true;
+        if (parseInt(x.dataset.bpm, 10) === hedef) { x.classList.add('dogru'); }
+      });
+      if (!dogruMu) { b.classList.add('yanlis'); }
+      sonucEl.hidden = false;
+      sonucEl.className = 't-tempo-sonuc ' + (dogruMu ? 'basari' : 'hata');
+      sonucEl.innerHTML = dogruMu
+        ? '✓ Doğru! Gizli tempo <strong>' + hedef + ' BPM</strong> idi.'
+        : '✕ Bu sefer olmadı — gizli tempo <strong>' + hedef + ' BPM</strong> idi.';
+      skorEl.hidden = false;
+      skorEl.textContent = 'Skor: ' + dogru + ' / ' + toplam;
+      durumEl.textContent = 'Tekrar dene:';
+      baslatBtn.hidden = false;
+      baslatBtn.textContent = '🔁 Yeni Gizli Tempo';
+      profilBildir('tempo', dogru + '/' + toplam);
+    });
+
+    baslatBtn.addEventListener('click', baslat);
+    acikModuller.push({ ad: 'herotempo', durdur: function () { if (calisiyor) { durdur(); } } });
+  })();
 })();
