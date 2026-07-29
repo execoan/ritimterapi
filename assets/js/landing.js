@@ -885,31 +885,59 @@
     var sonucEl = document.getElementById('tempoSonuc');
     var skorEl = document.getElementById('tempoSkor');
     var halka = document.getElementById('vurusHalkasi');
+    var ikon = document.getElementById('tempoIkon');
+    var noktaKutu = document.getElementById('tempoNoktalar');
 
     var HAVUZ = [60, 80, 100, 120, 140, 160, 180];
-    var HAZIRLIK = 4, OLCUM = 10;
+    /* Sabit dinletme süresi: tempodan bağımsız olarak HER TUR aynı sürede
+       biter (eski sürümde 60 BPM'de 14 sn, 180 BPM'de ~5 sn sürüyordu —
+       yavaş tempolarda beklemek can sıkıcıydı). Vuruş sayısı temposuna
+       göre kendiliğinden çıkar; en az 3 vuruş garanti edilir. */
+    var SURE_SN = 5;
 
-    var calisiyor = false, hedef = null, sonrakiZaman = 0, vurusNo = 0, zamanlayici = null;
+    var calisiyor = false, hedef = null, sonrakiZaman = 0, vurusNo = 0, toplamVurus = 0, zamanlayici = null;
+    var sonBeatZamani = 0;
     var dogru = 0, toplam = 0;
 
-    function gorselVurus(zaman) {
+    /** Vuruş noktalarını kur: bu turdaki toplam vuruş kadar boş nokta. */
+    function noktalariKur(adet) {
+      noktaKutu.innerHTML = '';
+      for (var i = 0; i < adet; i++) {
+        var n = document.createElement('span');
+        n.className = 't-tempo-nokta';
+        noktaKutu.appendChild(n);
+      }
+    }
+
+    function gorselVurus(zaman, sira) {
       var gecikme = Math.max(0, (zaman - ctx.currentTime) * 1000);
       setTimeout(function () {
         vurusuDuyur(1);
-        if (!halka) { return; }
-        halka.classList.add('vur');
-        setTimeout(function () { halka.classList.remove('vur'); }, 110);
+        if (halka) {
+          halka.classList.add('vur');
+          setTimeout(function () { halka.classList.remove('vur'); }, 110);
+        }
+        if (ikon) {
+          ikon.classList.add('vur');
+          setTimeout(function () { ikon.classList.remove('vur'); }, 110);
+        }
+        var nokta = noktaKutu.children[sira];
+        if (nokta) { nokta.classList.add('yandi'); }
       }, gecikme);
     }
 
     function planla() {
-      while (calisiyor && sonrakiZaman < ctx.currentTime + 0.12 && vurusNo < HAZIRLIK + OLCUM) {
+      while (calisiyor && sonrakiZaman < ctx.currentTime + 0.12 && vurusNo < toplamVurus) {
         klik(sonrakiZaman, vurusNo % 4 === 0, 'klik');
-        gorselVurus(sonrakiZaman);
+        gorselVurus(sonrakiZaman, vurusNo);
+        if (vurusNo === toplamVurus - 1) { sonBeatZamani = sonrakiZaman; }
         sonrakiZaman += 60 / hedef;
         vurusNo++;
       }
-      if (calisiyor && vurusNo >= HAZIRLIK + OLCUM) { bitirVeSor(); }
+      // Son vuruş SCHEDULE edilir edilmez değil, gerçekten ÇALINIP noktası
+      // yandıktan sonra seçenekleri göster (25-120ms'lik lookahead payı
+      // yüzünden anında geçilirse son nokta seçeneklerden SONRA yanıyordu).
+      if (calisiyor && vurusNo >= toplamVurus && ctx.currentTime > sonBeatZamani + 0.15) { bitirVeSor(); }
     }
 
     /** Dört seçenek: gizli tempo + havuzdan karışık 3 çeldirici. */
@@ -950,6 +978,8 @@
       sesHazirla();
       sesKes();
       hedef = HAVUZ[Math.floor(Math.random() * HAVUZ.length)];
+      toplamVurus = Math.max(3, Math.round(SURE_SN * hedef / 60));
+      noktalariKur(toplamVurus);
       vurusNo = 0;
       sonrakiZaman = ctx.currentTime + 0.15;
       calisiyor = true;
@@ -972,6 +1002,7 @@
       baslatBtn.hidden = false;
       baslatBtn.textContent = '▶ Gizli Tempoyu Çal';
       durumEl.textContent = 'Başka bir ses çalındığı için tur iptal edildi. Tekrar deneyin.';
+      noktaKutu.innerHTML = '';
     }
 
     secenekKutu.addEventListener('click', function (ev) {

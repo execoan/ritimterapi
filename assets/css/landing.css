@@ -90,37 +90,74 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 .t-aciklama strong { color: var(--t-metin); }
 .t-cta-satir { display: flex; gap: .9rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
 
-/* ---------- Hero: Tempoyu Yakala (gizli tempo tahmin oyunu) ---------- */
+/* ---------- Hero: Tempoyu Yakala (gizli tempo tahmin oyunu, v2) ---------- */
 .t-tempo-oyun {
-  max-width: 420px; margin: 0 0 1.6rem; padding: 1.1rem 1.25rem; border-radius: 16px;
-  background: rgba(255, 255, 255, .04); border: 1px solid var(--t-cizgi);
+  position: relative; overflow: hidden;
+  max-width: 420px; margin: 0 0 1.6rem; padding: 1.15rem 1.3rem; border-radius: 18px;
+  background: linear-gradient(150deg, rgba(245, 158, 11, .13), rgba(139, 92, 246, .1));
+  border: 1px solid rgba(245, 158, 11, .32);
 }
+/* .t-profil-isik ile aynı dönen ışık deseni (profil-tara keyframe'i paylaşılır) */
+.t-tempo-isik {
+  position: absolute; inset: -60%; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 82%, rgba(255, 255, 255, .09) 90%, transparent 96%);
+  animation: profil-tara 7s linear infinite;
+}
+.t-tempo-oyun > *:not(.t-tempo-isik) { position: relative; }
 .t-tempo-oyun-ust {
-  margin: 0 0 .4rem; font-size: .74rem; font-weight: 800; letter-spacing: .26em; text-indent: .26em;
+  margin: 0 0 .5rem; font-size: .74rem; font-weight: 800; letter-spacing: .26em; text-indent: .26em;
   color: var(--t-amber);
+}
+.t-tempo-gorsel {
+  display: flex; align-items: center; justify-content: center; gap: .7rem;
+  min-height: 2.6rem; margin-bottom: .5rem;
+}
+.t-tempo-ikon { font-size: 1.9rem; line-height: 1; display: inline-block; transition: transform .09s ease-out; }
+.t-tempo-ikon.vur { transform: scale(1.45) rotate(-6deg); }
+.t-tempo-noktalar { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 220px; }
+.t-tempo-nokta {
+  width: 9px; height: 9px; border-radius: 50%; background: rgba(255, 255, 255, .16);
+  transition: background .1s, transform .1s, box-shadow .1s;
+}
+.t-tempo-nokta.yandi {
+  background: var(--t-amber); transform: scale(1.5); box-shadow: 0 0 9px rgba(245, 158, 11, .7);
 }
 .t-tempo-oyun-durum { margin: 0 0 .85rem; font-size: .92rem; color: var(--t-soluk); min-height: 2.5em; }
 .t-tempo-secenekler { display: grid; grid-template-columns: repeat(2, 1fr); gap: .55rem; margin-top: .1rem; }
 .t-tempo-secenek {
-  padding: .65rem .5rem; border-radius: 11px; font-family: inherit; font-weight: 700; font-size: .98rem;
-  color: var(--t-metin); background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .16);
+  padding: .7rem .5rem; border-radius: 12px; font-family: inherit; font-weight: 700; font-size: 1rem;
+  color: var(--t-metin); background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .18);
   cursor: pointer; transition: border-color .15s, background .15s, transform .1s, opacity .15s;
 }
 .t-tempo-secenek:hover:not(:disabled) {
-  border-color: var(--t-amber); background: rgba(245, 158, 11, .1); transform: translateY(-1px);
+  border-color: var(--t-amber); background: rgba(245, 158, 11, .12); transform: translateY(-1px);
 }
 .t-tempo-secenek:disabled { cursor: default; }
 .t-tempo-secenek.dogru {
-  background: rgba(34, 197, 94, .18); border-color: rgba(74, 222, 128, .55); color: #86efac; opacity: 1;
+  background: rgba(34, 197, 94, .2); border-color: rgba(74, 222, 128, .6); color: #86efac; opacity: 1;
+  animation: tempo-pop .35s ease both;
 }
 .t-tempo-secenek.yanlis {
-  background: rgba(185, 28, 28, .18); border-color: rgba(248, 113, 113, .5); color: #fca5a5; opacity: 1;
+  background: rgba(185, 28, 28, .2); border-color: rgba(248, 113, 113, .55); color: #fca5a5; opacity: 1;
+  animation: tempo-sallan .4s ease both;
 }
-.t-tempo-secenek:disabled:not(.dogru):not(.yanlis) { opacity: .45; }
-.t-tempo-sonuc { margin: .85rem 0 0; font-size: .95rem; font-weight: 700; }
-.t-tempo-sonuc.basari { color: #86efac; }
-.t-tempo-sonuc.hata { color: #fca5a5; }
+.t-tempo-secenek:disabled:not(.dogru):not(.yanlis) { opacity: .4; }
+.t-tempo-sonuc { margin: .85rem 0 0; font-size: 1rem; font-weight: 800; }
+.t-tempo-sonuc.basari { color: #86efac; animation: tempo-pop .4s ease both; }
+.t-tempo-sonuc.hata { color: #fca5a5; animation: tempo-sallan .45s ease both; }
 .t-tempo-skor { margin: .3rem 0 0; font-size: .8rem; color: var(--t-soluk); }
+@keyframes tempo-pop {
+  0% { transform: scale(.88); opacity: 0; }
+  65% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes tempo-sallan {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
 @media (max-width: 380px) { .t-tempo-secenekler { grid-template-columns: 1fr; } }
 
 /* Vuruş halkaları */
@@ -775,7 +812,9 @@ body.tanitim::after {
   .kayarak { opacity: 1; transform: none; transition: none; }
   /* Deney/nabız süslemeleri de durur; deneyler tıklamayla yine çalışır */
   .t-deney-fon, .t-hero-davet-nokta, .t-nabiz-halka, .t-sapma-serit i,
-  .t-profil, .t-profil-isik, .t-kayit-fon { animation: none !important; }
+  .t-profil, .t-profil-isik, .t-kayit-fon, .t-tempo-isik,
+  .t-tempo-secenek.dogru, .t-tempo-secenek.yanlis, .t-tempo-sonuc.basari, .t-tempo-sonuc.hata
+    { animation: none !important; }
   .t-nabiz-halka { opacity: .25; }
   /* Sinematik ölçek bölümü kısalır: yapışkan sahne yerine tek ekran */
   .t-olcek { height: auto; }

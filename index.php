@@ -119,11 +119,18 @@ function metronom_svg(string $sinif, string $gradyanId): string
         </a>
       </div>
 
-      <!-- ===== Tempoyu Yakala: gizli tempo, ayarlanamaz, çoktan seçmeli tahmin ===== -->
+      <!-- ===== Tempoyu Yakala: gizli tempo, ayarlanamaz, çoktan seçmeli tahmin =====
+           Sabit 5 saniyelik dinletme (tempodan bağımsız — her tur aynı sürede biter),
+           kartın içinde gerçek zamanlı nabız (zıplayan ikon + vuruş noktaları). -->
       <div class="t-tempo-oyun" id="tempoOyun">
+        <div class="t-tempo-isik" aria-hidden="true"></div>
         <p class="t-tempo-oyun-ust">🎯 TEMPOYU YAKALA</p>
+        <div class="t-tempo-gorsel" id="tempoGorsel" aria-hidden="true">
+          <span class="t-tempo-ikon" id="tempoIkon">🎵</span>
+          <span class="t-tempo-noktalar" id="tempoNoktalar"></span>
+        </div>
         <p class="t-tempo-oyun-durum" id="tempoDurum">
-          Gizli bir tempo çalacağız — hızını göstermeyeceğiz. Sonra dört seçenekten birini işaretleyin.
+          Gizli bir tempo 5 saniye çalacağız — hızını göstermeyeceğiz. Sonra dört seçenekten birini işaretleyin.
         </p>
         <button type="button" class="t-btn t-btn-cerceve" id="tempoBaslat">▶ Gizli Tempoyu Çal</button>
         <div class="t-tempo-secenekler" id="tempoSecenekler" hidden></div>
