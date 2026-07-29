@@ -8,6 +8,7 @@ $haftaOturumlari = sessions_list(null, $pzt, $paz);
 usort($haftaOturumlari, fn($a, $b) => strcmp($a['tarih'], $b['tarih']) ?: strcmp($a['grup_saat'], $b['grup_saat']));
 $bekleyenler = pending_sessions();
 $bitenPaketler = packages_expiring(2);
+$yeniTalepler = pre_registration_count_new();
 
 $aktifGrup    = (int)db()->query('SELECT COUNT(*) FROM gruplar WHERE aktif = 1')->fetchColumn();
 $aktifOgrenci = (int)db()->query('SELECT COUNT(*) FROM ogrenciler WHERE aktif = 1')->fetchColumn();
@@ -30,6 +31,13 @@ require APP_DIR . '/includes/view/header.php';
   <div class="ozet-kart"><div class="sayi"><?= $teknikSayisi ?></div><div class="etiket">Teknik (kütüphane)</div></div>
   <div class="ozet-kart"><div class="sayi"><?= count($haftaOturumlari) ?></div><div class="etiket">Bu hafta oturum</div></div>
 </div>
+
+<?php if ($yeniTalepler > 0): ?>
+<div class="uyari-kutu">
+  📨 Tanıtım sitesinden <strong><?= $yeniTalepler ?></strong> yeni deneme oturumu talebi var.
+  <a href="<?= e(url('on-kayitlar.php')) ?>">Talepleri aç →</a>
+</div>
+<?php endif; ?>
 
 <?php if ($bekleyenler): ?>
 <div class="kart">

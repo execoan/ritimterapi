@@ -469,6 +469,23 @@ function run_migrations(): void
             ALTER TABLE protokol_sonuclari ADD COLUMN sd_ms INTEGER;
             ALTER TABLE protokol_sonuclari ADD COLUMN kalite TEXT NOT NULL DEFAULT '';
         ",
+
+        // v15 — tanıtım sitesinden gelen ön kayıt / deneme oturumu talepleri.
+        //        Kişisel veri içerir: yalnız geri dönüş için tutulur, dışa aktarılmaz.
+        15 => "
+            CREATE TABLE on_kayitlar (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                ad          TEXT    NOT NULL,
+                iletisim    TEXT    NOT NULL,
+                kitle       TEXT    NOT NULL DEFAULT 'belirtilmedi',
+                mesaj       TEXT    NOT NULL DEFAULT '',
+                profil      TEXT    NOT NULL DEFAULT '',
+                durum       TEXT    NOT NULL DEFAULT 'yeni'
+                            CHECK (durum IN ('yeni','arandi','kayit','vazgecti')),
+                created_at  TEXT    NOT NULL
+            );
+            CREATE INDEX ix_on_kayit_durum ON on_kayitlar(durum, created_at);
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {

@@ -42,6 +42,7 @@ $navYapisi = [
 
     ['tur' => 'menu', 'ikon' => '⚙️', 'etiket' => 'Yönetim', 'ogeler' => [
         ['dosya' => 'site.php',  'ikon' => '🌐', 'etiket' => 'Tanıtım Sitesi', 'not' => 'Metinler, bölümler, galeri'],
+        ['dosya' => 'on-kayitlar.php', 'ikon' => '📨', 'etiket' => 'Ön Kayıtlar', 'not' => 'Siteden gelen deneme talepleri'],
         ['dosya' => 'yedek.php', 'ikon' => '💾', 'etiket' => 'Yedekleme',      'not' => 'İndir, geri yükle'],
         ['ayrac' => true],
         ['cikis' => true],

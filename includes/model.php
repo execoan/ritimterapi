@@ -1377,6 +1377,91 @@ function student_protocol_first_last(int $ogrenciId, string $from, string $to): 
     return $harita;
 }
 
+/* ======================== ÖN KAYIT (tanıtım sitesi) ======================== */
+
+const ON_KAYIT_DURUM_LABELS = [
+    'yeni' => 'Yeni', 'arandi' => 'Arandı', 'kayit' => 'Kayıt oldu', 'vazgecti' => 'Vazgeçti',
+];
+const ON_KAYIT_KITLE_LABELS = [
+    'cocuk' => 'Çocuk / genç (8–15)', 'yetiskin' => 'Yetişkin (18+)',
+    'belirtilmedi' => 'Belirtilmedi',
+];
+
+/**
+ * Tanıtım sitesinden gelen deneme oturumu talebini kaydeder.
+ * Herkese açık uçtur: alan uzunlukları sınırlanır, HTML saklanmaz ve
+ * oturum başına saatlik gönderim sınırı uygulanır (kaba spam koruması).
+ * @return array{ok:bool, error:?string}
+ */
+function pre_registration_save(array $d): array
+{
+    $ad = trim((string)($d['ad'] ?? ''));
+    $iletisim = trim((string)($d['iletisim'] ?? ''));
+    if (mb_strlen($ad) < 2 || mb_strlen($ad) > 80) {
+        return ['ok' => false, 'error' => 'Lütfen adınızı yazın (2–80 karakter).'];
+    }
+    if (mb_strlen($iletisim) < 5 || mb_strlen($iletisim) > 120) {
+        return ['ok' => false, 'error' => 'Size ulaşabileceğimiz bir telefon veya e-posta yazın.'];
+    }
+    // Satır sonu enjeksiyonu (e-posta başlığı vb.) taşımasın
+    if (preg_match('/[\r\n]/', $ad . $iletisim)) {
+        return ['ok' => false, 'error' => 'Geçersiz karakter kullanıldı.'];
+    }
+    $kitle = (string)($d['kitle'] ?? 'belirtilmedi');
+    if (!isset(ON_KAYIT_KITLE_LABELS[$kitle])) { $kitle = 'belirtilmedi'; }
+
+    // Oturum başına saatlik sınır: aynı ziyaretçi formu doldurup durmasın
+    $simdi = time();
+    $gecmis = array_values(array_filter((array)($_SESSION['on_kayit_gecmis'] ?? []),
+        fn($t) => $simdi - (int)$t < 3600));
+    if (count($gecmis) >= 3) {
+        return ['ok' => false, 'error' => 'Kısa sürede birden çok talep aldık. Bir saat sonra tekrar deneyin.'];
+    }
+
+    db()->prepare('INSERT INTO on_kayitlar (ad, iletisim, kitle, mesaj, profil, durum, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)')
+        ->execute([
+            mb_substr($ad, 0, 80),
+            mb_substr($iletisim, 0, 120),
+            $kitle,
+            mb_substr(trim((string)($d['mesaj'] ?? '')), 0, 600),
+            mb_substr(trim((string)($d['profil'] ?? '')), 0, 300),
+            'yeni',
+            now_str(),
+        ]);
+    $gecmis[] = $simdi;
+    $_SESSION['on_kayit_gecmis'] = $gecmis;
+    return ['ok' => true, 'error' => null];
+}
+
+/** @param string $durum '' = hepsi */
+function pre_registrations(string $durum = ''): array
+{
+    if ($durum !== '' && isset(ON_KAYIT_DURUM_LABELS[$durum])) {
+        $st = db()->prepare('SELECT * FROM on_kayitlar WHERE durum = ? ORDER BY created_at DESC, id DESC');
+        $st->execute([$durum]);
+        return $st->fetchAll();
+    }
+    return db()->query('SELECT * FROM on_kayitlar ORDER BY created_at DESC, id DESC')->fetchAll();
+}
+
+function pre_registration_count_new(): int
+{
+    return (int)db()->query("SELECT COUNT(*) FROM on_kayitlar WHERE durum = 'yeni'")->fetchColumn();
+}
+
+function pre_registration_set_status(int $id, string $durum): bool
+{
+    if (!isset(ON_KAYIT_DURUM_LABELS[$durum])) { return false; }
+    db()->prepare('UPDATE on_kayitlar SET durum = ? WHERE id = ?')->execute([$durum, $id]);
+    return true;
+}
+
+function pre_registration_delete(int $id): void
+{
+    db()->prepare('DELETE FROM on_kayitlar WHERE id = ?')->execute([$id]);
+}
+
 /* ======================== EV PROGRAMI ======================== */
 
 /** Karışmayan karakterlerle 6 haneli öğrenci erişim kodu üretir (benzersiz). */

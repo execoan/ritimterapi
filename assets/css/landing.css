@@ -609,6 +609,127 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 .t-nabiz-ad { font-weight: 700; font-size: .98rem; }
 .t-nabiz-not { font-size: .78rem; color: var(--t-soluk); line-height: 1.4; }
 
+/* ================= HERO: ÜRETKEN RİTİM ALANI ================= */
+/* Vuruşa ve fareye tepki veren canvas; içerik onun üstünde kalır. */
+.t-alan-tuval { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.t-hero > .t-kapsayici { position: relative; z-index: 2; }
+.t-hero .t-halka, .t-hero .t-parcaciklar, .t-hero .t-notalar { z-index: 1; }
+
+/* Sayfa geneline ince film grenli doku — dijital düzlüğü kırar */
+body.tanitim::after {
+  content: ''; position: fixed; inset: 0; z-index: 999; pointer-events: none; opacity: .035;
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'>\
+<filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/></filter>\
+<rect width='140' height='140' filter='url(%23g)'/></svg>");
+}
+
+.t-nav-kayit { padding: .45rem 1rem; font-size: .9rem; }
+@media (max-width: 560px) { .t-nav-kayit { display: none; } }
+
+/* ================= ZAMAN ÖLÇEĞİ (scroll anlatısı) ================= */
+/* Uzun bölüm + yapışkan sahne: kaydırma ilerledikçe ölçek 12 haftadan
+   milisaniyeye iner. Ürünün ölçtüğü büyüklüğü hissettirmek için. */
+.t-olcek { position: relative; height: 420vh; background: var(--t-zemin); }
+.t-olcek-sabit {
+  position: sticky; top: 0; height: 100vh; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; text-align: center;
+}
+.t-olcek-halka { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; }
+.t-olcek-halka span {
+  position: absolute; border-radius: 50%; border: 1px solid rgba(245, 158, 11, .22);
+  width: 40vmin; height: 40vmin; transition: transform .25s ease-out, opacity .25s;
+}
+.t-olcek-halka span:nth-child(2) { width: 70vmin; height: 70vmin; border-color: rgba(139, 92, 246, .18); }
+.t-olcek-halka span:nth-child(3) { width: 100vmin; height: 100vmin; border-color: rgba(245, 158, 11, .1); }
+.t-olcek-icerik { position: relative; z-index: 1; padding: 0 1.2rem; max-width: 760px; }
+.t-olcek-etiket {
+  letter-spacing: .42em; text-indent: .42em; font-size: .82rem; font-weight: 700;
+  color: var(--t-amber); margin: 0 0 .8rem;
+}
+.t-olcek-deger {
+  font-size: clamp(2.1rem, 7vw, 4.6rem); font-weight: 800; line-height: 1.05;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+  background: linear-gradient(120deg, #fde68a, #f59e0b 45%, #a78bfa);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.t-olcek-aciklama { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--t-soluk); margin: 1rem auto 1.6rem; max-width: 32em; }
+.t-olcek-cubuk { height: 3px; background: rgba(255, 255, 255, .1); border-radius: 999px; overflow: hidden; max-width: 320px; margin: 0 auto; }
+.t-olcek-cubuk i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--t-amber), #a78bfa); }
+.t-olcek-ipucu { font-size: .8rem; color: var(--t-soluk); margin-top: 1.2rem; opacity: .7; }
+
+/* ================= RİTİM PROFİLİ ================= */
+.t-profil {
+  position: relative; overflow: hidden; text-align: center; margin: 0 0 1.4rem;
+  padding: 2rem 1.5rem; border-radius: 20px;
+  background: linear-gradient(150deg, rgba(245, 158, 11, .14), rgba(139, 92, 246, .12));
+  border: 1px solid rgba(245, 158, 11, .35);
+  animation: profil-gel .55s cubic-bezier(.2, .9, .3, 1.1) both;
+}
+@keyframes profil-gel { from { opacity: 0; transform: translateY(24px) scale(.97); } }
+.t-profil-isik {
+  position: absolute; inset: -50%; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 78%, rgba(255, 255, 255, .1) 86%, transparent 92%);
+  animation: profil-tara 6s linear infinite;
+}
+@keyframes profil-tara { to { transform: rotate(360deg); } }
+.t-profil > *:not(.t-profil-isik) { position: relative; }
+.t-profil-ustbaslik { letter-spacing: .3em; text-indent: .3em; font-size: .75rem; font-weight: 800; color: var(--t-amber); margin: 0 0 1rem; }
+.t-profil-rozetler { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.t-profil-rozet {
+  display: flex; flex-direction: column; align-items: center; gap: .1rem; min-width: 120px;
+  padding: .7rem .9rem; border-radius: 14px;
+  background: rgba(0, 0, 0, .3); border: 1px solid rgba(255, 255, 255, .1);
+}
+.t-profil-rozet b { font-size: 1.5rem; color: var(--t-amber); line-height: 1; }
+.t-profil-rozet span { font-size: .74rem; color: var(--t-soluk); text-align: center; line-height: 1.3; }
+.t-profil-metin { font-size: 1.08rem; max-width: 40em; margin: 0 auto 1.3rem; }
+.t-profil-butonlar { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; }
+.t-profil-not { font-size: .78rem; color: var(--t-soluk); margin: 1rem 0 0; }
+
+/* ================= ÖN KAYIT ================= */
+.t-kayit-bolum { position: relative; overflow: hidden; background: var(--t-zemin2); }
+.t-kayit-fon {
+  position: absolute; inset: -40% -10%; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(245, 158, 11, .16), transparent 70%) 15% 40% / 60% 70% no-repeat,
+              radial-gradient(closest-side, rgba(139, 92, 246, .13), transparent 70%) 85% 60% / 55% 65% no-repeat;
+  animation: fon-suzul 26s ease-in-out infinite alternate;
+}
+.t-kayit-ic { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 420px; gap: 2.4rem; align-items: start; }
+@media (max-width: 900px) { .t-kayit-ic { grid-template-columns: 1fr; } }
+.t-kayit-gizlilik {
+  font-size: .86rem; color: var(--t-soluk); background: rgba(0, 0, 0, .25);
+  border-left: 3px solid var(--t-cizgi); padding: .7rem .9rem; border-radius: 0 10px 10px 0; margin-top: 1.2rem;
+}
+.t-kayit-form {
+  background: rgba(12, 10, 9, .8); border: 1px solid var(--t-cizgi); border-radius: 20px;
+  padding: 1.6rem 1.4rem; box-shadow: 0 22px 60px rgba(0, 0, 0, .45); backdrop-filter: blur(6px);
+}
+.t-kayit-form h3 { font-size: 1.15rem; margin-bottom: 1rem; }
+.t-alan { display: block; margin-bottom: .9rem; }
+.t-alan > span { display: block; font-size: .88rem; font-weight: 600; margin-bottom: .35rem; color: var(--t-metin); }
+.t-alan > span small { font-weight: 400; color: var(--t-soluk); }
+.t-alan input, .t-alan select, .t-alan textarea {
+  width: 100%; padding: .7rem .85rem; border-radius: 11px; font-family: inherit; font-size: .96rem;
+  background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .14); color: var(--t-metin);
+  transition: border-color .2s, background .2s;
+}
+.t-alan textarea { resize: vertical; }
+.t-alan input:focus, .t-alan select:focus, .t-alan textarea:focus {
+  outline: none; border-color: var(--t-amber); background: rgba(255, 255, 255, .08);
+}
+.t-alan select option { background: var(--t-zemin2); color: var(--t-metin); }
+.t-tam-genislik { width: 100%; text-align: center; border: none; margin-top: .3rem; }
+.t-kayit-alt { font-size: .8rem; color: var(--t-soluk); text-align: center; margin: .7rem 0 0; }
+.t-bal-kupu { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.t-form-flash { padding: .7rem .9rem; border-radius: 11px; margin-bottom: 1rem; font-size: .92rem; }
+.t-form-flash.basari { background: rgba(34, 197, 94, .15); border: 1px solid rgba(74, 222, 128, .4); color: #86efac; }
+.t-form-flash.hata { background: rgba(185, 28, 28, .18); border: 1px solid rgba(248, 113, 113, .4); color: #fca5a5; }
+.t-profil-eklendi {
+  font-size: .85rem; color: #c4b5fd; background: rgba(139, 92, 246, .14);
+  border: 1px solid rgba(139, 92, 246, .3); border-radius: 11px; padding: .6rem .8rem; margin-bottom: .9rem;
+}
+
 /* ---------- Tilt ---------- */
 [data-tilt] { will-change: transform; }
 
@@ -620,6 +741,11 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
   .t-sarkac, .t-halka, .t-ekolayzer i, .t-notalar span, .t-vurgu-buyuk { animation: none !important; }
   .kayarak { opacity: 1; transform: none; transition: none; }
   /* Deney/nabız süslemeleri de durur; deneyler tıklamayla yine çalışır */
-  .t-deney-fon, .t-hero-davet-nokta, .t-nabiz-halka, .t-sapma-serit i { animation: none !important; }
+  .t-deney-fon, .t-hero-davet-nokta, .t-nabiz-halka, .t-sapma-serit i,
+  .t-profil, .t-profil-isik, .t-kayit-fon { animation: none !important; }
   .t-nabiz-halka { opacity: .25; }
+  /* Sinematik ölçek bölümü kısalır: yapışkan sahne yerine tek ekran */
+  .t-olcek { height: auto; }
+  .t-olcek-sabit { position: static; height: auto; padding: 3rem 0; }
+  .t-alan-tuval { display: none; }
 }

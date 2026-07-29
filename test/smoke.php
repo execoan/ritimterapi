@@ -334,7 +334,7 @@ try {
     $teknikAdet = (int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn();
     $pdo = null;
 } catch (Throwable $e) { $surum = -1; $teknikAdet = -1; }
-dogrula($surum === 14, 'göçler uygulanmış (user_version=14)', 'bulunan: ' . $surum);
+dogrula($surum === 15, 'göçler uygulanmış (user_version=15)', 'bulunan: ' . $surum);
 dogrula($teknikAdet >= 18, 'teknik kütüphanesi seed edilmiş', 'adet: ' . $teknikAdet);
 dogrula(str_contains(git_('teknikler.php', $jar)['govde'], 'Metronoma eşlik'), 'seed içeriği sayfada görünüyor');
 $grupAtolyesi = git_('grup-atolyesi.php', $jar)['govde'];
@@ -697,6 +697,42 @@ $bulunan = array_values(array_filter($yasakli, fn($k) => mb_stripos($veliBelge, 
 dogrula($veliBelge !== '' && !$bulunan, 'veli raporu belgesinde kilitli dil temiz', implode(', ', $bulunan));
 dogrula(git_('rapor-haftalik.php', $jar)['durum'] === 200
      && git_('rapor-donemlik.php?grup_id=' . $grupId, $jar)['durum'] === 200, 'haftalık ve dönemlik raporlar açılıyor');
+
+bolum('Ön kayıt (herkese açık form)');
+$halkJar = [];                              // giriş yapmamış ziyaretçi
+$t = csrf_al('index.php', $halkJar);
+dogrula($t !== '', 'tanıtım sayfasında CSRF alanı var');
+// CSRF'siz gönderim kayıt oluşturmamalı
+gonder('index.php', ['islem' => 'on_kayit', 'ad' => 'CSRFSIZ-TALEP', 'iletisim' => '0555 000 00 00'], $halkJar);
+$y = gonder('index.php', ['islem' => 'on_kayit', 'csrf_token' => $t,
+    'ad' => 'Duman Talep', 'iletisim' => 'duman@example.test', 'kitle' => 'cocuk',
+    'mesaj' => 'duman testi', 'profil' => 'eşik 20 Hz'], $halkJar);
+dogrula($y['durum'] >= 300 && $y['durum'] < 400, 'geçerli talep kabul edildi (yönlendirme)', 'durum ' . $y['durum']);
+// Bal küpü dolu → kayıt OLUŞMAMALI
+$t = csrf_al('index.php', $halkJar);
+gonder('index.php', ['islem' => 'on_kayit', 'csrf_token' => $t, 'ad' => 'Bot Talep',
+    'iletisim' => 'bot@example.test', 'website' => 'http://spam.example'], $halkJar);
+// Kısa ad reddedilmeli
+$t = csrf_al('index.php', $halkJar);
+gonder('index.php', ['islem' => 'on_kayit', 'csrf_token' => $t, 'ad' => 'X', 'iletisim' => 'kisa@example.test'], $halkJar);
+
+$liste = git_('on-kayitlar.php', $jar)['govde'];   // eğitmen oturumuyla
+dogrula(str_contains($liste, 'Duman Talep'), 'talep panelde görünüyor');
+dogrula(!str_contains($liste, 'CSRFSIZ-TALEP'), 'CSRF jetonu olmadan talep oluşmuyor');
+dogrula(!str_contains($liste, 'Bot Talep'), 'bal küpü dolu gönderim kaydedilmiyor');
+dogrula(!str_contains($liste, 'kisa@example.test'), 'geçersiz ad reddediliyor');
+dogrula(str_contains($liste, 'eşik 20 Hz'), 'ritim profili talebe eklendi');
+dogrula(str_contains(git_('panel.php', $jar)['govde'], 'deneme oturumu talebi'), 'panelde yeni talep uyarısı var');
+// Ziyaretçi ön kayıt listesini GÖREMEMELİ
+$y = git_('on-kayitlar.php', $halkJar);
+dogrula($y['durum'] >= 300 && str_contains($y['yer'], 'giris.php'), 'ön kayıt listesi girişe kapalı');
+// Temizlik: kişisel veri bırakmayalım
+preg_match('/name="id" value="(\d+)"/', $liste, $m);
+if (!empty($m[1])) {
+    $t = csrf_al('on-kayitlar.php', $jar);
+    gonder('on-kayitlar.php', ['csrf_token' => $t, 'islem' => 'sil', 'id' => $m[1]], $jar);
+    dogrula(!str_contains(git_('on-kayitlar.php', $jar)['govde'], 'Duman Talep'), 'talep silinebiliyor');
+}
 
 bolum('Dışa aktarma ve yedek uçları');
 $csv = git_('disa-aktar.php?tur=protokol', $jar);

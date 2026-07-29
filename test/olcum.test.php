@@ -96,7 +96,10 @@ kontrol($sup['supheli_olcum'] === 3, 'kalibrasyonsuz ölçümler sayılıyor',
 echo "\n— Kayıt: sd_ms ve kalite —\n";
 run_migrations();
 $surum = (int)db()->query('PRAGMA user_version')->fetchColumn();
-kontrol($surum === 14, 'göç v14 uygulandı', 'user_version=' . $surum);
+// Sütun varlığını denetle: yeni göçler eklendikçe bu test kırılmasın
+$sutunlar = array_column(db()->query('PRAGMA table_info(protokol_sonuclari)')->fetchAll(), 'name');
+kontrol($surum >= 14 && in_array('sd_ms', $sutunlar, true) && in_array('kalite', $sutunlar, true),
+    'göç v14 sütunları yerinde', 'user_version=' . $surum);
 db()->exec("INSERT INTO ogrenciler (kod, kayit_tarihi) VALUES ('OLCUM-1', '2026-01-01')");
 $oid = (int)db()->lastInsertId();
 $res = protocol_result_save(['ogrenci_id' => $oid, 'protokol' => 'vurus_tutturma',

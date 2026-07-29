@@ -153,6 +153,193 @@
     acikModuller.forEach(function (m) { if (m.ad !== haric) { m.durdur(); } });
   }
 
+  /* Sayfadaki her vuruşu dinleyenler (canvas alanı buna tepki verir) */
+  var vurusDinleyiciler = [];
+  function vurusuDuyur(guc) {
+    vurusDinleyiciler.forEach(function (f) { f(guc || 1); });
+  }
+
+  /* ================================================================
+     HERO — ÜRETKEN RİTİM ALANI (canvas)
+     Parçacıklar sakin bir alanda süzülür; her vuruşta merkezden bir
+     basınç dalgası çıkar ve parçacıkları iter. Fare de alanı büker.
+     ================================================================ */
+  (function ritimAlani() {
+    var tuval = document.getElementById('ritimAlani');
+    if (!tuval || azHareket) { return; }
+    var ciz = tuval.getContext('2d');
+    var G = 0, Y = 0, oran = Math.min(2, window.devicePixelRatio || 1);
+    var parcaciklar = [], dalgalar = [];
+    var fare = { x: -999, y: -999, aktif: false };
+
+    function boyutla() {
+      var kutu = tuval.getBoundingClientRect();
+      G = kutu.width; Y = kutu.height;
+      tuval.width = Math.round(G * oran);
+      tuval.height = Math.round(Y * oran);
+      ciz.setTransform(oran, 0, 0, oran, 0, 0);
+      kur();
+    }
+
+    function kur() {
+      // Yoğunluk alana göre; küçük ekranda az parçacık (performans)
+      var adet = Math.min(150, Math.round(G * Y / 9000));
+      parcaciklar = [];
+      for (var i = 0; i < adet; i++) {
+        parcaciklar.push({
+          x: Math.random() * G, y: Math.random() * Y,
+          vx: (Math.random() - 0.5) * 0.14, vy: (Math.random() - 0.5) * 0.14,
+          r: 0.7 + Math.random() * 1.8,
+          p: Math.random()           // renk fazı: amber ↔ mor
+        });
+      }
+    }
+
+    /** Vuruş geldiğinde merkezden yayılan basınç dalgası. */
+    function dalgaEkle(guc) {
+      dalgalar.push({ r: 0, guc: guc, olu: false });
+      if (dalgalar.length > 6) { dalgalar.shift(); }
+    }
+    vurusDinleyiciler.push(dalgaEkle);
+
+    function dongu() {
+      ciz.clearRect(0, 0, G, Y);
+      var mx = G * 0.5, my = Y * 0.45;
+
+      // Dalgalar: halka olarak çizilir ve parçacıkları iter
+      dalgalar.forEach(function (d) {
+        d.r += 6.5;
+        var alfa = Math.max(0, 1 - d.r / (Math.max(G, Y) * 0.75));
+        if (alfa <= 0) { d.olu = true; return; }
+        ciz.beginPath();
+        ciz.arc(mx, my, d.r, 0, Math.PI * 2);
+        ciz.strokeStyle = 'rgba(245, 158, 11, ' + (alfa * 0.28 * d.guc).toFixed(3) + ')';
+        ciz.lineWidth = 1.6;
+        ciz.stroke();
+      });
+      dalgalar = dalgalar.filter(function (d) { return !d.olu; });
+
+      parcaciklar.forEach(function (p, i) {
+        // Dalga itişi: halkanın tam üstündeki parçacık en çok itilir
+        dalgalar.forEach(function (d) {
+          var dx = p.x - mx, dy = p.y - my;
+          var uz = Math.sqrt(dx * dx + dy * dy) || 1;
+          var fark = Math.abs(uz - d.r);
+          if (fark < 34) {
+            var itme = (1 - fark / 34) * 0.42 * d.guc;
+            p.vx += (dx / uz) * itme;
+            p.vy += (dy / uz) * itme;
+          }
+        });
+        // Fare çekim/itme alanı
+        if (fare.aktif) {
+          var fx = p.x - fare.x, fy = p.y - fare.y;
+          var fu = Math.sqrt(fx * fx + fy * fy) || 1;
+          if (fu < 130) {
+            var f = (1 - fu / 130) * 0.5;
+            p.vx += (fx / fu) * f;
+            p.vy += (fy / fu) * f;
+          }
+        }
+        p.x += p.vx; p.y += p.vy;
+        p.vx *= 0.965; p.vy *= 0.965;   // sürtünme: sonunda sakinliğe döner
+        // Kenardan sarma
+        if (p.x < -10) { p.x = G + 10; } else if (p.x > G + 10) { p.x = -10; }
+        if (p.y < -10) { p.y = Y + 10; } else if (p.y > Y + 10) { p.y = -10; }
+
+        var hiz = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+        var parlak = Math.min(1, 0.18 + hiz * 1.7);
+        ciz.beginPath();
+        ciz.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ciz.fillStyle = p.p > 0.75
+          ? 'rgba(167, 139, 250, ' + parlak.toFixed(3) + ')'
+          : 'rgba(245, 158, 11, ' + parlak.toFixed(3) + ')';
+        ciz.fill();
+
+        // Yakın komşuları ince çizgiyle bağla — "alan" hissi
+        for (var j = i + 1; j < parcaciklar.length; j++) {
+          var q = parcaciklar[j];
+          var ax = p.x - q.x, ay = p.y - q.y;
+          var au = ax * ax + ay * ay;
+          if (au < 6400) {
+            ciz.beginPath();
+            ciz.moveTo(p.x, p.y); ciz.lineTo(q.x, q.y);
+            ciz.strokeStyle = 'rgba(245, 158, 11, ' + (0.09 * (1 - au / 6400)).toFixed(3) + ')';
+            ciz.lineWidth = 0.6;
+            ciz.stroke();
+          }
+        }
+      });
+      requestAnimationFrame(dongu);
+    }
+
+    var hero = document.getElementById('ust');
+    hero.addEventListener('pointermove', function (ev) {
+      var kutu = tuval.getBoundingClientRect();
+      fare.x = ev.clientX - kutu.left; fare.y = ev.clientY - kutu.top; fare.aktif = true;
+    });
+    hero.addEventListener('pointerleave', function () { fare.aktif = false; });
+    window.addEventListener('resize', boyutla);
+    boyutla();
+    requestAnimationFrame(dongu);
+  })();
+
+  /* ================================================================
+     ZAMAN ÖLÇEĞİ — kaydırma ilerledikçe 12 haftadan milisaniyeye
+     ================================================================ */
+  (function zamanOlcegi() {
+    var bolum = document.getElementById('olcek');
+    if (!bolum) { return; }
+    var etiket = document.getElementById('olcekEtiket');
+    var deger = document.getElementById('olcekDeger');
+    var aciklama = document.getElementById('olcekAciklama');
+    var dolu = document.getElementById('olcekDolu');
+    var halkalar = bolum.querySelectorAll('.t-olcek-halka span');
+
+    var ADIMLAR = [
+      { etiket: '12 HAFTA',      deger: '7 257 600 000 ms',
+        aciklama: 'Bir dönem böyle başlar: on iki hafta, yirmi dört oturum.' },
+      { etiket: 'BİR OTURUM',    deger: '2 700 000 ms',
+        aciklama: 'Kırk beş dakika. Isınma, hedef çalışma, oyun ve sakinleşme.' },
+      { etiket: 'BİR ÇALIŞMA',   deger: '480 000 ms',
+        aciklama: 'Sekiz dakikalık tek bir teknik: metronoma eşlik.' },
+      { etiket: 'BİR VURUŞ',     deger: '833 ms',
+        aciklama: '72 BPM’de iki vuruş arası. Artık saymıyorsunuz, hissediyorsunuz.' },
+      { etiket: 'SAPMA',         deger: '± 25 ms',
+        aciklama: 'Ölçtüğümüz büyüklük bu: vuruşun kaç milisaniye kaydığı.' },
+      { etiket: 'İŞTE BURADA',   deger: '25 ms',
+        aciklama: 'Göz kırpmanın onda biri. Atölyenin işi bu aralıkta geçiyor.' }
+    ];
+
+    function guncelle() {
+      var kutu = bolum.getBoundingClientRect();
+      var toplam = bolum.offsetHeight - window.innerHeight;
+      if (toplam <= 0) { return; }
+      var oran = Math.max(0, Math.min(1, -kutu.top / toplam));
+      var idx = Math.min(ADIMLAR.length - 1, Math.floor(oran * ADIMLAR.length));
+      var a = ADIMLAR[idx];
+      if (etiket.textContent !== a.etiket) {
+        etiket.textContent = a.etiket;
+        deger.textContent = a.deger;
+        aciklama.textContent = a.aciklama;
+        // Yeni ölçekte kısa bir "yeniden odaklanma" hissi
+        deger.animate(
+          [{ opacity: 0, transform: 'translateY(14px) scale(.96)' }, { opacity: 1, transform: 'none' }],
+          { duration: 420, easing: 'cubic-bezier(.2,.9,.3,1.1)' }
+        );
+      }
+      dolu.style.width = Math.round(oran * 100) + '%';
+      // Halkalar ölçek daraldıkça içe çöker
+      halkalar.forEach(function (h, i) {
+        h.style.transform = 'scale(' + (1 - oran * (0.55 + i * 0.12)).toFixed(3) + ')';
+        h.style.opacity = (1 - oran * 0.5).toFixed(2);
+      });
+    }
+    window.addEventListener('scroll', guncelle, { passive: true });
+    window.addEventListener('resize', guncelle);
+    guncelle();
+  })();
+
   /* ================================================================
      DENEY 1 — Ritim mi, ton mu? (psikoakustik eşik)
      Aynı klik dizisi hızlandıkça ~20 Hz'de ayrı vuruş algısı bırakır,
@@ -305,6 +492,19 @@
     });
     surgu.addEventListener('input', function () { otomatikDur(); etiketiGuncelle(); });
 
+    /* Kişisel eşik: ziyaretçi "artık tek ses" dediği anı kendisi işaretler.
+       Ölçülen şey öznel algı sınırı — profilin ilk parçası. */
+    var isaretleBtn = document.getElementById('d1Isaretle');
+    if (isaretleBtn) {
+      isaretleBtn.addEventListener('click', function () {
+        otomatikDur();
+        profilBildir('esik', hz());
+        durumEl.textContent = '🎯 Sizin eşiğiniz: ' + hz() + ' Hz — profilinize eklendi';
+        var profilKutu = document.getElementById('ritimProfil');
+        if (profilKutu) { profilKutu.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      });
+    }
+
     acikModuller.push({ ad: 'd1', durdur: function () { if (calisiyor) { durdur(); } } });
     etiketiGuncelle();
   })();
@@ -420,6 +620,7 @@
               : ortalama > 12 ? 'Vuruşlarınız biraz geç geldi.'
               : 'Erken/geç dengeniz iyi.';
       durumEl.textContent = yon + (kacan ? ' ' + kacan + ' vuruş kaçtı.' : '');
+      profilBildir('sapma', Math.round(ortMutlak));
     }
 
     btn.addEventListener('click', function () { aktif ? durdur() : baslat(); });
@@ -513,6 +714,7 @@
       } else {
         aktif = false;
         btn.textContent = '↻ Yeniden Oyna';
+        profilBildir('algi', dogru);
         zamanlayicilar.push(setTimeout(function () {
           skorEl.innerHTML = 'Skor: <strong>' + dogru + ' / ' + TUR + '</strong> — ' +
             (dogru === TUR ? 'kulağınız keskin! 👏' : dogru >= 2 ? 'fena değil, kulak ısınıyor.' : 'bu iş pratikle gelişir.');
@@ -542,6 +744,10 @@
     function planla() {
       while (sonrakiZaman < ctx.currentTime + 0.12) {
         klik(sonrakiZaman, vurusNo % 4 === 0, 'tahta');
+        (function (z) {
+          setTimeout(function () { vurusuDuyur(0.7); },
+            Math.max(0, (z - ctx.currentTime) * 1000));
+        })(sonrakiZaman);
         sonrakiZaman += 60 / bpm;
         vurusNo++;
       }
@@ -563,6 +769,90 @@
     });
 
     acikModuller.push({ ad: 'nabiz', durdur: durdur });
+  })();
+
+  /* ================================================================
+     RİTİM PROFİLİ — üç deneyin ortak sonucu
+     Hiçbir yere kaydedilmez; yalnız sayfada yaşar. Kullanıcı isterse
+     tek cümlelik özeti ön kayıt formuna taşır.
+     ================================================================ */
+  var profil = { esik: null, sapma: null, algi: null };
+
+  function profilBildir(alan, deger) {
+    profil[alan] = deger;
+    profilCiz();
+  }
+
+  function profilCiz() {
+    var kutu = document.getElementById('ritimProfil');
+    if (!kutu) { return; }
+    var rozetler = document.getElementById('profilRozetler');
+    var metin = document.getElementById('profilMetin');
+    var dolu = [];
+
+    rozetler.innerHTML = '';
+    function rozet(buyuk, etiketMetni) {
+      var d = document.createElement('div');
+      d.className = 't-profil-rozet';
+      var b = document.createElement('b'); b.textContent = buyuk;
+      var s = document.createElement('span'); s.textContent = etiketMetni;
+      d.appendChild(b); d.appendChild(s);
+      rozetler.appendChild(d);
+    }
+
+    if (profil.esik !== null) {
+      rozet(profil.esik + ' Hz', 'ritmi tona çevirdiğiniz nokta');
+      dolu.push('eşik ' + profil.esik + ' Hz');
+    }
+    if (profil.sapma !== null) {
+      rozet(profil.sapma + ' ms', 'ortalama vuruş sapmanız');
+      dolu.push('sapma ' + profil.sapma + ' ms');
+    }
+    if (profil.algi !== null) {
+      rozet(profil.algi + '/3', 'aksak vuruşu yakalama');
+      dolu.push('aksak algısı ' + profil.algi + '/3');
+    }
+    if (!dolu.length) { kutu.hidden = true; return; }
+
+    kutu.hidden = false;
+    var cumleler = [];
+    if (profil.esik !== null) {
+      cumleler.push(profil.esik <= 18
+        ? 'Vuruşları oldukça geç noktada birleştirdiniz — ayrım gücünüz iyi.'
+        : 'Vuruşlar sizde ' + profil.esik + ' Hz civarında tek sese dönüştü; tipik aralıkta.');
+    }
+    if (profil.sapma !== null) {
+      cumleler.push(profil.sapma <= 40
+        ? 'Metronoma yakın vurdunuz (' + profil.sapma + ' ms).'
+        : 'Vuruşlarınız ortalama ' + profil.sapma + ' ms kaydı — pratikle daralan bir aralık.');
+    }
+    if (profil.algi !== null) {
+      cumleler.push(profil.algi >= 2
+        ? 'Aksayan diziyi ' + profil.algi + '/3 yakaladınız; kulağınız uyanık.'
+        : 'Aksak diziyi ayırmak zorlandı — bu tam olarak pratikle gelişen beceri.');
+    }
+    metin.textContent = cumleler.join(' ');
+
+    // Forma taşınacak özet
+    var ozet = dolu.join(' · ');
+    var alan = document.getElementById('kayitProfil');
+    var bilgi = document.getElementById('profilEklendi');
+    var bilgiMetin = document.getElementById('profilEklendiMetin');
+    if (alan) { alan.value = ozet; }
+    if (bilgi && bilgiMetin) { bilgi.hidden = false; bilgiMetin.textContent = ozet; }
+  }
+
+  (function profilKontrolleri() {
+    var sifirla = document.getElementById('profilSifirla');
+    if (!sifirla) { return; }
+    sifirla.addEventListener('click', function () {
+      profil = { esik: null, sapma: null, algi: null };
+      document.getElementById('ritimProfil').hidden = true;
+      var alan = document.getElementById('kayitProfil');
+      var bilgi = document.getElementById('profilEklendi');
+      if (alan) { alan.value = ''; }
+      if (bilgi) { bilgi.hidden = true; }
+    });
   })();
 
   /* "Ritmi Hisset" — Web Audio ile 4/4 vuruş, halka nabzı eşliğinde */
@@ -589,6 +879,7 @@
   function gorselVurus(zaman) {
     var gecikme = Math.max(0, (zaman - ctx.currentTime) * 1000);
     setTimeout(function () {
+      vurusuDuyur(1);          // canvas ritim alanına basınç dalgası gönder
       if (!halka) { return; }
       halka.classList.add('vur');
       setTimeout(function () { halka.classList.remove('vur'); }, 110);

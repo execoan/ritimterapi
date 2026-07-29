@@ -7,7 +7,24 @@
  */
 define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
+
+/* Ön kayıt formu — herkese açık uç: CSRF + bal küpü + model tarafında hız sınırı */
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['islem'] ?? '') === 'on_kayit') {
+    csrf_check('index.php');
+    if (trim((string)($_POST['website'] ?? '')) !== '') {
+        // Bal küpü doldurulmuş: bot. Sessizce başarı göster, kaydetme.
+        flash_set('basari', 'Talebiniz alındı.');
+        redirect('index.php#kayit');
+    }
+    $res = pre_registration_save($_POST);
+    flash_set($res['ok'] ? 'basari' : 'hata', $res['ok']
+        ? 'Teşekkürler! Talebiniz bize ulaştı — en kısa sürede size döneceğiz.'
+        : $res['error']);
+    redirect('index.php#kayit');
+}
+
 $girisli = educator_logged_in();
+$kayitFlash = flash_get();
 $bolumler = site_sections(true);
 $galeriFotolar = gallery_list(true);
 // Galeride görsel yoksa bölüm (ve menü bağlantısı) hiç gösterilmez.
@@ -60,6 +77,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
           'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'iletisim' => 'İletişim'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
     </div>
+    <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">Deneme oturumu</a>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
       <?= $girisli ? 'Panele Git' : 'Giriş Yap' ?>
     </a>
@@ -67,6 +85,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 </nav>
 
 <header class="t-hero" id="ust">
+  <canvas class="t-alan-tuval" id="ritimAlani" aria-hidden="true"></canvas>
   <div class="t-halka t-halka-1" aria-hidden="true"></div>
   <div class="t-halka t-halka-2" aria-hidden="true"></div>
   <div class="t-halka t-halka-3" aria-hidden="true"></div>
@@ -171,6 +190,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <div class="t-deney-butonlar">
         <button type="button" class="t-btn t-btn-dolu" id="d1Btn">▶ Deneyi Başlat</button>
         <button type="button" class="t-btn t-btn-cerceve" id="d1Otomatik">⟳ Yavaştan hızlıya otomatik</button>
+        <button type="button" class="t-btn t-btn-cerceve" id="d1Isaretle">🎯 İşte burada tek sese döndü</button>
       </div>
 
       <p class="t-deney-bilgi">
@@ -255,9 +275,37 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </p>
     </article>
 
+    <!-- ===== Ritim profili: üç deneyin ortak sonucu ===== -->
+    <div class="t-profil" id="ritimProfil" hidden>
+      <div class="t-profil-isik" aria-hidden="true"></div>
+      <p class="t-profil-ustbaslik">RİTİM PROFİLİN</p>
+      <div class="t-profil-rozetler" id="profilRozetler"></div>
+      <p class="t-profil-metin" id="profilMetin"></p>
+      <div class="t-profil-butonlar">
+        <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit" id="profilKayitBtn">→ Profilimle deneme oturumu iste</a>
+        <button type="button" class="t-btn t-btn-cerceve" id="profilSifirla">↻ Deneyleri sıfırla</button>
+      </div>
+      <p class="t-profil-not">Bu profil yalnız tarayıcınızda oluşur; deney sonuçları hiçbir yere
+         kaydedilmez. Formu doldurursanız yalnız özet cümlesi talebinize eklenir.</p>
+    </div>
+
     <div class="t-deney-cta kayarak">
       <p><?= e(site_text('deney_cta')) ?></p>
-      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#iletisim">→ Deneme oturumu iste</a>
+      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit">→ Deneme oturumu iste</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ZAMAN ÖLÇEĞİ (scroll anlatısı) ===================== -->
+<section class="t-olcek" id="olcek" aria-label="Zaman ölçeği">
+  <div class="t-olcek-sabit">
+    <div class="t-olcek-halka" aria-hidden="true"><span></span><span></span><span></span></div>
+    <div class="t-olcek-icerik">
+      <p class="t-olcek-etiket" id="olcekEtiket">12 HAFTA</p>
+      <div class="t-olcek-deger" id="olcekDeger">7 257 600 000 ms</div>
+      <p class="t-olcek-aciklama" id="olcekAciklama">Bir dönem böyle başlar: on iki hafta, yirmi dört oturum.</p>
+      <div class="t-olcek-cubuk"><i id="olcekDolu"></i></div>
+      <p class="t-olcek-ipucu">↓ kaydırmaya devam edin</p>
     </div>
   </div>
 </section>
@@ -603,6 +651,73 @@ function metronom_svg(string $sinif, string $gradyanId): string
 </section>
 <?php endif; ?>
 <?php endforeach; ?>
+
+<!-- ===================== ÖN KAYIT ===================== -->
+<section class="t-bolum t-kayit-bolum" id="kayit">
+  <div class="t-kayit-fon" aria-hidden="true"></div>
+  <div class="t-kapsayici t-kayit-ic">
+    <div class="kayarak">
+      <p class="t-bolum-ustbaslik">YER AYIRT</p>
+      <h2>Bir oturum deneyin — sonra karar verin</h2>
+      <p class="t-bolum-aciklama">
+        Deneme oturumu ücretsizdir ve hiçbir taahhüt içermez. Adınızı ve size
+        ulaşabileceğimiz bir yolu bırakın; grup saatleri ve dönem takvimiyle biz size dönelim.
+      </p>
+      <ul class="t-liste">
+        <li>Ritim veya müzik geçmişi gerekmez — hiç başlamamış olmak sorun değil.</li>
+        <li>Katılımcılar sistemde kod/takma adla tutulur; açık kimlik saklanmaz.</li>
+        <li>İlk oturumda ne yapıldığını görür, sorularınızı sorarsınız.</li>
+      </ul>
+      <p class="t-kayit-gizlilik">
+        🔒 Bıraktığınız iletişim bilgisi <strong>yalnız size dönmek için</strong> kullanılır;
+        bu bilgisayarda saklanır, üçüncü kişilerle paylaşılmaz, pazarlama listesine eklenmez.
+      </p>
+    </div>
+
+    <form class="t-kayit-form kayarak" method="post" action="<?= e(url('index.php')) ?>#kayit">
+      <?= csrf_field() ?>
+      <input type="hidden" name="islem" value="on_kayit">
+      <input type="hidden" name="profil" id="kayitProfil" value="">
+      <!-- bal küpü: insanlar görmez, botlar doldurur -->
+      <div class="t-bal-kupu" aria-hidden="true">
+        <label>Web siteniz<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+      </div>
+
+      <?php foreach ($kayitFlash as $f): ?>
+      <div class="t-form-flash <?= $f['type'] === 'basari' ? 'basari' : 'hata' ?>">
+        <?= $f['type'] === 'basari' ? '✓' : '⚠' ?> <?= e($f['msg']) ?>
+      </div>
+      <?php endforeach; ?>
+
+      <h3>Deneme oturumu talebi</h3>
+      <label class="t-alan">
+        <span>Adınız</span>
+        <input type="text" name="ad" maxlength="80" required placeholder="Nasıl hitap edelim?">
+      </label>
+      <label class="t-alan">
+        <span>Telefon veya e-posta</span>
+        <input type="text" name="iletisim" maxlength="120" required placeholder="Size nasıl ulaşalım?">
+      </label>
+      <label class="t-alan">
+        <span>Kimin için?</span>
+        <select name="kitle">
+          <option value="belirtilmedi">Seçmek istemiyorum</option>
+          <option value="cocuk">Çocuk / genç (8–15 yaş)</option>
+          <option value="yetiskin">Yetişkin (18+)</option>
+        </select>
+      </label>
+      <label class="t-alan">
+        <span>Eklemek istediğiniz bir şey var mı? <small>(isteğe bağlı)</small></span>
+        <textarea name="mesaj" rows="3" maxlength="600" placeholder="Uygun gün/saatiniz, merak ettikleriniz…"></textarea>
+      </label>
+      <div class="t-profil-eklendi" id="profilEklendi" hidden>
+        🎧 Ritim profiliniz talebe eklenecek: <span id="profilEklendiMetin"></span>
+      </div>
+      <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk t-tam-genislik">Talebimi Gönder →</button>
+      <p class="t-kayit-alt">Formu göndermek sizi hiçbir şeye bağlamaz.</p>
+    </form>
+  </div>
+</section>
 
 <footer class="t-alt">
   <div class="t-kapsayici">
