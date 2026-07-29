@@ -77,7 +77,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
           'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'iletisim' => 'İletişim'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
     </div>
-    <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">Deneme oturumu</a>
+    <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">İletişim</a>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
       <?= $girisli ? 'Panele Git' : 'Giriş Yap' ?>
     </a>
@@ -294,7 +294,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <div class="t-profil-rozetler" id="profilRozetler"></div>
       <p class="t-profil-metin" id="profilMetin"></p>
       <div class="t-profil-butonlar">
-        <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit" id="profilKayitBtn">→ Profilimle deneme oturumu iste</a>
+        <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit" id="profilKayitBtn">→ Profilimle iletişime geç</a>
         <button type="button" class="t-btn t-btn-cerceve" id="profilSifirla">↻ Deneyleri sıfırla</button>
       </div>
       <p class="t-profil-not">Bu profil yalnız tarayıcınızda oluşur; deney sonuçları hiçbir yere
@@ -303,7 +303,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
     <div class="t-deney-cta kayarak">
       <p><?= e(site_text('deney_cta')) ?></p>
-      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit">→ Deneme oturumu iste</a>
+      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit">→ İletişime Geç</a>
     </div>
   </div>
 </section>
@@ -658,27 +658,27 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <p><?= e(site_text('iletisim_adres', '—')) ?></p>
       </article>
     </div>
-    <p class="t-not kayarak">Deneme oturumu ve dönem takvimi için iletişime geçebilirsiniz.</p>
+    <p class="t-not kayarak">Program ve dönem takvimi hakkında bilgi almak için iletişime geçebilirsiniz.</p>
   </div>
 </section>
 <?php endif; ?>
 <?php endforeach; ?>
 
-<!-- ===================== ÖN KAYIT ===================== -->
+<!-- ===================== İLETİŞİM ===================== -->
 <section class="t-bolum t-kayit-bolum" id="kayit">
   <div class="t-kayit-fon" aria-hidden="true"></div>
   <div class="t-kapsayici t-kayit-ic">
     <div class="kayarak">
-      <p class="t-bolum-ustbaslik">YER AYIRT</p>
-      <h2>Bir oturum deneyin — sonra karar verin</h2>
+      <p class="t-bolum-ustbaslik">İLETİŞİM</p>
+      <h2>Merak ettiklerinizi sorun</h2>
       <p class="t-bolum-aciklama">
-        Deneme oturumu ücretsizdir ve hiçbir taahhüt içermez. Adınızı ve size
-        ulaşabileceğimiz bir yolu bırakın; grup saatleri ve dönem takvimiyle biz size dönelim.
+        Adınızı ve size ulaşabileceğimiz bir yolu bırakın; grup saatleri, dönem takvimi ve
+        aklınıza takılan her şey için size dönelim.
       </p>
       <ul class="t-liste">
         <li>Ritim veya müzik geçmişi gerekmez — hiç başlamamış olmak sorun değil.</li>
         <li>Katılımcılar sistemde kod/takma adla tutulur; açık kimlik saklanmaz.</li>
-        <li>İlk oturumda ne yapıldığını görür, sorularınızı sorarsınız.</li>
+        <li>Programı ve teknikleri sorularınıza göre birebir anlatırız.</li>
       </ul>
       <p class="t-kayit-gizlilik">
         🔒 Bıraktığınız iletişim bilgisi <strong>yalnız size dönmek için</strong> kullanılır;
@@ -701,7 +701,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </div>
       <?php endforeach; ?>
 
-      <h3>Deneme oturumu talebi</h3>
+      <h3>İletişim formu</h3>
       <label class="t-alan">
         <span>Adınız</span>
         <input type="text" name="ad" maxlength="80" required placeholder="Nasıl hitap edelim?">
@@ -725,7 +725,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <div class="t-profil-eklendi" id="profilEklendi" hidden>
         🎧 Ritim profiliniz talebe eklenecek: <span id="profilEklendiMetin"></span>
       </div>
-      <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk t-tam-genislik">Talebimi Gönder →</button>
+      <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk t-tam-genislik">Mesajımı Gönder →</button>
       <p class="t-kayit-alt">Formu göndermek sizi hiçbir şeye bağlamaz.</p>
     </form>
   </div>

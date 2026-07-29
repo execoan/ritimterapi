@@ -34,7 +34,7 @@ require APP_DIR . '/includes/view/header.php';
 
 <?php if ($yeniTalepler > 0): ?>
 <div class="uyari-kutu">
-  📨 Tanıtım sitesinden <strong><?= $yeniTalepler ?></strong> yeni deneme oturumu talebi var.
+  📨 Tanıtım sitesinden <strong><?= $yeniTalepler ?></strong> yeni iletişim talebi var.
   <a href="<?= e(url('on-kayitlar.php')) ?>">Talepleri aç →</a>
 </div>
 <?php endif; ?>

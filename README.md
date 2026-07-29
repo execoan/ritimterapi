@@ -81,7 +81,7 @@ Aynı test her push'ta GitHub Actions'ta da otomatik koşar
 - **🎧 Ritim Profili**: dört deneyin sonucu (eşik Hz · sapma ms · aksak
   algısı · tempo tahmini) tek kartta birleşir. Profil **hiçbir yere
   kaydedilmez**, yalnız tarayıcıda yaşar; ziyaretçi isterse tek cümlelik
-  özeti ön kayıt formuna taşır. Deneyler → profil → talep şeklinde bir huni kurar.
+  özeti iletişim formuna taşır. Deneyler → profil → talep şeklinde bir huni kurar.
 - **⏱ Zaman ölçeği anlatısı**: kaydırdıkça ölçek 12 haftadan (7,2 milyar ms)
   bir oturuma, bir vuruşa (833 ms) ve nihayet ölçtüğümüz büyüklüğe (±25 ms)
   iner. Yapışkan sahne + halka çöküşü; ürünün hangi zaman ölçeğinde
@@ -89,13 +89,14 @@ Aynı test her push'ta GitHub Actions'ta da otomatik koşar
 - **✨ Üretken ritim alanı**: hero'da canvas parçacık alanı; her vuruşta
   merkezden basınç dalgası çıkıp parçacıkları iter, fare de alanı büker.
   Yakın parçacıklar ince çizgilerle bağlanır.
-- **📨 Ön kayıt (dönüşüm)**: "Deneme oturumu iste" formu → `on_kayitlar`
-  tablosu → panelde **Yönetim ▸ Ön Kayıtlar**. Herkese açık uç olduğu için
-  CSRF, gizli bal küpü alanı, alan uzunluk sınırları, satır sonu enjeksiyonu
-  engeli ve **oturum başına saatte 3 talep** sınırı vardır. Panelde durum
-  akışı (yeni · arandı · kayıt oldu · vazgeçti) ve tek tıkla silme.
-  Kişisel veri içerdiği için CSV'ye **aktarılmaz**; görüşme bitince silinmesi
-  önerilir (sayfada uyarı vardır).
+- **📨 İletişim (dönüşüm)**: **düz bir iletişim formudur** — deneme dersi/oturumu
+  vaat etmez, yalnız "bize ulaşın" mesajı alır → `on_kayitlar` tablosu →
+  panelde **Yönetim ▸ İletişim Talepleri**. Herkese açık uç olduğu için CSRF,
+  gizli bal küpü alanı, alan uzunluk sınırları, satır sonu enjeksiyonu engeli
+  ve **oturum başına saatte 3 talep** sınırı vardır. Panelde durum akışı
+  (yeni · arandı · kayıt oldu · vazgeçti) ve tek tıkla silme. Kişisel veri
+  içerdiği için CSV'ye **aktarılmaz**; görüşme bitince silinmesi önerilir
+  (sayfada uyarı vardır).
 - Sağ üstteki **Giriş Yap** → eğitmen paneli. Giriş ekranında **⚡ Admin** ve
   **⚡ Eğitmen** tek-tık hızlı giriş butonları vardır (geliştirme kolaylığı) ve
   klasik kullanıcı adı + şifre formu (varsayılan: `admin` / `ritim` ve

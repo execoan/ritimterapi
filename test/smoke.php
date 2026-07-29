@@ -722,10 +722,10 @@ dogrula(!str_contains($liste, 'CSRFSIZ-TALEP'), 'CSRF jetonu olmadan talep oluş
 dogrula(!str_contains($liste, 'Bot Talep'), 'bal küpü dolu gönderim kaydedilmiyor');
 dogrula(!str_contains($liste, 'kisa@example.test'), 'geçersiz ad reddediliyor');
 dogrula(str_contains($liste, 'eşik 20 Hz'), 'ritim profili talebe eklendi');
-dogrula(str_contains(git_('panel.php', $jar)['govde'], 'deneme oturumu talebi'), 'panelde yeni talep uyarısı var');
-// Ziyaretçi ön kayıt listesini GÖREMEMELİ
+dogrula(str_contains(git_('panel.php', $jar)['govde'], 'yeni iletişim talebi'), 'panelde yeni talep uyarısı var');
+// Ziyaretçi iletişim talepleri listesini GÖREMEMELİ
 $y = git_('on-kayitlar.php', $halkJar);
-dogrula($y['durum'] >= 300 && str_contains($y['yer'], 'giris.php'), 'ön kayıt listesi girişe kapalı');
+dogrula($y['durum'] >= 300 && str_contains($y['yer'], 'giris.php'), 'iletişim talepleri listesi girişe kapalı');
 // Temizlik: kişisel veri bırakmayalım
 preg_match('/name="id" value="(\d+)"/', $liste, $m);
 if (!empty($m[1])) {

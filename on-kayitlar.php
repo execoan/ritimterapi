@@ -1,6 +1,7 @@
 <?php
 /**
- * Ön kayıtlar — tanıtım sitesinden gelen deneme oturumu talepleri.
+ * İletişim talepleri — tanıtım sitesindeki iletişim formundan gelen mesajlar.
+ * Deneme dersi/oturumu SUNULMAZ; bu yalnız genel bir "bize ulaşın" formudur.
  * Kişisel veri içerir (ad + iletişim): yalnız geri dönüş için tutulur.
  * CSV dışa aktarma yoktur; iş bitince kayıt silinir.
  */
@@ -25,11 +26,11 @@ $filtre = (string)($_GET['durum'] ?? '');
 if ($filtre !== '' && !isset(ON_KAYIT_DURUM_LABELS[$filtre])) { $filtre = ''; }
 $kayitlar = pre_registrations($filtre);
 
-$PAGE_TITLE = 'Ön Kayıtlar';
+$PAGE_TITLE = 'İletişim Talepleri';
 require APP_DIR . '/includes/view/header.php';
 ?>
 <div class="sayfa-baslik">
-  <h1>Ön Kayıtlar</h1>
+  <h1>İletişim Talepleri</h1>
   <span class="rozet rozet-acik"><?= count($kayitlar) ?> talep</span>
 </div>
 

@@ -470,7 +470,7 @@ function run_migrations(): void
             ALTER TABLE protokol_sonuclari ADD COLUMN kalite TEXT NOT NULL DEFAULT '';
         ",
 
-        // v15 — tanıtım sitesinden gelen ön kayıt / deneme oturumu talepleri.
+        // v15 — tanıtım sitesindeki genel iletişim formundan gelen talepler.
         //        Kişisel veri içerir: yalnız geri dönüş için tutulur, dışa aktarılmaz.
         15 => "
             CREATE TABLE on_kayitlar (

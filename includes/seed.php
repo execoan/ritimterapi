@@ -488,7 +488,7 @@ function seed_deney_texts(): void
         . 'kendi GERÇEK temposunda atıyor — üzerine dokunun, o tempoyu dinleyin.']);
     $st->execute(['deney_cta',
         'Kulağın ısındı mı? Atölyede bunların ölçümlü, programlı hâli çalışılıyor. '
-        . 'Deneme oturumu için yerinizi ayırın.']);
+        . 'Merak ettiklerinizi sormak için iletişime geçin.']);
 }
 
 function seed_moxo_texts(): void

@@ -1388,7 +1388,8 @@ const ON_KAYIT_KITLE_LABELS = [
 ];
 
 /**
- * Tanıtım sitesinden gelen deneme oturumu talebini kaydeder.
+ * Tanıtım sitesindeki genel iletişim formundan gelen talebi kaydeder
+ * (deneme dersi/oturumu sunulmaz — yalnız "bize ulaşın" mesajıdır).
  * Herkese açık uçtur: alan uzunlukları sınırlanır, HTML saklanmaz ve
  * oturum başına saatlik gönderim sınırı uygulanır (kaba spam koruması).
  * @return array{ok:bool, error:?string}
