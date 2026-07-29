@@ -434,6 +434,181 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
   letter-spacing: 1.5px; animation: nabiz 2.4s ease-in-out infinite;
 }
 
+/* ================= CANLI DENEYLER ================= */
+
+/* Hero'daki davet çipi — deney bölümüne çeker */
+.t-hero-davet {
+  display: inline-flex; align-items: center; gap: .6rem; margin-top: 1.1rem;
+  padding: .5rem 1rem .5rem .7rem; border-radius: 999px; text-decoration: none;
+  color: var(--t-metin); font-size: .93rem;
+  background: rgba(245, 158, 11, .09); border: 1px solid var(--t-cizgi);
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.t-hero-davet:hover { background: rgba(245, 158, 11, .16); border-color: var(--t-amber); transform: translateY(-2px); }
+.t-hero-davet b { color: var(--t-amber); }
+.t-hero-davet-nokta {
+  width: 9px; height: 9px; border-radius: 50%; background: var(--t-amber); flex: none;
+  animation: davet-nabiz 1.6s ease-in-out infinite;
+}
+@keyframes davet-nabiz {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, .55); }
+  50%      { transform: scale(1.25); box-shadow: 0 0 0 9px rgba(245, 158, 11, 0); }
+}
+
+.t-deney-bolum { position: relative; overflow: hidden; }
+/* Yumuşak, yavaş dönen ışık havuzu — sahneye derinlik verir */
+.t-deney-fon {
+  position: absolute; inset: -30% -10%; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(closest-side, rgba(245, 158, 11, .13), transparent 70%) 20% 30% / 55% 55% no-repeat,
+    radial-gradient(closest-side, rgba(139, 92, 246, .10), transparent 70%) 80% 70% / 50% 50% no-repeat;
+  animation: fon-suzul 22s ease-in-out infinite alternate;
+}
+@keyframes fon-suzul {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to   { transform: translate3d(3%, 2%, 0) scale(1.08); }
+}
+.t-deney-bolum > .t-kapsayici { position: relative; z-index: 1; }
+
+.t-deney {
+  background: linear-gradient(160deg, rgba(28, 25, 23, .92), rgba(12, 10, 9, .92));
+  border: 1px solid var(--t-cizgi); border-radius: 20px;
+  padding: 1.6rem 1.5rem; margin-bottom: 1.4rem;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .38);
+}
+.t-deney-bas { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
+.t-deney-no {
+  font-size: 2rem; font-weight: 800; line-height: 1; flex: none;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.t-deney-bas h3 { margin: 0 0 .25rem; font-size: 1.25rem; }
+.t-deney-alt { margin: 0; color: var(--t-soluk); font-size: .95rem; }
+.t-deney-alt em { color: var(--t-amber); font-style: normal; }
+
+.t-deney-sahne {
+  display: grid; grid-template-columns: 1fr 260px; gap: 1.2rem; align-items: center;
+  background: rgba(0, 0, 0, .3); border-radius: 14px; padding: 1rem; margin-bottom: .9rem;
+}
+@media (max-width: 760px) { .t-deney-sahne { grid-template-columns: 1fr; } }
+.t-dalga { width: 100%; height: 150px; display: block; }
+
+.t-deney-okuma { text-align: center; }
+.t-deney-buyuk {
+  font-size: 3rem; font-weight: 800; line-height: 1; color: var(--t-amber);
+  font-variant-numeric: tabular-nums;
+}
+.t-deney-buyuk small { display: block; font-size: .78rem; font-weight: 600; color: var(--t-soluk); margin-top: .3rem; letter-spacing: .06em; }
+.t-deney-durum {
+  margin-top: .7rem; font-size: .95rem; font-weight: 600; min-height: 2.6em;
+  display: flex; align-items: center; justify-content: center;
+}
+.t-deney-nota {
+  margin-top: .4rem; font-size: .85rem; color: #a5b4fc;
+  background: rgba(139, 92, 246, .16); border-radius: 999px; padding: .25rem .8rem; display: inline-block;
+}
+/* Eşik geçilince okuma kutusu mora döner: "artık ton duyuyorsunuz" */
+.t-deney-okuma.ton .t-deney-buyuk { color: #a78bfa; }
+.t-deney-okuma.ton .t-deney-durum { color: #c4b5fd; }
+
+.t-kaydirac-satir { display: flex; align-items: center; gap: .9rem; margin: .2rem 0 1rem; font-size: .85rem; color: var(--t-soluk); }
+.t-kaydirac {
+  flex: 1; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, var(--t-amber), #8b5cf6); outline: none;
+}
+.t-kaydirac::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--t-amber); cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+.t-kaydirac::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 50%; background: #fff;
+  border: 3px solid var(--t-amber); cursor: pointer;
+}
+.t-deney-butonlar { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: .9rem; }
+.t-deney-bilgi {
+  font-size: .9rem; color: var(--t-soluk); line-height: 1.65; margin: 0;
+  border-left: 3px solid var(--t-cizgi); padding-left: .9rem;
+}
+.t-deney-bilgi strong { color: var(--t-metin); }
+.t-deney-bilgi em { color: var(--t-amber); font-style: normal; }
+
+/* Deney 2 — tap pad ve sapma şeridi */
+.t-deney-sahne-tap { grid-template-columns: 240px 1fr; }
+@media (max-width: 760px) { .t-deney-sahne-tap { grid-template-columns: 1fr; } }
+.t-tap-pad {
+  width: 100%; aspect-ratio: 1 / 1; max-width: 210px; margin: 0 auto; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: .3rem;
+  border-radius: 50%; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 1.5rem;
+  color: #1c1917; border: none;
+  background: radial-gradient(circle at 35% 30%, #fde68a, #f59e0b 55%, #b45309);
+  box-shadow: 0 10px 34px rgba(245, 158, 11, .35);
+  transition: transform .07s, box-shadow .2s;
+}
+.t-tap-pad small { font-size: .7rem; font-weight: 600; opacity: .75; }
+.t-tap-pad:active, .t-tap-pad.vurdu { transform: scale(.94); box-shadow: 0 4px 16px rgba(245, 158, 11, .5); }
+.t-tap-pad.bekle { background: radial-gradient(circle at 35% 30%, #57534e, #292524 60%); color: #a8a29e; }
+.t-sapma-serit { display: flex; gap: 4px; justify-content: center; align-items: flex-end; height: 54px; margin-top: .7rem; }
+.t-sapma-serit i {
+  width: 9px; border-radius: 3px; background: var(--t-amber); align-self: center;
+  animation: sapma-gir .25s ease both;
+}
+.t-sapma-serit i.gec { background: #60a5fa; align-self: flex-start; }
+.t-sapma-serit i.erken { background: #fbbf24; align-self: flex-end; }
+.t-sapma-serit i.kacik { background: #ef4444; }
+@keyframes sapma-gir { from { transform: scaleY(.2); opacity: 0; } }
+
+/* Deney 3 — aksak noktalar */
+.t-deney-sahne-aksak { grid-template-columns: 1fr 260px; }
+@media (max-width: 760px) { .t-deney-sahne-aksak { grid-template-columns: 1fr; } }
+.t-aksak-noktalar { display: flex; gap: .7rem; justify-content: center; align-items: center; min-height: 90px; }
+.t-aksak-noktalar i {
+  width: 22px; height: 22px; border-radius: 50%; background: rgba(255, 255, 255, .12);
+  transition: transform .1s, background .1s, box-shadow .1s;
+}
+.t-aksak-noktalar i.yandi {
+  background: var(--t-amber); transform: scale(1.55);
+  box-shadow: 0 0 22px rgba(245, 158, 11, .75);
+}
+.t-aksak-cevaplar { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; margin-top: .6rem; }
+.t-aksak-skor { margin-top: .7rem; font-size: 1.05rem; font-weight: 700; }
+.t-aksak-skor .dogru { color: #4ade80; }
+.t-aksak-skor .yanlis { color: #f87171; }
+
+.t-deney-cta {
+  text-align: center; padding: 1.6rem 1rem; border-radius: 18px; margin-top: .5rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, .12), rgba(139, 92, 246, .1));
+  border: 1px solid var(--t-cizgi);
+}
+.t-deney-cta p { margin: 0 0 1rem; font-size: 1.05rem; }
+
+/* ================= NABIZ ================= */
+.t-nabiz-dizi { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 1rem; }
+.t-nabiz {
+  position: relative; display: flex; flex-direction: column; align-items: center; gap: .3rem;
+  padding: 1.4rem 1rem 1.1rem; border-radius: 16px; cursor: pointer; font-family: inherit;
+  color: var(--t-metin); text-align: center;
+  background: rgba(255, 255, 255, .04); border: 1px solid rgba(255, 255, 255, .09);
+  transition: border-color .2s, transform .2s, background .2s;
+}
+.t-nabiz:hover { border-color: var(--t-amber); transform: translateY(-4px); background: rgba(245, 158, 11, .07); }
+.t-nabiz.calıyor { border-color: var(--t-amber); background: rgba(245, 158, 11, .12); }
+/* Halka KENDİ temposunda atar — ekranda altı farklı hız aynı anda görünür */
+.t-nabiz-halka {
+  position: absolute; inset: 0; border-radius: 16px; pointer-events: none;
+  border: 2px solid var(--t-amber); opacity: 0;
+  animation: nabiz-at var(--sure) linear infinite; animation-delay: var(--gecikme);
+}
+@keyframes nabiz-at {
+  0%   { opacity: .75; transform: scale(.97); }
+  60%  { opacity: 0;   transform: scale(1.04); }
+  100% { opacity: 0;   transform: scale(1.04); }
+}
+.t-nabiz-ikon { font-size: 1.9rem; line-height: 1; }
+.t-nabiz-bpm { font-size: 1.7rem; font-weight: 800; color: var(--t-amber); line-height: 1; }
+.t-nabiz-bpm small { font-size: .6rem; margin-left: .2rem; color: var(--t-soluk); font-weight: 700; }
+.t-nabiz-ad { font-weight: 700; font-size: .98rem; }
+.t-nabiz-not { font-size: .78rem; color: var(--t-soluk); line-height: 1.4; }
+
 /* ---------- Tilt ---------- */
 [data-tilt] { will-change: transform; }
 
@@ -444,4 +619,7 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 @media (prefers-reduced-motion: reduce) {
   .t-sarkac, .t-halka, .t-ekolayzer i, .t-notalar span, .t-vurgu-buyuk { animation: none !important; }
   .kayarak { opacity: 1; transform: none; transition: none; }
+  /* Deney/nabız süslemeleri de durur; deneyler tıklamayla yine çalışır */
+  .t-deney-fon, .t-hero-davet-nokta, .t-nabiz-halka, .t-sapma-serit i { animation: none !important; }
+  .t-nabiz-halka { opacity: .25; }
 }

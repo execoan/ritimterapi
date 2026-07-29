@@ -50,7 +50,26 @@ Aynı test her push'ta GitHub Actions'ta da otomatik koşar
 ## Site ve giriş
 
 - `http://localhost:8590` → **tanıtım sitesi** (herkese açık, animasyonlu tek sayfa:
-  yöntem, bilimsel dayanak ve atölyedeki yansımaları, protokoller, biz kimiz).
+  canlı deneyler, yöntem, bilimsel dayanak ve atölyedeki yansımaları, protokoller,
+  biz kimiz).
+- **🔊 Canlı deneyler bölümü** (sayfanın en başında, ziyaretçiyi ilk ekranda
+  yakalamak için): ziyaretçi okumak yerine *dinler*.
+  1. **"Saniyede kaç ses duyuyorsunuz?"** — sürgüyle klik dizisi 1→120 Hz
+     hızlanır; ~20 Hz'de kulak vuruşları ayıramaz ve **perde (nota)** duymaya
+     başlar. Ekran o anda mora döner, yaklaşık nota adını yazar (60 Hz ≈ Si1);
+     canvas'ta dalga gerçek zamanlı çizilir, "otomatik" modu yavaştan hızlıya
+     kendi gezer. Ritim ve notanın aynı olgunun iki hızı olduğunu gösterir.
+  2. **"Vuruşu ne kadar yakalıyorsunuz?"** — 4 hazırlık + 8 ölçüm vuruşu;
+     tap'lerin ms sapması renkli şeritle gösterilir (erken/geç/kaçan).
+     Cihaz gecikmesi telafi edilmez ve sayfada bu açıkça yazar — *değerlendirme
+     değil, gösterim*.
+  3. **"Aksayanı duyabilir misiniz?"** — 6 vuruşluk dizi ya kusursuz düzenlidir
+     ya bir vuruş %12 kayar; 3 tur, anlık geri bildirim. Atölyedeki
+     "eğitilmeyen sonda" ölçümünün tanıtımı.
+- **💓 Nabız bölümü**: ninniden koşu adımına altı kart, her biri **kendi
+  temposunda** atar (CSS'te `--sure = 60/bpm`); dokununca o tempo çalar.
+  Sayfadaki tüm sesler tek bir ses bağlamını paylaşır — yeni bir deney
+  başlayınca diğerleri otomatik susar.
 - Sağ üstteki **Giriş Yap** → eğitmen paneli. Giriş ekranında **⚡ Admin** ve
   **⚡ Eğitmen** tek-tık hızlı giriş butonları vardır (geliştirme kolaylığı) ve
   klasik kullanıcı adı + şifre formu (varsayılan: `admin` / `ritim` ve

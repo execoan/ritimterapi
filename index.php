@@ -55,8 +55,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <a class="t-marka" href="#ust"><?= metronom_svg('t-logo', 'tg') ?><span>RitimTerapi</span></a>
     <div class="t-nav-linkler">
       <?php foreach ($bolumler as $b): ?>
-      <a href="#<?= e($b['anahtar']) ?>"><?= e(['yontem' => 'Yöntem', 'program' => 'Program', 'bilim' => 'Bilim',
-          'protokoller' => 'Protokoller', 'moxo' => 'MOXO', 'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'iletisim' => 'İletişim'][$b['anahtar']] ?? $b['baslik']) ?></a>
+      <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Deneyler', 'yontem' => 'Yöntem', 'program' => 'Program',
+          'bilim' => 'Bilim', 'nabiz' => 'Nabız', 'protokoller' => 'Protokoller', 'moxo' => 'MOXO',
+          'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'iletisim' => 'İletişim'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
     </div>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
@@ -99,6 +100,10 @@ function metronom_svg(string $sinif, string $gradyanId): string
         </a>
         <button type="button" class="t-btn t-btn-cerceve t-btn-buyuk" id="ritimBtn">▶ Ritmi Hisset</button>
       </div>
+      <a class="t-hero-davet" href="#deney">
+        <span class="t-hero-davet-nokta" aria-hidden="true"></span>
+        Şimdi dinleyin: saniyede kaç ses duyuyorsunuz? <b>Deneyi aç ↓</b>
+      </a>
       <div class="t-ekolayzer" id="ekolayzer" aria-hidden="true">
         <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
       </div>
@@ -128,7 +133,171 @@ function metronom_svg(string $sinif, string $gradyanId): string
 </div>
 
 <?php foreach ($bolumler as $bolum): ?>
-<?php if ($bolum['anahtar'] === 'yontem'): ?>
+<?php if ($bolum['anahtar'] === 'deney'): ?>
+<section class="t-bolum t-deney-bolum" id="deney">
+  <div class="t-deney-fon" aria-hidden="true"></div>
+  <div class="t-kapsayici">
+    <p class="t-bolum-ustbaslik kayarak">ŞİMDİ DİNLEYİN</p>
+    <h2 class="kayarak"><?= e($bolum['baslik']) ?></h2>
+    <p class="t-bolum-aciklama kayarak"><?= e(site_text('deney_aciklama')) ?></p>
+
+    <!-- ===== Deney 1: ritim → ton eşiği ===== -->
+    <article class="t-deney kayarak" id="deney1">
+      <div class="t-deney-bas">
+        <span class="t-deney-no">01</span>
+        <div>
+          <h3>Saniyede kaç ses duyuyorsunuz?</h3>
+          <p class="t-deney-alt">Vuruşlar hızlandıkça bir yerde <em>saymayı bırakır, nota duymaya başlarsınız</em>.
+             O sınırı kendi kulağınızla bulun.</p>
+        </div>
+      </div>
+
+      <div class="t-deney-sahne">
+        <canvas class="t-dalga" id="d1Dalga" width="900" height="150" aria-hidden="true"></canvas>
+        <div class="t-deney-okuma">
+          <div class="t-deney-buyuk"><span id="d1Hz">4</span><small>vuruş / saniye</small></div>
+          <div class="t-deney-durum" id="d1Durum">Ayrı vuruşlar — sayabilirsiniz</div>
+          <div class="t-deney-nota" id="d1Nota" hidden></div>
+        </div>
+      </div>
+
+      <label class="t-kaydirac-satir">
+        <span>Yavaş</span>
+        <input type="range" id="d1Surgu" class="t-kaydirac" min="1" max="120" value="4" step="1"
+               aria-label="Saniyedeki vuruş sayısı">
+        <span>Hızlı</span>
+      </label>
+
+      <div class="t-deney-butonlar">
+        <button type="button" class="t-btn t-btn-dolu" id="d1Btn">▶ Deneyi Başlat</button>
+        <button type="button" class="t-btn t-btn-cerceve" id="d1Otomatik">⟳ Yavaştan hızlıya otomatik</button>
+      </div>
+
+      <p class="t-deney-bilgi">
+        <strong>Neden böyle?</strong> Ritim ve nota aslında aynı olgunun iki hızı. Ayrı ayrı duyduğunuz
+        vuruşlar saniyede yaklaşık <strong>20</strong>'yi geçince kulak onları tek tek ayıramaz ve
+        <strong>perde (ton)</strong> olarak algılar. Atölyede çalıştığımız her şey bu eşiğin
+        <em>altındaki</em> dünyada geçer: saniyeler, yarım saniyeler ve milisaniyeler.
+      </p>
+    </article>
+
+    <!-- ===== Deney 2: milisaniye hassasiyeti ===== -->
+    <article class="t-deney kayarak" id="deney2">
+      <div class="t-deney-bas">
+        <span class="t-deney-no">02</span>
+        <div>
+          <h3>Vuruşu ne kadar yakalıyorsunuz?</h3>
+          <p class="t-deney-alt">8 vuruş çalacak. Siz de birlikte vurun — her vuruşun kaç milisaniye
+             kaydığını göstereceğiz.</p>
+        </div>
+      </div>
+
+      <div class="t-deney-sahne t-deney-sahne-tap">
+        <button type="button" class="t-tap-pad" id="d2Pad">
+          <span id="d2PadYazi">VUR</span>
+          <small>boşluk tuşu da olur</small>
+        </button>
+        <div class="t-deney-okuma">
+          <div class="t-deney-buyuk"><span id="d2Sonuc">—</span><small>ortalama sapma (ms)</small></div>
+          <div class="t-deney-durum" id="d2Durum">Başlat'a basın, 4 vuruş hazırlık sayacağız.</div>
+          <div class="t-sapma-serit" id="d2Serit" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="t-deney-butonlar">
+        <button type="button" class="t-btn t-btn-dolu" id="d2Btn">▶ Başlat</button>
+      </div>
+
+      <p class="t-deney-bilgi">
+        <strong>Ne anlama geliyor?</strong> İnsanlar metronoma genellikle birkaç on milisaniye
+        <em>önce</em> vurur; bu bilinen ve normal bir eğilimdir. Önemli olan tek bir vuruş değil,
+        vuruşların <strong>ne kadar tutarlı</strong> olduğudur. Bu sayfadaki hızlı gösterim
+        cihaz gecikmesini hesaba katmaz — atölyedeki ölçümde cihaz kalibre edilir ve
+        tutarlılık ayrıca hesaplanır. <em>Bu bir değerlendirme değildir.</em>
+      </p>
+    </article>
+
+    <!-- ===== Deney 3: aksayanı bul ===== -->
+    <article class="t-deney kayarak" id="deney3">
+      <div class="t-deney-bas">
+        <span class="t-deney-no">03</span>
+        <div>
+          <h3>Aksayanı duyabilir misiniz?</h3>
+          <p class="t-deney-alt">Altı vuruşluk bir dizi çalacak. Ya kusursuz düzenli olacak,
+             ya da bir vuruş azıcık kayacak. Hangisi?</p>
+        </div>
+      </div>
+
+      <div class="t-deney-sahne t-deney-sahne-aksak">
+        <div class="t-aksak-noktalar" id="d3Noktalar" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="t-deney-okuma">
+          <div class="t-deney-durum" id="d3Durum">Hazır olduğunuzda başlatın.</div>
+          <div class="t-aksak-cevaplar" id="d3Cevaplar" hidden>
+            <button type="button" class="t-btn t-btn-cerceve" data-cevap="duzenli">✓ Düzenliydi</button>
+            <button type="button" class="t-btn t-btn-cerceve" data-cevap="aksak">⚠ Aksadı</button>
+          </div>
+          <div class="t-aksak-skor" id="d3Skor"></div>
+        </div>
+      </div>
+
+      <div class="t-deney-butonlar">
+        <button type="button" class="t-btn t-btn-dolu" id="d3Btn">▶ 3 Tur Oyna</button>
+      </div>
+
+      <p class="t-deney-bilgi">
+        <strong>Kulak ne kadar hassas?</strong> Eğitimli dinleyiciler düzenli bir dizideki
+        yüzde birkaçlık kaymayı fark edebilir. Bu bir <em>algı</em> ölçümüdür; el hareketi
+        gerektirmez. Atölye yazılımında bunun kademeli zorluklu hâli var — ve programda
+        bilerek <strong>çalıştırmadığımız</strong> bir ölçüm olarak duruyor, çünkü karşılaştırma
+        yapabilmek için "eğitilmemiş" bir referans gerekiyor.
+      </p>
+    </article>
+
+    <div class="t-deney-cta kayarak">
+      <p><?= e(site_text('deney_cta')) ?></p>
+      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#iletisim">→ Deneme oturumu iste</a>
+    </div>
+  </div>
+</section>
+
+<?php elseif ($bolum['anahtar'] === 'nabiz'): ?>
+<section class="t-bolum t-bolum-koyu" id="nabiz">
+  <div class="t-kapsayici">
+    <p class="t-bolum-ustbaslik kayarak">TEMPO HER YERDE</p>
+    <h2 class="kayarak"><?= e($bolum['baslik']) ?></h2>
+    <p class="t-bolum-aciklama kayarak"><?= e(site_text('nabiz_aciklama')) ?></p>
+
+    <div class="t-nabiz-dizi kayarak" id="nabizDizi">
+      <?php
+      /* Her kart KENDİ temposunda atar: --sure = 60/bpm saniye. Tıklayınca o tempo çalar. */
+      $nabizlar = [
+        ['bpm' => 60,  'ikon' => '🌙', 'ad' => 'Ninni',            'not' => 'Uyku öncesi şarkılar bu civarda gezinir'],
+        ['bpm' => 72,  'ikon' => '❤️', 'ad' => 'Dinlenik kalp',    'not' => 'Yetişkin istirahat nabzı ortalaması'],
+        ['bpm' => 100, 'ikon' => '🚶', 'ad' => 'Rahat yürüyüş',    'not' => 'Adımlar da bir metronomdur'],
+        ['bpm' => 120, 'ikon' => '🪩', 'ad' => 'Dans müziği',      'not' => 'İnsanların kendiliğinden seçtiği tempoya yakın'],
+        ['bpm' => 140, 'ikon' => '🏃', 'ad' => 'Koşu adımı',       'not' => 'Kondisyon müziklerinin klasik aralığı'],
+        ['bpm' => 176, 'ikon' => '🥁', 'ad' => 'Hızlı davul',      'not' => 'Saniyede yaklaşık üç vuruş'],
+      ];
+      foreach ($nabizlar as $i => $n): ?>
+      <button type="button" class="t-nabiz" data-bpm="<?= (int)$n['bpm'] ?>"
+              style="--sure:<?= round(60 / $n['bpm'], 3) ?>s;--gecikme:<?= $i * 0.1 ?>s"
+              aria-label="<?= e($n['ad']) ?> temposunu dinle">
+        <span class="t-nabiz-halka" aria-hidden="true"></span>
+        <span class="t-nabiz-ikon" aria-hidden="true"><?= $n['ikon'] ?></span>
+        <span class="t-nabiz-bpm"><?= (int)$n['bpm'] ?><small>BPM</small></span>
+        <span class="t-nabiz-ad"><?= e($n['ad']) ?></span>
+        <span class="t-nabiz-not"><?= e($n['not']) ?></span>
+      </button>
+      <?php endforeach; ?>
+    </div>
+    <p class="t-not kayarak">Karta dokunun — o tempo çalmaya başlar, tekrar dokunun susar.
+       Değerler tipik aralıkları anlatır; kişiden kişiye değişir.</p>
+  </div>
+</section>
+
+<?php elseif ($bolum['anahtar'] === 'yontem'): ?>
 <section class="t-bolum" id="yontem">
   <div class="t-kapsayici">
     <p class="t-bolum-ustbaslik kayarak">YÖNTEM</p>

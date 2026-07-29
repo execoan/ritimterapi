@@ -158,24 +158,37 @@ function seed_site(): void
                     SELECT 'moxo', 'MOXO dikkat ölçümü — isteğe bağlı',
                            (SELECT COALESCE(MAX(sira), 0) + 1 FROM site_bolumleri), 1
                     WHERE NOT EXISTS (SELECT 1 FROM site_bolumleri WHERE anahtar = 'moxo')");
+        /* Etkileşimli bölümler ziyaretçiyi ilk ekranda yakalasın diye EN BAŞA
+           eklenir (mevcut sıranın önüne). Eğitmen sürükle-bırakla istediği
+           yere taşıyabilir; ilk kaydetmede sıra numaraları 1..N'e normalleşir. */
+        $enKucuk = (int)$pdo->query('SELECT COALESCE(MIN(sira), 1) FROM site_bolumleri')->fetchColumn();
+        $bolumEkle = $pdo->prepare('INSERT INTO site_bolumleri (anahtar, baslik, sira, gorunur)
+                                    SELECT ?, ?, ?, 1
+                                     WHERE NOT EXISTS (SELECT 1 FROM site_bolumleri WHERE anahtar = ?)');
+        $bolumEkle->execute(['deney', 'Kulağını test et — canlı deneyler', $enKucuk - 2, 'deney']);
+        $bolumEkle->execute(['nabiz', 'Dünyanın nabzı', $enKucuk - 1, 'nabiz']);
         seed_moxo_texts();
+        seed_deney_texts();
         return;
     }
 
     $bolumler = [
         // [anahtar, başlık, sıra]
-        ['yontem',      'Atölyede bir oturum nasıl akar?', 1],
-        ['program',     'Program: iki iz, on iki hafta', 2],
-        ['bilim',       'Literatür ne söylüyor, atölyede nasıl yankılanıyor?', 3],
-        ['protokoller', 'Metronom modülü ve dikkat protokolleri', 4],
-        ['moxo',        'MOXO dikkat ölçümü — isteğe bağlı', 5],
-        ['galeri',      'Atölyeden kareler', 6],
-        ['bizkimiz',    'Fizikten ritme uzanan bir sınıf', 7],
-        ['iletisim',    'Bize ulaşın', 8],
+        ['deney',       'Kulağını test et — canlı deneyler', 1],
+        ['yontem',      'Atölyede bir oturum nasıl akar?', 2],
+        ['program',     'Program: iki iz, on iki hafta', 3],
+        ['bilim',       'Literatür ne söylüyor, atölyede nasıl yankılanıyor?', 4],
+        ['nabiz',       'Dünyanın nabzı', 5],
+        ['protokoller', 'Metronom modülü ve dikkat protokolleri', 6],
+        ['moxo',        'MOXO dikkat ölçümü — isteğe bağlı', 7],
+        ['galeri',      'Atölyeden kareler', 8],
+        ['bizkimiz',    'Fizikten ritme uzanan bir sınıf', 9],
+        ['iletisim',    'Bize ulaşın', 10],
     ];
     $bs = $pdo->prepare('INSERT INTO site_bolumleri (anahtar, baslik, sira, gorunur) VALUES (?, ?, ?, 1)');
     foreach ($bolumler as $b) { $bs->execute($b); }
     seed_moxo_texts();
+    seed_deney_texts();
 
     $metinler = [
         'hero_ustbaslik'  => 'RİTİM · DİKKAT · ÖZ-DÜZENLEME',
@@ -462,6 +475,22 @@ function seed_group_workshop_studies(): void
 }
 
 /** MOXO bölümü metin varsayılanları (yalnız yoksa eklenir; düzenlemeler ezilmez). */
+/** Deney + nabız bölümlerinin metinleri (mevcut kuruluma da INSERT OR IGNORE ile gelir). */
+function seed_deney_texts(): void
+{
+    $st = db()->prepare('INSERT OR IGNORE INTO site_icerik (anahtar, deger) VALUES (?, ?)');
+    $st->execute(['deney_aciklama',
+        'Okumak yerine dinleyin: aşağıdaki üç mini deney, atölyede çalıştığımız işitsel '
+        . 'zamanlama dünyasına açılan küçük pencereler. Kulaklıkla daha iyi; ses açık olsun. '
+        . 'Bunlar eğlencelik gösterimlerdir — ölçüm ya da değerlendirme değildir.']);
+    $st->execute(['nabiz_aciklama',
+        'Tempo soyut bir sayı değil; bedenin ve müziğin ortak dili. Aşağıdaki her nokta '
+        . 'kendi GERÇEK temposunda atıyor — üzerine dokunun, o tempoyu dinleyin.']);
+    $st->execute(['deney_cta',
+        'Kulağın ısındı mı? Atölyede bunların ölçümlü, programlı hâli çalışılıyor. '
+        . 'Deneme oturumu için yerinizi ayırın.']);
+}
+
 function seed_moxo_texts(): void
 {
     $st = db()->prepare('INSERT OR IGNORE INTO site_icerik (anahtar, deger) VALUES (?, ?)');

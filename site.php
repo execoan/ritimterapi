@@ -23,6 +23,11 @@ $METIN_ALANLARI = [
     'Program bölümü' => [
         'program_aciklama' => ['Program tanıtım paragrafı', 'coksatir'],
     ],
+    'Canlı deneyler ve nabız' => [
+        'deney_aciklama' => ['Deney bölümü tanıtım paragrafı', 'coksatir'],
+        'deney_cta'      => ['Deneylerin altındaki davet cümlesi', 'coksatir'],
+        'nabiz_aciklama' => ['Nabız bölümü tanıtım paragrafı', 'coksatir'],
+    ],
     'MOXO bölümü' => [
         'moxo_aciklama'   => ['MOXO tanıtım paragrafı', 'coksatir'],
         'moxo_uygulayici' => ['Uygulayıcı cümlesi (psikologlar)', 'coksatir'],
