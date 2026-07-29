@@ -1922,6 +1922,13 @@
      D) RİTİM OKUMA (stüdyo sürümü — ritim-okuma.js widget'ı)
      ================================================================ */
   var roKok = byId('roKok');
+
+  /** Ritim Okuma sekmesi görünür mü? (Space onun alanında metronoma düşmesin) */
+  function ritimSekmesiAcikMi() {
+    var panel = byId('sekme-ritim');
+    return !!panel && !panel.hidden;
+  }
+
   function roKur() {
     if (!roKok || !window.RitimOkuma) { return; }
     byId('roKaydetSatir').hidden = true;
@@ -2390,7 +2397,11 @@
     if (haric !== 'st' && st.aktif) { stIptalEt(); }
     if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
     if (haric !== 'ir' && ir.aktif) { irIptalEt(); }
-    if (haric !== 'ro' && roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roIptal(); }
+    /* __roMesgul kullanılır, __roAktif DEĞİL: dinleme/geri sayım fazında da
+       ileri tarihli ses zamanlanmış olabilir. Yalnız vuruş kabul eden fazlara
+       bakmak, dinleme sesinin yeni protokolün üstünde çalmaya devam etmesine
+       yol açıyordu (metronomdaki "iptalde susmayan ses" hatasının aynısı). */
+    if (haric !== 'ro' && roKok && roKok.__roMesgul && roKok.__roMesgul()) { roKok.__roIptal(); }
     if (haric !== 'oyun' && oyun.aktif) { oyunIptalEt(); }
   }
 
@@ -2752,6 +2763,10 @@
       else if (ir.aktif) { irTap(ev); }
       else if (oyun.aktif && oyun.faz === 'tahmin') { oyunTap(ev); }
       else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(ev); }
+      /* Ritim Okuma dinleme/geri sayım fazındayken VEYA sekmesi açıkken Space'i
+         yut: kullanıcı alıştırmayı oynarken metronomun üstüne açılması hataydı. */
+      else if (roKok && roKok.__roMesgul && roKok.__roMesgul()) { /* yalnız yut */ }
+      else if (ritimSekmesiAcikMi()) { /* yalnız yut */ }
       else if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
       else if (m.calisiyor) { metronomDurdur(); }
       else { metronomBaslat(); }

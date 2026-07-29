@@ -1248,7 +1248,17 @@ window.RitimOkuma = (function () {
       if (!aktifTur) { degerlendirmeArayuzunuGuncelle(); }
     };
     window.addEventListener('ritim-zamanlama-guncellendi', kok.__roZamanDinleyici);
+    /*
+     * İki AYRI soru, iki ayrı yanıt:
+     *  __roAktif  → "bu Space bir VURUŞ olarak sayılmalı mı?" (yalnız vuruş kabul
+     *               eden fazlar)
+     *  __roMesgul → "Space tuşunun sahibi şu an bu widget mı?" (dinleme ve geri
+     *               sayım dahil TÜM etkin fazlar)
+     * Bu ayrım şart: dinleme/hazırlık fazında Space vuruş değildir ama metronoma
+     * da düşmemelidir — aksi hâlde alıştırmanın üstüne metronom açılıyordu.
+     */
     kok.__roAktif = function () { return aktifTur === 'uygulama' || aktifTur === 'kalibrasyon'; };
+    kok.__roMesgul = function () { return aktifTur !== ''; };
     kok.__roIptal = function () { durdur(); };
     kok.__roYeni = ornekDegistir;
     kok.__roYenidenCiz = function () {
