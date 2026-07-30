@@ -29,6 +29,14 @@ $sonKayitlar = protocol_results_recent(12);
 $sonSkorlar = protocol_last_scores();
 $acilacakProtokol = (string)($_GET['protokol'] ?? '');
 if (!isset(PROTOKOL_LABELS[$acilacakProtokol])) { $acilacakProtokol = ''; }
+/* Kendi sayfasına taşınan protokoller: eski derin bağlantılar (oturum.php'deki
+   "Protokolü stüdyoda aç" gibi) kırılmasın diye yönlendirilir. */
+const PROTOKOL_SAYFALARI = ['ritim_okuma' => 'ritim-okuma.php', 'poliritim' => 'poliritim.php'];
+if (isset(PROTOKOL_SAYFALARI[$acilacakProtokol])) {
+    $hedef = PROTOKOL_SAYFALARI[$acilacakProtokol];
+    if (($a = (int)($_GET['akis'] ?? 0)) > 0) { $hedef .= '?akis=' . $a; }
+    redirect($hedef);
+}
 
 /* Ders akışı: bir oturumun teknik planını sırayla, süre sayaçlarıyla çalıştır */
 $akisOturum = null;
@@ -509,8 +517,17 @@ require APP_DIR . '/includes/view/header.php';
     <span class="rozet rozet-acik"><?= e($akisOturum['grup']) ?></span>
     <span class="rozet rozet-gri"><?= e(format_date_tr($akisOturum['tarih'])) ?> · Hafta <?= (int)$akisOturum['hafta_no'] ?></span>
     <?php if ($akisOturum['protokol'] && isset(PROTOKOL_LABELS[$akisOturum['protokol']])): ?>
-    <button type="button" class="btn btn-kucuk btn-golge" id="akisProtokolAc"
-            data-protokol="<?= e($akisOturum['protokol']) ?>">🧭 Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?></button>
+      <?php if (isset(PROTOKOL_SAYFALARI[$akisOturum['protokol']])): ?>
+      <!-- Kendi sayfasındaki protokol YENİ SEKMEDE açılır: ders akışı sayacı
+           yalnız bellekte yaşıyor, aynı sekmede gidilirse baştan sıfırlanır. -->
+      <a class="btn btn-kucuk btn-golge" target="_blank" rel="noopener"
+         href="<?= e(url(PROTOKOL_SAYFALARI[$akisOturum['protokol']] . '?akis=' . (int)$akisOturum['id'])) ?>"
+         title="Yeni sekmede açılır; ders akışı sayacı burada çalışmaya devam eder">
+        🧭 Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?> ↗</a>
+      <?php else: ?>
+      <button type="button" class="btn btn-kucuk btn-golge" id="akisProtokolAc"
+              data-protokol="<?= e($akisOturum['protokol']) ?>">🧭 Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?></button>
+      <?php endif; ?>
     <?php endif; ?>
     <div class="sag">
       <a class="btn btn-kucuk btn-golge" href="<?= e(url('oturum.php?id=' . (int)$akisOturum['id'])) ?>">Oturum kaydına git</a>
@@ -595,7 +612,6 @@ require APP_DIR . '/includes/view/header.php';
   <div class="m-sekmeler" role="tablist" id="mSekmeler" data-acilacak="<?= e($acilacakProtokol) ?>">
     <button type="button" class="m-sekme aktif" role="tab" aria-selected="true" data-sekme="vurus">🎯 Vuruş Tutturma</button>
     <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="bpm">🎧 BPM Bulma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="ritim">🎼 Ritim Okuma</button>
     <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="spontan">🫀 Spontan Tempo</button>
     <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="aksak">🕳 Aksak Bulma</button>
     <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="icsel">🧭 İçsel Ritim</button>
@@ -693,44 +709,6 @@ require APP_DIR . '/includes/view/header.php';
           <button type="button" class="btn btn-golge" id="bfTekrar">Tekrar Oyna</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Ritim Okuma -->
-  <div class="m-sekme-icerik" id="sekme-ritim" hidden>
-    <p class="alan-ipucu">Yüzlerce kademeli alıştırmada ritmi önce gerçekten dinle, sonra sayarak ve notada yazıldığı
-       zamanlarda vur. Kolay → Orta → Zor müfredatı dörtlüklerden senkop, onaltılık ve üçlemelere ilerler.</p>
-    <div class="filtre-satir">
-      <label class="form-alan">Öğrenci<?= ogrenci_secimi('roOgrenci', $ogrenciler) ?></label>
-      <label class="form-alan">Seviye
-        <select id="roSeviye" class="secim">
-          <option value="1" selected>Kolay — temel değerler</option>
-          <option value="2">Orta — onaltılık ve senkop</option>
-          <option value="3">Zor — üçleme ve karma deşifre</option>
-        </select>
-      </label>
-      <label class="form-alan">Tempo
-        <select id="roBpm" class="secim">
-          <option value="50">50 BPM</option>
-          <option value="60" selected>60 BPM</option>
-          <option value="72">72 BPM</option>
-          <option value="84">84 BPM</option>
-          <option value="96">96 BPM</option>
-          <option value="112">112 BPM</option>
-        </select>
-      </label>
-      <label class="form-alan">Kılavuz
-        <select id="roRehber" class="secim">
-          <option value="tam">Her vuruş</option>
-          <option value="olcu">Yalnız ölçü başı</option>
-          <option value="sessiz">Sessiz deşifre</option>
-        </select>
-      </label>
-      <button type="button" class="btn btn-golge" id="roYenile">Sonraki örnek →</button>
-    </div>
-    <div class="ro-kok" id="roKok"></div>
-    <div class="m-kaydet-satir" id="roKaydetSatir" hidden>
-      <?= sonuc_formu('ro', 'ritim_okuma') ?>
     </div>
   </div>
 
@@ -921,7 +899,5 @@ window.METRONOM_CALISMA_VERI = <?= json_encode([
 <script src="<?= e(asset('js/ritim-ogrenme.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom-cekirdegi.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom-setlist.js')) ?>"></script>
-<script src="<?= e(asset('vendor/abcjs/abcjs-basic-min.js')) ?>"></script>
-<script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/metronom.js')) ?>"></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

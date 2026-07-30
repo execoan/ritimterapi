@@ -7,7 +7,7 @@
    Not: CACHE_ADI değişince aktivasyonda eski cache silinir.
    ======================================================= */
 
-var CACHE_ADI   = 'ritim-v27';
+var CACHE_ADI   = 'ritim-v28';
 /* Çevrimdışı sayfası SW'nin kendi konumuna göre çözülür (alt dizin kurulumunda da doğru). */
 var OFFLINE_URL = new URL('offline.html', self.location).pathname;
 
@@ -34,6 +34,7 @@ var KABUK = [
   'assets/js/grup-atolyesi-cekirdegi.js',
   'assets/js/grup-atolyesi.js',
   'assets/js/ritim-okuma.js',
+  'assets/js/ritim-okuma-sayfa.js',
   'assets/js/poliritim-cekirdegi.js',
   'assets/js/poliritim-studyo.js',
   'assets/vendor/abcjs/abcjs-basic-min.js',

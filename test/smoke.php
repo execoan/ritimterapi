@@ -254,7 +254,7 @@ dogrula($y['durum'] !== 200 && !str_contains($y['govde'], 'PANEL_KULLANICILAR'),
    C) KİMLİK KAPISI (güvenlik)
    ================================================================= */
 bolum('Kimlik kapısı (çıkış yapılmışken)');
-foreach (['panel.php', 'ogrenciler.php', 'yedek.php', 'disa-aktar.php?tur=protokol', 'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php', 'poliritim.php'] as $sayfa) {
+foreach (['panel.php', 'ogrenciler.php', 'yedek.php', 'disa-aktar.php?tur=protokol', 'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php', 'poliritim.php', 'ritim-okuma.php'] as $sayfa) {
     $y = git_($sayfa, $jar);
     dogrula($y['durum'] >= 300 && $y['durum'] < 400 && str_contains($y['yer'], 'giris.php'),
         "{$sayfa} girişe yönlendiriyor", 'durum ' . $y['durum']);
@@ -299,7 +299,7 @@ dogrula($y['durum'] === 200 && !str_contains($y['govde'], 'Beklenmeyen bir sorun
    ================================================================= */
 bolum('Çekirdek sayfalar (giriş sonrası)');
 $sayfalar = ['gruplar.php', 'ogrenciler.php', 'teknikler.php', 'sablonlar.php', 'ev-programi.php',
-             'metronom.php', 'motor-studyo.php', 'poliritim.php', 'grup-atolyesi.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
+             'metronom.php', 'motor-studyo.php', 'poliritim.php', 'ritim-okuma.php', 'grup-atolyesi.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
              'plan.php'];
 foreach ($sayfalar as $sayfa) {
     $y = git_($sayfa, $jar);

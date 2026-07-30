@@ -1562,14 +1562,11 @@
       s.setAttribute('aria-selected', 'true');
       document.querySelectorAll('.m-sekme-icerik').forEach(function (x) { x.hidden = true; });
       byId('sekme-' + s.dataset.sekme).hidden = false;
-      if (s.dataset.sekme === 'ritim' && byId('roKok').__roYenidenCiz) {
-        window.requestAnimationFrame(function () { byId('roKok').__roYenidenCiz(); });
-      }
     });
   });
 
   var PROTOKOL_SEKME = {
-    vurus_tutturma: 'vurus', bpm_bulma: 'bpm', ritim_okuma: 'ritim',
+    vurus_tutturma: 'vurus', bpm_bulma: 'bpm',
     spontan_tempo: 'spontan', aksak_bulma: 'aksak', icsel_ritim: 'icsel'
   };
   (function () {
@@ -1917,49 +1914,6 @@
   byId('bfTekrar').addEventListener('click', function () { byId('bfSonuc').hidden = true; bfBaslatOyun(); });
   byId('bfPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); bfTap(ev); });
   kaydetFormuBagla('bf', 'bfOgrenci');
-
-  /* ================================================================
-     D) RİTİM OKUMA (stüdyo sürümü — ritim-okuma.js widget'ı)
-     ================================================================ */
-  var roKok = byId('roKok');
-
-  /** Ritim Okuma sekmesi görünür mü? (Space onun alanında metronoma düşmesin) */
-  function ritimSekmesiAcikMi() {
-    var panel = byId('sekme-ritim');
-    return !!panel && !panel.hidden;
-  }
-
-  function roKur() {
-    if (!roKok || !window.RitimOkuma) { return; }
-    byId('roKaydetSatir').hidden = true;
-    window.RitimOkuma.baslat(roKok, {
-      seviye: parseInt(byId('roSeviye').value, 10),
-      bpm: parseInt(byId('roBpm').value, 10),
-      rehber: byId('roRehber').value,
-      onBitti: function (sonuc) {
-        byId('roFormBpm').value = sonuc.bpm;
-        byId('roFormSkor').value = sonuc.skor;
-        byId('roFormDetay').value = JSON.stringify(sonuc);
-        byId('roFormStandart').value =
-          (parseInt(byId('roSeviye').value, 10) === 1 &&
-           parseInt(byId('roBpm').value, 10) === 60 &&
-           byId('roRehber').value === 'tam') ? '1' : '0';
-        byId('roFormSd').value = Number.isFinite(sonuc.sapmaSdMs) ? sonuc.sapmaSdMs : '';
-        byId('roFormKalite').value = (ses.ctx ? zaman.kaliteDurumu(ses.ctx).kod : '') || '';
-        byId('roKaydetSatir').hidden = false;
-      }
-    });
-  }
-  if (roKok) {
-    roKur();
-    byId('roYenile').addEventListener('click', function () {
-      if (roKok.__roYeni) { roKok.__roYeni(1); }
-    });
-    byId('roSeviye').addEventListener('change', roKur);
-    byId('roBpm').addEventListener('change', roKur);
-    byId('roRehber').addEventListener('change', roKur);
-    kaydetFormuBagla('ro', 'roOgrenci');
-  }
 
   /* ================================================================
      E) SPONTAN TEMPO (BAASTA: unpaced tapping)
@@ -2397,11 +2351,6 @@
     if (haric !== 'st' && st.aktif) { stIptalEt(); }
     if (haric !== 'ab' && ab.aktif) { abIptalEt(); }
     if (haric !== 'ir' && ir.aktif) { irIptalEt(); }
-    /* __roMesgul kullanılır, __roAktif DEĞİL: dinleme/geri sayım fazında da
-       ileri tarihli ses zamanlanmış olabilir. Yalnız vuruş kabul eden fazlara
-       bakmak, dinleme sesinin yeni protokolün üstünde çalmaya devam etmesine
-       yol açıyordu (metronomdaki "iptalde susmayan ses" hatasının aynısı). */
-    if (haric !== 'ro' && roKok && roKok.__roMesgul && roKok.__roMesgul()) { roKok.__roIptal(); }
     if (haric !== 'oyun' && oyun.aktif) { oyunIptalEt(); }
   }
 
@@ -2599,7 +2548,6 @@
   var STD_AYAR = {
     vtBpm: '72', vtVurusSayisi: '16',
     bfZorluk: 'orta',
-    roSeviye: '1', roBpm: '60', roRehber: 'tam',
     abZorluk: 'orta',
     irBpm: '72', irProfil: 'standart'
   };
@@ -2608,26 +2556,18 @@
   function stdAcik() { return !!(stdKutu && stdKutu.checked); }
   if (stdKutu) {
     stdKutu.addEventListener('change', function () {
-      var roDegisti = false;
       Object.keys(STD_AYAR).forEach(function (id) {
         var el = byId(id);
         if (!el) { return; }
         if (stdKutu.checked) {
           stdOnceki[id] = el.value;
-          if (el.value !== STD_AYAR[id]) {
-            el.value = STD_AYAR[id];
-            if (id === 'roSeviye' || id === 'roBpm' || id === 'roRehber') { roDegisti = true; }
-          }
+          if (el.value !== STD_AYAR[id]) { el.value = STD_AYAR[id]; }
           el.disabled = true;
         } else {
           el.disabled = false;
-          if (stdOnceki[id] !== undefined && el.value !== stdOnceki[id]) {
-            el.value = stdOnceki[id];
-            if (id === 'roSeviye' || id === 'roBpm' || id === 'roRehber') { roDegisti = true; }
-          }
+          if (stdOnceki[id] !== undefined) { el.value = stdOnceki[id]; }
         }
       });
-      if (roDegisti && roKok) { roKur(); }
     });
   }
 
@@ -2762,11 +2702,6 @@
       else if (st.aktif) { stTap(ev); }
       else if (ir.aktif) { irTap(ev); }
       else if (oyun.aktif && oyun.faz === 'tahmin') { oyunTap(ev); }
-      else if (roKok && roKok.__roAktif && roKok.__roAktif()) { roKok.__roTap(ev); }
-      /* Ritim Okuma dinleme/geri sayım fazındayken VEYA sekmesi açıkken Space'i
-         yut: kullanıcı alıştırmayı oynarken metronomun üstüne açılması hataydı. */
-      else if (roKok && roKok.__roMesgul && roKok.__roMesgul()) { /* yalnız yut */ }
-      else if (ritimSekmesiAcikMi()) { /* yalnız yut */ }
       else if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
       else if (m.calisiyor) { metronomDurdur(); }
       else { metronomBaslat(); }
