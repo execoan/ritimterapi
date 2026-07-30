@@ -350,6 +350,11 @@ window.RitimOkuma = (function () {
       '    <small>Başlangıca</small><strong>4</strong><span>vuruş kaldı</span>' +
       '  </div>' +
       '  <div class="ro-durum" role="status" aria-live="polite">Ritmi dinleyebilir veya doğrudan okumaya başlayabilirsin.</div>' +
+      '  <label class="ro-desifre-secim" hidden>' +
+      '    <input type="checkbox" class="ro-desifre-kutu">' +
+      '    <span><strong>İlk görüş (deşifre)</strong> — nota gizli kalır, yalnız geri sayımda açılır.' +
+      '      Ölçülen şey ritmi ÖNCEDEN çözmek değil, ilk bakışta okumak.</span>' +
+      '  </label>' +
       '  <div class="ro-butonlar">' +
       '    <button type="button" class="btn btn-golge ro-dinle">🔊 Ritmi Dinle</button>' +
       '    <button type="button" class="btn btn-birincil ro-baslat">▶ Okumayı Başlat</button>' +
@@ -361,6 +366,9 @@ window.RitimOkuma = (function () {
 
     var desenEl = kok.querySelector('.ro-desen');
     var portaEl = kok.querySelector('.ro-porteli');
+    var notaAlaniEl = kok.querySelector('.ro-nota-alani');
+    var desifreSecimEl = kok.querySelector('.ro-desifre-secim');
+    var desifreKutuEl = kok.querySelector('.ro-desifre-kutu');
     var durumEl = kok.querySelector('.ro-durum');
     var baslangicSayacEl = kok.querySelector('.ro-baslangic-sayaci');
     var dersEl = kok.querySelector('.ro-ders');
@@ -465,21 +473,100 @@ window.RitimOkuma = (function () {
       kok.querySelector('.ro-ogrenme').dataset.mevcutDurum = durumMetni;
     }
 
-    function pencereBilgisi() {
-      if (degerlendirmeAyari.profil === 'ozel') {
-        var ozelPencere = sinirla(degerlendirmeAyari.ozel[seviye], 60, 300);
-        return {
-          profil: 'Özel',
-          pencereMs: Math.round(ozelPencere),
-          tamMs: Math.round(sinirla(ozelPencere * 0.3, 25, 70))
-        };
+    /* ================================================================
+       İLK GÖRÜŞ (DEŞİFRE) MODU
+
+       Maske TÜM `.ro-nota-alani`'nı kapatır — yalnız porteyi değil.
+       Bu şart: `.ro-desen` ızgarası ritmin TAM metinsel yazımıdır
+       (1-e-ve-a heceleri, onset olanlarda `ro-nota-var` sınıfı). Yalnız
+       porte bulanıklaştırılsa öğrenci ritmi hece ızgarasından okuyup
+       çözer; ölçülen şey "ilk bakışta porteden okuma" değil "hece
+       tablosundan okuma" olur ve metrik baştan geçersiz doğar.
+
+       abcjs çizemediyse mod SUNULMAZ: maskelenecek porte yoktur.
+       ================================================================ */
+    function desifreAcikMi() {
+      return !!(desifreKutuEl && desifreKutuEl.checked && !desifreSecimEl.hidden);
+    }
+
+    function desifreSecimGoster() {
+      if (!desifreSecimEl) { return; }
+      var porteVar = !portaEl.classList.contains('ro-porteli-yedek')
+                  && Number(portaEl.dataset.notaSayisi || 0) > 0;
+      desifreSecimEl.hidden = !porteVar;
+      if (!porteVar && desifreKutuEl) { desifreKutuEl.checked = false; }
+    }
+
+    /** Notayı gizle/aç. Sonuç renkleri okunabilsin diye bitişte AÇILIR. */
+    function notayiMaskele(gizle) {
+      if (!notaAlaniEl) { return; }
+      notaAlaniEl.classList.toggle('ro-nota-gizli', !!gizle);
+      notaAlaniEl.setAttribute('aria-hidden', gizle ? 'true' : 'false');
+    }
+
+    /**
+     * Bu örnekteki EN KÜÇÜK ardışık onset aralığı (ms).
+     * Tolerans penceresi bu aralığın yarısını geçerse bir dokunuş komşu
+     * notaya da uyabilir; eşleştirici en çok eşleşmeyi seçtiği için kabaca
+     * doğru ama YANLIŞ HIZDA vuran öğrenci de tam puana yaklaşır.
+     */
+    function enKucukOnsetAraligiMs() {
+      var ornek = mevcut();
+      if (!ornek) { return Infinity; }
+      var zamanlar = [];
+      for (var idx = 0; idx < VURUS_ADEDI; idx++) {
+        var tip = TIPLER[ornek.kodlar[idx]];
+        if (!tip || !tip.onset) { continue; }
+        for (var o = 0; o < tip.onset.length; o++) {
+          zamanlar.push((idx + tip.onset[o]) * spb);
+        }
       }
-      var profil = DEGERLENDIRME_PROFILLERI[degerlendirmeAyari.profil]
-        || DEGERLENDIRME_PROFILLERI.dengeli;
+      zamanlar.sort(function (a, b) { return a - b; });
+      var enKucuk = Infinity;
+      for (var i = 1; i < zamanlar.length; i++) {
+        enKucuk = Math.min(enKucuk, zamanlar[i] - zamanlar[i - 1]);
+      }
+      return Number.isFinite(enKucuk) ? enKucuk * 1000 : Infinity;
+    }
+
+    /*
+     * TOLERANS PENCERESİ — profil değeri, tempoya göre KIRPILIR.
+     *
+     * Profil pencereleri sabit ms cinsindendir; ritmin yoğunluğunu ve
+     * tempoyu bilmezler. Ölçülen örnek: seviye 2, dengeli profil ±160 ms;
+     * 112 BPM'de onaltılık aralığı 134 ms — yani pencere komşuya olan
+     * uzaklığın (67 ms) 2,4 KATI. Bu durumda skor beceriyi değil TAVAN
+     * ETKİSİNİ gösterir ve hız çalışması anlamsızlaşır.
+     *
+     * Kırpma sınırı aralığın %40'ı: bu sınırda bir dokunuş komşu notaya
+     * taşamaz. Kullanıcının seçtiği pencere daha darsa o kullanılır.
+     */
+    function pencereBilgisi() {
+      var istenen;
+      var tamIstenen;
+      var ad;
+      if (degerlendirmeAyari.profil === 'ozel') {
+        istenen = sinirla(degerlendirmeAyari.ozel[seviye], 60, 300);
+        tamIstenen = sinirla(istenen * 0.3, 25, 70);
+        ad = 'Özel';
+      } else {
+        var profil = DEGERLENDIRME_PROFILLERI[degerlendirmeAyari.profil]
+          || DEGERLENDIRME_PROFILLERI.dengeli;
+        istenen = profil.pencere[seviye];
+        tamIstenen = profil.tam[seviye];
+        ad = profil.ad;
+      }
+      var sinirMs = enKucukOnsetAraligiMs() * 0.4;
+      var pencereMs = Math.min(istenen, sinirMs);
+      /* Tam puan bölgesi pencerenin içinde kalmalı, yoksa her isabet tam puan olur */
+      var tamMs = Math.min(tamIstenen, pencereMs * 0.6);
       return {
-        profil: profil.ad,
-        pencereMs: profil.pencere[seviye],
-        tamMs: profil.tam[seviye]
+        profil: ad,
+        pencereMs: Math.round(pencereMs),
+        tamMs: Math.round(tamMs),
+        istenenPencereMs: Math.round(istenen),
+        kirpildi: istenen > sinirMs + 0.5,
+        onsetAraligiMs: Math.round(enKucukOnsetAraligiMs())
       };
     }
 
@@ -500,7 +587,8 @@ window.RitimOkuma = (function () {
       telafiMsEl.value = Math.round(kal.telafiMs);
       ozelMsEl.hidden = degerlendirmeAyari.profil !== 'ozel';
       pencereOzetEl.textContent = bilgi.profil + ' · doğru ±' + bilgi.pencereMs
-        + ' ms · tam puan ±' + bilgi.tamMs + ' ms';
+        + ' ms · tam puan ±' + bilgi.tamMs + ' ms'
+        + (bilgi.kirpildi ? ' · ⚠ tempoya göre kırpıldı (istenen ±' + bilgi.istenenPencereMs + ' ms)' : '');
 
       if (degerlendirmeAyari.profil === 'ozel') {
         profilAciklamaEl.textContent = 'Her seviye için doğru sayılma penceresini ayrı belirleyebilirsin. '
@@ -625,7 +713,12 @@ window.RitimOkuma = (function () {
       cizMeta();
       var pencere = pencereBilgisi();
       aciklamaEl.textContent = '4/4 · 2 ölçü · ' + bpm + ' BPM · ' + pencere.profil
-        + ' ±' + pencere.pencereMs + ' ms · Sayım: 1-e-ve-a / üçlemede 1-le-me';
+        + ' ±' + pencere.pencereMs + ' ms'
+        + (pencere.kirpildi
+            ? ' (±' + pencere.istenenPencereMs + ' ms bu tempoda çok geniş: en yakın iki nota '
+              + pencere.onsetAraligiMs + ' ms arayla)'
+            : '')
+        + ' · Sayım: 1-e-ve-a / üçlemede 1-le-me';
 
       for (var olcu = 0; olcu < 2; olcu++) {
         var olcuEl = document.createElement('div');
@@ -657,6 +750,10 @@ window.RitimOkuma = (function () {
         desenEl.appendChild(olcuEl);
       }
       porteyiCiz();
+      desifreSecimGoster();
+      /* Yeni örnekte maske geri gelir: aksi hâlde bir sonraki ritim önceden
+         görülür ve "ilk görüş" ölçümü ilk örnekten sonra anlamsızlaşır. */
+      notayiMaskele(desifreAcikMi() && !aktifTur);
     }
 
     function audioHazirla() {
@@ -961,7 +1058,14 @@ window.RitimOkuma = (function () {
         x.classList.remove('ro-dogru', 'ro-kacirildi');
       });
       var t0 = ctx.currentTime + 0.3;
-      durumEl.textContent = 'Hazır ol · geri sayım bitince ilk notayla birlikte vur.';
+      /* İlk görüş modu: nota TAM burada açılır — öğrencinin tarama süresi
+         yalnız 4 vuruşluk geri sayım. Önceden inceleme yok. */
+      if (desifreAcikMi()) {
+        notayiMaskele(false);
+        durumEl.textContent = 'İlk görüş: nota şimdi açıldı, geri sayım boyunca tara.';
+      } else {
+        durumEl.textContent = 'Hazır ol · geri sayım bitince ilk notayla birlikte vur.';
+      }
       sayimPlanla(t0, 'vurmaya başla');
       var bas = t0 + 4 * spb;
       durumZamanla(rehber === 'sessiz'
@@ -1130,7 +1234,11 @@ window.RitimOkuma = (function () {
           ogrenmeSurumu: ogrenme.SURUM,
           ustalik: ustalikKaydi.ustalik,
           denemeSayisi: ustalikKaydi.deneme,
-          desen: mevcut().kodlar.join(',')
+          desen: mevcut().kodlar.join(','),
+          ilkGorus: desifreAcikMi() ? 1 : 0,
+          pencereKirpildi: pencere.kirpildi ? 1 : 0,
+          onsetAraligiMs: pencere.onsetAraligiMs,
+          istenenPencereMs: pencere.istenenPencereMs
         });
       }
     }
@@ -1213,6 +1321,12 @@ window.RitimOkuma = (function () {
 
     dinleBtn.addEventListener('click', dinle);
     baslatBtn.addEventListener('click', uygulamaBaslat);
+    if (desifreKutuEl) {
+      desifreKutuEl.addEventListener('change', function () {
+        /* Çalışma sürüyorken maskeyi değiştirmek ölçümü bozar; yalnız boştayken */
+        notayiMaskele(desifreAcikMi() && !aktifTur);
+      });
+    }
     iptalBtn.addEventListener('click', function () { durdur('Çalışma durduruldu.'); });
     pad.addEventListener('pointerdown', function (ev) { ev.preventDefault(); tap(ev); });
     oncekiBtn.addEventListener('click', function () { ornekDegistir(-1); });

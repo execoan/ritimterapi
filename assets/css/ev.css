@@ -513,3 +513,31 @@
 .ev-flash-uyari { background: rgba(245, 158, 11, .16); color: #fcd34d; border: 1px solid rgba(245, 158, 11, .4); }
 
 .ev-alt-not { color: var(--t-soluk); font-size: .8rem; text-align: center; margin-top: 1.6rem; }
+
+/* ---------- İlk görüş (deşifre) modu ---------- */
+/*
+ * Maske TÜM nota alanını kapatır: porte + sayım başlığı + hece ızgarası.
+ * Yalnız porteyi bulanıklaştırmak yetmez — .ro-desen ızgarası ritmin tam
+ * metinsel yazımıdır (onset olan hecelerde .ro-nota-var), öğrenci ritmi
+ * oradan okuyup çözebilir ve "ilk görüş" ölçümü geçersiz doğar.
+ */
+.ro-desifre-secim {
+  display: flex; gap: .5rem; align-items: flex-start;
+  padding: .5rem .7rem; margin: .4rem 0; border-radius: 10px;
+  background: var(--zemin); border: 1px solid var(--cizgi);
+  font-size: .8rem; line-height: 1.4; cursor: pointer;
+}
+.ro-desifre-secim input { margin-top: .18rem; flex: 0 0 auto; }
+.ro-desifre-secim strong { color: var(--amber-koyu); }
+
+.ro-nota-alani { position: relative; }
+.ro-nota-gizli > * { visibility: hidden; }
+.ro-nota-gizli::after {
+  content: '🙈 Nota gizli — “Okumayı Başlat”a bastığında geri sayımla birlikte açılacak';
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 1rem; border-radius: 10px;
+  background: repeating-linear-gradient(45deg,
+    var(--zemin), var(--zemin) 10px, var(--cizgi) 10px, var(--cizgi) 11px);
+  color: var(--metin-soluk); font-size: .82rem; line-height: 1.45;
+  visibility: visible;
+}

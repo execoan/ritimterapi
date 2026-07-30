@@ -322,17 +322,30 @@
     byId('prDonguSayaci').textContent = a.dongu + ' döngü · ' + a.bpm + ' BPM ('
       + (a.referans === 'sag' ? 'sağ' : 'sol') + ' el) · ±' + Math.round(a.pencere.ms) + ' ms';
 
-    /* Pencere kırpıldıysa sebebini söyle — sessizce değiştirmek yanıltıcı olur */
+    /*
+     * İki AYRI uyarı: pencere kırpması ölçümün geçerliliğiyle, oynanabilirlik
+     * ise görevin fiziksel yapılabilirliğiyle ilgili. İkincisi daha ağır —
+     * ızgara adımı 100 ms altına düşerse iki vuruş tek olay olarak duyulur.
+     */
     var uyari = byId('prPencereUyari');
+    var oyn = cekirdek.oynanabilirlik(d.oran, a.bpm, a.referans);
+    var satirlar = [];
+    if (!oyn.oynanabilir) {
+      satirlar.push('⛔ <strong>Bu tempoda oynanamaz.</strong> İki elin en yakın vuruşları '
+        + Math.round(oyn.adimMs) + ' ms arayla; 100 ms altında kulak bunu tek vuruş olarak duyar. '
+        + d.oran + ' için önerilen üst tempo <strong>' + oyn.onerilenUstBpm + ' BPM</strong>.');
+    } else if (!oyn.rahat) {
+      satirlar.push('⚠ Sıkı tempo: en yakın iki vuruş ' + Math.round(oyn.adimMs)
+        + ' ms arayla. Acemi için ' + oyn.onerilenUstBpm + ' BPM ve altı daha uygun.');
+    }
     if (a.pencere.kirpildi) {
-      uyari.hidden = false;
-      uyari.innerHTML = '⚠ Bu tempoda ±' + a.pencere.istenenMs + ' ms çok geniş: hızlı elin vuruş '
+      satirlar.push('⚠ Bu tempoda ±' + a.pencere.istenenMs + ' ms çok geniş: hızlı elin vuruş '
         + 'aralığı ' + Math.round(a.pencere.hizliAralikMs) + ' ms. Pencere <strong>±'
         + Math.round(a.pencere.ms) + ' ms</strong>\'ye kırpıldı — aksi hâlde her dokunuş bir hedefe '
-        + 'uyar ve skor gerçek beceriyi değil tavan etkisini gösterir.';
-    } else {
-      uyari.hidden = true;
+        + 'uyar ve skor gerçek beceriyi değil tavan etkisini gösterir.');
     }
+    uyari.hidden = !satirlar.length;
+    uyari.innerHTML = satirlar.join('<br>');
 
     /* Bu aşamada kullanılmayan el soluk ve pasif */
     ['sag', 'sol'].forEach(function (el) {

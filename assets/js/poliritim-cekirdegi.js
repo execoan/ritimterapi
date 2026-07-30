@@ -39,16 +39,33 @@
     { kod: '3:4', sag: 3, sol: 4, zorluk: 3, ad: 'Üçe dört (ters)',
       not: 'Aynı oran, eller yer değişir — baskın el değişince zorluk değişir.',
       mnemonik: ['ka', 'rış', 'tır', 'ma', 'sa', 'kın'] },
-    { kod: '5:4', sag: 5, sol: 4, zorluk: 4, ad: 'Beşe dört',
-      not: 'İleri seviye; bileşik ızgara 20 alt bölüm.',
-      mnemonik: ['ya', 'vaş', 'ya', 'vaş', 'a', 'lı', 'şı', 'yor'] },
-    { kod: '5:3', sag: 5, sol: 3, zorluk: 5, ad: 'Beşe üç',
+    { kod: '5:3', sag: 5, sol: 3, zorluk: 4, ad: 'Beşe üç',
       not: 'İleri seviye; ortak vuruş yalnız döngü başında.',
       mnemonik: ['her', 'a', 'dım', 'da', 'bir', 'de', 'ne'] },
+    { kod: '5:4', sag: 5, sol: 4, zorluk: 5, ad: 'Beşe dört',
+      not: 'İleri seviye; bileşik ızgara 20 alt bölüm.',
+      mnemonik: ['ya', 'vaş', 'ya', 'vaş', 'a', 'lı', 'şı', 'yor'] },
     { kod: '7:4', sag: 7, sol: 4, zorluk: 6, ad: 'Yediye dört',
       not: 'Usta seviye; yoğun bileşik ızgara.',
       mnemonik: ['bu', 'ra', 'sı', 'ar', 'tık', 'cid', 'di', 'iş', 'ol', 'du'] }
   ];
+
+  /*
+   * ZORLUK SIRASI literatürdeki zorluk indeksine dayanır: indeks = a × b
+   * (aralarında asal oranlarda OKEK'e eşit). Deutsch (1983) ve Summers,
+   * Rosenbaum, Burns & Ford (1993) sıralaması — Yokuş & Yokuş (2015, s.240)
+   * üzerinden: 3:2 = 6, 4:3 = 12, 5:3 = 15, 5:4 = 20, 7:4 = 28.
+   *
+   * DİKKAT — sezgiye aykırı: 5:3 (15), 5:4'ten (20) KOLAYDIR. Sayılar
+   * büyüdükçe zorlaşacağı varsayımıyla 5:4'ü öne almak öğrenciyi yanlış
+   * basamağa yönlendirir; katalog sırası bu yüzden indekse göre dizilidir.
+   * Bileşik ızgaradaki farklı nota uzunluğu sayısı da aynı yönü gösterir
+   * (5:3 → 3 farklı uzunluk, 5:4 → 4).
+   */
+  function zorlukIndeksi(oran) {
+    var o = typeof oran === 'string' ? oranBul(oran) : oran;
+    return o ? o.sag * o.sol : 0;
+  }
 
   function obeb(a, b) {
     a = Math.abs(a); b = Math.abs(b);
@@ -262,6 +279,38 @@
     };
   }
 
+  /**
+   * OYNANABİLİRLİK — bileşik ızgaradaki en küçük boşluk.
+   *
+   * Poliritimde iki elin vuruşları birbirine çok yaklaşabilir; bileşik
+   * ızgaranın bir adımı en küçük boşluktur (a:b aralarında asalsa daima).
+   * İki vuruş ~100 ms'nin altına düşünce kulak bunu tek olay ("flam")
+   * olarak duyar ve iki eli ayrı ayrı yerleştirmek fiziksel olarak
+   * imkânsızlaşır — skor beceriyi değil el hızı sınırını ölçer.
+   *
+   * Bu, pencere kırpmasından FARKLI bir sınır: pencere tek elin kendi
+   * hedefleri arasında karışmayı önler, bu ise iki el arasındaki
+   * fiziksel yakınlığı denetler.
+   *
+   * @returns {{adimMs:number, oynanabilir:boolean, rahat:boolean, onerilenUstBpm:number}}
+   */
+  function oynanabilirlik(oran, bpm, referans) {
+    var o = typeof oran === 'string' ? oranBul(oran) : oran;
+    if (!o) { return { adimMs: 0, oynanabilir: true, rahat: true, onerilenUstBpm: 0 }; }
+    var donguSn = donguSuresi(o, bpm, referans);
+    var bolum = okek(o.sag, o.sol);
+    var adimMs = (donguSn / bolum) * 1000;
+    /* Aynı adım süresini 150 ms'ye çıkaran tempo: kolaylık için ters çözüm */
+    var refSayi = (referans === 'sol') ? o.sol : o.sag;
+    var onerilenUstBpm = Math.floor((60 * refSayi * 1000) / (150 * bolum));
+    return {
+      adimMs: Math.round(adimMs * 10) / 10,
+      oynanabilir: adimMs >= 100,     // altında iki vuruş tek olay duyulur
+      rahat: adimMs >= 150,           // acemi için önerilen taban
+      onerilenUstBpm: onerilenUstBpm
+    };
+  }
+
   /** Ardışık vuruşların ortalama aralığı (saniye). */
   function ortalamaAralik(taplar) {
     if (!taplar || taplar.length < 2) { return 0; }
@@ -448,6 +497,7 @@
     obeb: obeb,
     okek: okek,
     oranBul: oranBul,
+    zorlukIndeksi: zorlukIndeksi,
     donguSuresi: donguSuresi,
     hedefleriUret: hedefleriUret,
     izgara: izgara,
@@ -455,6 +505,7 @@
     mnemonikHaritasi: mnemonikHaritasi,
     eliDegerlendir: eliDegerlendir,
     etkinPencere: etkinPencere,
+    oynanabilirlik: oynanabilirlik,
     ortalamaAralik: ortalamaAralik,
     oranHatasi: oranHatasi,
     fazKaymasiOlc: fazKaymasiOlc,

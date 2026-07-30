@@ -192,6 +192,76 @@ test('ortak downbeat iki elde AYRI AYRI sayılır', () => {
   assert.equal(d.skor, 100, 'kusursuz oyun 100 vermeli');
 });
 
+console.log('\n— Zorluk sırası (literatür indeksi) —');
+test('katalog sırası zorluk indeksine (a×b) göre artan', () => {
+  /*
+   * Deutsch (1983) / Summers ark. (1993) indeksi = a × b.
+   * Sezgiye aykırı olan yer: 5:3 (15) < 5:4 (20). Sayı büyüklüğüne göre
+   * sıralamak öğrenciyi yanlış basamağa yönlendiriyordu.
+   */
+  const indeksler = P.ORANLAR.map((o) => P.zorlukIndeksi(o.kod));
+  for (let i = 1; i < indeksler.length; i++) {
+    assert.ok(indeksler[i] >= indeksler[i - 1],
+      `${P.ORANLAR[i - 1].kod}(${indeksler[i - 1]}) → ${P.ORANLAR[i].kod}(${indeksler[i]}) sıra bozuk`);
+  }
+});
+
+test('bilinen indeks değerleri literatürle uyuşuyor', () => {
+  assert.equal(P.zorlukIndeksi('3:2'), 6);
+  assert.equal(P.zorlukIndeksi('4:3'), 12);
+  assert.equal(P.zorlukIndeksi('5:3'), 15);
+  assert.equal(P.zorlukIndeksi('5:4'), 20);
+  assert.equal(P.zorlukIndeksi('7:4'), 28);
+});
+
+test('5:3, 5:4\'ten ÖNCE gelir (kritik: sayı büyüklüğü aldatıcı)', () => {
+  const kodlar = P.ORANLAR.map((o) => o.kod);
+  assert.ok(kodlar.indexOf('5:3') < kodlar.indexOf('5:4'),
+    'katalog sırası: ' + kodlar.join(' → '));
+  // Merdiven bu sırayı izler: 5:3'ten sonra 5:4 gelir
+  assert.equal(P.sonrakiOran('5:3', 90), '5:4');
+});
+
+test('4:3 ve 3:4 aynı indeksi paylaşır ve yan yana durur', () => {
+  /* Aynı çevrim; fark yalnız hangi elin nabız sayıldığı. Bu yüzden
+     merdivende ardışıktır ve aralarına başka oran girmez. */
+  assert.equal(P.zorlukIndeksi('4:3'), P.zorlukIndeksi('3:4'));
+  assert.equal(P.sonrakiOran('4:3', 90), '3:4');
+  assert.equal(P.sonrakiOran('3:4', 90), '5:3');
+});
+
+console.log('\n— Oynanabilirlik (bileşik ızgara boşluğu) —');
+test('bileşik ızgara adımı = döngü / OKEK', () => {
+  // 3:2 @ 80 BPM ref sağ → döngü 2.25 sn, OKEK 6 → adım 375 ms
+  const p = P.oynanabilirlik('3:2', 80, 'sag');
+  yakin(p.adimMs, 375, 0.1);
+  assert.equal(p.oynanabilir, true);
+  assert.equal(p.rahat, true);
+});
+
+test('yüksek tempoda 7:4 fiziksel olarak oynanamaz hâle gelir', () => {
+  // 7:4 @ 200 BPM ref sağ → döngü 2.1 sn, OKEK 28 → adım 75 ms
+  const p = P.oynanabilirlik('7:4', 200, 'sag');
+  yakin(p.adimMs, 75, 0.1);
+  assert.equal(p.oynanabilir, false, 'adım ' + p.adimMs + ' ms, 100 ms altı flam olarak duyulur');
+});
+
+test('önerilen üst tempo, adımı 150 ms\'de tutar', () => {
+  ['3:2', '4:3', '5:3', '5:4', '7:4'].forEach((kod) => {
+    const ust = P.oynanabilirlik(kod, 80, 'sag').onerilenUstBpm;
+    const p = P.oynanabilirlik(kod, ust, 'sag');
+    assert.ok(p.adimMs >= 150 - 0.6, kod + ' @ ' + ust + ' BPM → adım ' + p.adimMs + ' ms');
+    assert.ok(p.rahat, kod + ' önerilen üst tempoda rahat olmalı');
+  });
+});
+
+test('oynanabilirlik referans ele göre değişir', () => {
+  // Aynı oran, referans sol el olunca döngü kısalır → adım daralır
+  const sag = P.oynanabilirlik('3:2', 80, 'sag');
+  const sol = P.oynanabilirlik('3:2', 80, 'sol');
+  assert.ok(sol.adimMs < sag.adimMs, `sağ ${sag.adimMs} ms, sol ${sol.adimMs} ms`);
+});
+
 console.log('\n— Etkin tolerans penceresi (tavan etkisine karşı) —');
 test('yavaş tempoda istenen pencere aynen kullanılır', () => {
   // 3:2 @ 80 BPM ref sağ → döngü 2.25 sn, hızlı el (3 vuruş) aralığı 750 ms.
