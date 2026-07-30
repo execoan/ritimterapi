@@ -215,7 +215,7 @@ function sd_grafigi_svg(array $seri): string
     <?php foreach ($seriler as $pKod => $seri):
         $k = $karsilastirma[$pKod] ?? null; ?>
     <div class="rpr-protokol">
-      <h3>🧭 <?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?>
+      <h3>🧭 <?= e(protokol_etiketi($pKod)) ?>
         <?php if ($pKod === 'aksak_bulma'): ?><span class="rozet rozet-gri">eğitilmeyen sonda</span><?php endif; ?>
       </h3>
       <?= skor_grafigi_svg($seri) ?>

@@ -1119,10 +1119,14 @@ function protocol_result_save(array $d): array
     $sdMs = ($sd === null || $sd === '' || !is_numeric($sd)) ? null : max(0, min(60000, (int)round((float)$sd)));
     $kalite = (string)($d['kalite'] ?? '');
     if (!isset(OLCUM_KALITE_LABELS[$kalite])) { $kalite = ''; }
-    db()->prepare('INSERT INTO protokol_sonuclari (ogrenci_id, protokol, bpm, skor, detay, notlar, kaynak, standart, sd_ms, kalite, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    // Varyant: aynı protokolün karşılaştırılamaz koşulu (poliritimde oran gibi).
+    // Serilerin karışmaması buna bağlı; kısa ve düzenli tutulur.
+    $varyant = preg_replace('/[^0-9A-Za-z:\/._-]/', '', (string)($d['varyant'] ?? ''));
+    $varyant = substr((string)$varyant, 0, 20);
+    db()->prepare('INSERT INTO protokol_sonuclari (ogrenci_id, protokol, bpm, skor, detay, notlar, kaynak, standart, sd_ms, kalite, varyant, created_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([$ogrenciId, $protokol, $bpm, $skor,
-                   $detay, trim((string)($d['notlar'] ?? '')), $kaynak, $standart, $sdMs, $kalite, now_str()]);
+                   $detay, trim((string)($d['notlar'] ?? '')), $kaynak, $standart, $sdMs, $kalite, $varyant, now_str()]);
     return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
 }
 
@@ -1238,13 +1242,34 @@ function measure_pick_series(array $hepsi, array $standart): array
 }
 
 /**
+ * Trend/karşılaştırma serisinin anahtarı. Varyant doluysa protokolden AYRI
+ * seri açılır — 3:2 poliritim skoru ile 7:4 skoru aynı çizgide okunamaz
+ * (bkz. db.php v16). Varyantsız kayıtlar eskisi gibi protokol adıyla gruplanır.
+ */
+function protokol_seri_anahtari(string $protokol, string $varyant): string
+{
+    return $varyant === '' ? $protokol : $protokol . '|' . $varyant;
+}
+
+/** Seri anahtarlarını PROTOKOL_LABELS sırasına, varyantları alfabetik dizer. */
+function protokol_seri_sirala(array &$seriler): void
+{
+    $sira = array_keys(PROTOKOL_LABELS);
+    uksort($seriler, function (string $a, string $b) use ($sira): int {
+        [$ap, $av] = array_pad(explode('|', $a, 2), 2, '');
+        [$bp, $bv] = array_pad(explode('|', $b, 2), 2, '');
+        return [array_search($ap, $sira), $av] <=> [array_search($bp, $sira), $bv];
+    });
+}
+
+/**
  * Dönemlik rapor için grup protokol gelişimi:
  * - haftalik: [protokol => [haftaPzt => ['toplam','adet']]]
  * - ogrenciler: [protokol => [ogrenci_kod => measure_compare(...) + 'standart']]
  */
 function report_group_protocols(int $grupId, string $from, string $to): array
 {
-    $st = db()->prepare("SELECT p.protokol, p.skor, p.standart, p.kalite, p.created_at, o.kod
+    $st = db()->prepare("SELECT p.protokol, p.varyant, p.skor, p.standart, p.kalite, p.created_at, o.kod
                            FROM protokol_sonuclari p
                            JOIN ogrenciler o ON o.id = p.ogrenci_id
                            JOIN grup_uyelikleri gu ON gu.ogrenci_id = o.id
@@ -1255,22 +1280,25 @@ function report_group_protocols(int $grupId, string $from, string $to): array
     $haftalik = [];
     $seriler = [];
     foreach ($st->fetchAll() as $r) {
+        $anahtar = protokol_seri_anahtari((string)$r['protokol'], (string)($r['varyant'] ?? ''));
         [$pzt] = week_bounds(substr($r['created_at'], 0, 10));
-        $haftalik[$r['protokol']][$pzt]['toplam'] = ($haftalik[$r['protokol']][$pzt]['toplam'] ?? 0) + (int)$r['skor'];
-        $haftalik[$r['protokol']][$pzt]['adet'] = ($haftalik[$r['protokol']][$pzt]['adet'] ?? 0) + 1;
+        $haftalik[$anahtar][$pzt]['toplam'] = ($haftalik[$anahtar][$pzt]['toplam'] ?? 0) + (int)$r['skor'];
+        $haftalik[$anahtar][$pzt]['adet'] = ($haftalik[$anahtar][$pzt]['adet'] ?? 0) + 1;
         $kayit = ['skor' => (int)$r['skor'], 'tarih' => substr((string)$r['created_at'], 0, 10),
                   'kalite' => (string)($r['kalite'] ?? '')];
-        $seriler[$r['protokol']][$r['kod']]['hepsi'][] = $kayit;
-        if ((int)$r['standart'] === 1) { $seriler[$r['protokol']][$r['kod']]['std'][] = $kayit; }
+        $seriler[$anahtar][$r['kod']]['hepsi'][] = $kayit;
+        if ((int)$r['standart'] === 1) { $seriler[$anahtar][$r['kod']]['std'][] = $kayit; }
     }
     $ogrenciler = [];
-    foreach ($seriler as $protokol => $kodlar) {
+    foreach ($seriler as $anahtar => $kodlar) {
         foreach ($kodlar as $kod => $s) {
             $std = $s['std'] ?? [];
             $dizi = measure_pick_series($s['hepsi'], $std);
-            $ogrenciler[$protokol][$kod] = measure_compare($dizi) + ['standart' => count($std) >= 2 ? 1 : 0];
+            $ogrenciler[$anahtar][$kod] = measure_compare($dizi) + ['standart' => count($std) >= 2 ? 1 : 0];
         }
     }
+    protokol_seri_sirala($haftalik);
+    protokol_seri_sirala($ogrenciler);
     return ['haftalik' => $haftalik, 'ogrenciler' => $ogrenciler];
 }
 
@@ -1310,14 +1338,15 @@ function report_group_practice(int $grupId, string $from, string $to): array
  */
 function student_protocol_series(int $ogrenciId, string $from, string $to): array
 {
-    $st = db()->prepare('SELECT protokol, skor, sd_ms, standart, kalite, kaynak, created_at
+    $st = db()->prepare('SELECT protokol, varyant, skor, sd_ms, standart, kalite, kaynak, created_at
                            FROM protokol_sonuclari
                           WHERE ogrenci_id = ? AND date(created_at) BETWEEN ? AND ?
                           ORDER BY created_at, id');
     $st->execute([$ogrenciId, $from, $to]);
     $seriler = [];
     foreach ($st->fetchAll() as $r) {
-        $seriler[$r['protokol']][] = [
+        $anahtar = protokol_seri_anahtari((string)$r['protokol'], (string)($r['varyant'] ?? ''));
+        $seriler[$anahtar][] = [
             'tarih'    => substr((string)$r['created_at'], 0, 10),
             'skor'     => (int)$r['skor'],
             'sd_ms'    => $r['sd_ms'] !== null ? (int)$r['sd_ms'] : null,
@@ -1326,7 +1355,7 @@ function student_protocol_series(int $ogrenciId, string $from, string $to): arra
             'kaynak'   => (string)($r['kaynak'] ?? 'atolye'),
         ];
     }
-    uksort($seriler, fn($a, $b) => array_search($a, array_keys(PROTOKOL_LABELS)) <=> array_search($b, array_keys(PROTOKOL_LABELS)));
+    protokol_seri_sirala($seriler);
     return $seriler;
 }
 

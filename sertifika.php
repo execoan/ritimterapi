@@ -109,7 +109,7 @@ require APP_DIR . '/includes/view/header.php';
           foreach ($olcumler as $pKod => $v):
               if (empty($v['standart'])) { $karisikVar = true; } ?>
           <tr>
-            <td class="sol"><?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?><?= !empty($v['standart']) ? ' 📏' : '' ?></td>
+            <td class="sol"><?= e(protokol_etiketi($pKod)) ?><?= !empty($v['standart']) ? ' 📏' : '' ?></td>
             <td><?= (int)$v['ilk'] ?> / 100 <span class="olcum-tarih">(<?= e(format_date_tr($v['ilk_tarih'], false)) ?>)</span></td>
             <td><?= (int)$v['son'] ?> / 100 <span class="olcum-tarih">(<?= e(format_date_tr($v['son_tarih'], false)) ?>)</span></td>
           </tr>

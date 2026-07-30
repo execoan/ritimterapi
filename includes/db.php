@@ -486,6 +486,16 @@ function run_migrations(): void
             );
             CREATE INDEX ix_on_kayit_durum ON on_kayitlar(durum, created_at);
         ",
+
+        // v16 — ölçüm VARYANTI. Aynı protokolün karşılaştırılamaz koşulları olur:
+        //        poliritimde 3:2 ile 7:4 aynı beceri değil, aksak usulde 9/8 ile
+        //        4/4 aynı zorluk değil. Varyant boş kalırsa davranış eskisi gibi;
+        //        doluysa trend ve karşılaştırma AYRI seri olarak okunur. Bu ayrım
+        //        sonradan yapılamaz (kayıtlar karışınca geri alınamaz), o yüzden
+        //        varyantlı ilk protokolle birlikte açılıyor.
+        16 => "
+            ALTER TABLE protokol_sonuclari ADD COLUMN varyant TEXT NOT NULL DEFAULT '';
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {

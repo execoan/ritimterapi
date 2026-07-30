@@ -254,7 +254,7 @@ dogrula($y['durum'] !== 200 && !str_contains($y['govde'], 'PANEL_KULLANICILAR'),
    C) KİMLİK KAPISI (güvenlik)
    ================================================================= */
 bolum('Kimlik kapısı (çıkış yapılmışken)');
-foreach (['panel.php', 'ogrenciler.php', 'yedek.php', 'disa-aktar.php?tur=protokol', 'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php'] as $sayfa) {
+foreach (['panel.php', 'ogrenciler.php', 'yedek.php', 'disa-aktar.php?tur=protokol', 'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php', 'poliritim.php'] as $sayfa) {
     $y = git_($sayfa, $jar);
     dogrula($y['durum'] >= 300 && $y['durum'] < 400 && str_contains($y['yer'], 'giris.php'),
         "{$sayfa} girişe yönlendiriyor", 'durum ' . $y['durum']);
@@ -299,7 +299,7 @@ dogrula($y['durum'] === 200 && !str_contains($y['govde'], 'Beklenmeyen bir sorun
    ================================================================= */
 bolum('Çekirdek sayfalar (giriş sonrası)');
 $sayfalar = ['gruplar.php', 'ogrenciler.php', 'teknikler.php', 'sablonlar.php', 'ev-programi.php',
-             'metronom.php', 'motor-studyo.php', 'grup-atolyesi.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
+             'metronom.php', 'motor-studyo.php', 'poliritim.php', 'grup-atolyesi.php', 'oturumlar.php', 'raporlar.php', 'site.php', 'yedek.php', 'calismalar.php',
              'plan.php'];
 foreach ($sayfalar as $sayfa) {
     $y = git_($sayfa, $jar);
@@ -334,7 +334,7 @@ try {
     $teknikAdet = (int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn();
     $pdo = null;
 } catch (Throwable $e) { $surum = -1; $teknikAdet = -1; }
-dogrula($surum === 15, 'göçler uygulanmış (user_version=15)', 'bulunan: ' . $surum);
+dogrula($surum === 16, 'göçler uygulanmış (user_version=16)', 'bulunan: ' . $surum);
 dogrula($teknikAdet >= 18, 'teknik kütüphanesi seed edilmiş', 'adet: ' . $teknikAdet);
 dogrula(str_contains(git_('teknikler.php', $jar)['govde'], 'Metronoma eşlik'), 'seed içeriği sayfada görünüyor');
 $grupAtolyesi = git_('grup-atolyesi.php', $jar)['govde'];
@@ -679,6 +679,46 @@ foreach ([[52, 1], [83, 1]] as [$skor, $std]) {
 }
 $og = git_('ogrenci.php?id=' . $ogrenciId, $jar)['govde'];
 dogrula(str_contains($og, '83') && str_contains($og, "\u{1F4CF}"), 'protokol sonuçları öğrenci sayfasında (📏 işaretli)');
+
+bolum('Poliritim stüdyosu ve ölçüm varyantı (db v16)');
+$t = csrf_al('poliritim.php', $jar);
+/* İstemci başka bir protokol adı göndermeye çalışsa da sunucu poliritim'e sabitler */
+gonder('poliritim.php', ['csrf_token' => $t, 'islem' => 'sonuc_kaydet', 'ogrenci_id' => $ogrenciId,
+                         'protokol' => 'vurus_tutturma', 'varyant' => '3:2', 'skor' => 74,
+                         'bpm' => 80, 'sd_ms' => 31, 'detay' => '{"oran":"3:2"}', 'standart' => 1], $jar);
+$t = csrf_al('poliritim.php', $jar);
+gonder('poliritim.php', ['csrf_token' => $t, 'islem' => 'sonuc_kaydet', 'ogrenci_id' => $ogrenciId,
+                         'varyant' => '7:4', 'skor' => 22, 'bpm' => 80,
+                         'sd_ms' => 96, 'detay' => '{"oran":"7:4"}', 'standart' => 1], $jar);
+$pdo = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$poliSatirlar = $pdo->query("SELECT protokol, varyant, skor FROM protokol_sonuclari
+                              WHERE protokol = 'poliritim' ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+dogrula(count($poliSatirlar) === 2
+    && $poliSatirlar[0]['varyant'] === '3:2' && $poliSatirlar[1]['varyant'] === '7:4',
+    'poliritim sonucu varyantıyla (oran) kaydediliyor',
+    json_encode($poliSatirlar, JSON_UNESCAPED_UNICODE));
+dogrula(count(array_filter($poliSatirlar, fn($r) => $r['protokol'] !== 'poliritim')) === 0,
+    'istemcinin gönderdiği protokol adı yok sayılıyor (sunucuda sabit)');
+$sahteVaryant = $pdo->query("SELECT COUNT(*) FROM protokol_sonuclari WHERE varyant LIKE '%<%'")->fetchColumn();
+$pdo = null;
+dogrula((int)$sahteVaryant === 0, 'varyant alanı süzülüyor');
+$og = git_('ogrenci.php?id=' . $ogrenciId, $jar)['govde'];
+dogrula(str_contains($og, 'Poliritim · 3:2') && str_contains($og, 'Poliritim · 7:4'),
+    'öğrenci sayfasında 3:2 ve 7:4 AYRI seri olarak listeleniyor (karışmıyor)');
+$poliSayfa = git_('poliritim.php', $jar)['govde'];
+dogrula(str_contains($poliSayfa, 'poliritim-cekirdegi.js') && str_contains($poliSayfa, 'prSagPad')
+    && str_contains($poliSayfa, 'prSolPad'),
+    'poliritim sayfası çekirdeği ve iki el padini yüklüyor');
+/* 'terapi' ve 'tanı' bilinçli olarak taranmaz: ikisi de yalnız üst menüden
+   gelir (RitimTerapi markası ve "Tanıtım Sitesi" bağlantısı) ve CLAUDE.md §2
+   uygulama içi adı açıkça meşru sayar. Taranan sözcükler kabukta hiç geçmez. */
+$yasakliPoli = array_values(array_filter(
+    ['tedavi', 'hasta', 'danışan', 'DEHB', 'semptom', 'iyileşme', 'dikkat eksikliği',
+     'titreşim', 'rezonans', 'hücresel'],
+    fn($k) => mb_stripos($poliSayfa, $k) !== false));
+dogrula(!$yasakliPoli, 'poliritim sayfasında kilitli dil temiz (CLAUDE.md §2)', implode(', ', $yasakliPoli));
+dogrula(str_contains($poliSayfa, 'veli raporuna yansıtılmaz'),
+    'poliritim skorunun veli raporuna gitmediği sayfada yazılı');
 
 bolum('Belgeler ve kilitli dil (CLAUDE.md §2)');
 $sert = git_('sertifika.php?ogrenci_id=' . $ogrenciId . '&olcumler=1', $jar)['govde'];

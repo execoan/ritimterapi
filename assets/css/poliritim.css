@@ -1,0 +1,183 @@
+/* ============================================================
+   Poliritim Stüdyosu — iki elin bağımsız ritmi
+   Renk sözleşmesi: SAĞ el = camgöbeği, SOL el = eflatun, ORTAK = amber.
+   Bu üç renk sayfanın her yerinde (ızgara, daire, padlar, sonuç) aynıdır;
+   öğrenci rengi öğrenir, etiketi okumak zorunda kalmaz.
+   ============================================================ */
+
+:root {
+  --pr-sag: #22d3ee;
+  --pr-sag-koyu: #0e7490;
+  --pr-sol: #c084fc;
+  --pr-sol-koyu: #7e22ce;
+  --pr-ortak: #fbbf24;
+}
+
+.pr-sayfa-baslik { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+
+/* ---------- Oran seçici ---------- */
+.pr-oranlar { display: flex; flex-wrap: wrap; gap: .5rem; margin: .2rem 0 .6rem; }
+.pr-oran-btn {
+  display: flex; flex-direction: column; gap: .1rem; align-items: flex-start;
+  padding: .5rem .7rem; border: 2px solid var(--cizgi); border-radius: 12px;
+  background: var(--kart-zemin); color: inherit; cursor: pointer; text-align: left;
+  transition: border-color .15s, transform .15s, background .15s;
+}
+.pr-oran-btn:hover { transform: translateY(-2px); border-color: var(--pr-sag); }
+.pr-oran-btn[aria-pressed="true"] {
+  border-color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent);
+}
+.pr-oran-btn b { font-size: 1.05rem; letter-spacing: .02em; }
+.pr-oran-btn small { opacity: .75; font-size: .74rem; }
+.pr-oran-zorluk { display: inline-flex; gap: 2px; margin-top: .15rem; }
+.pr-oran-zorluk i { width: 6px; height: 6px; border-radius: 50%; background: var(--cizgi); }
+.pr-oran-zorluk i.dolu { background: var(--amber); }
+
+/* ---------- Aşama merdiveni (önce sağ el, sonra sol el) ---------- */
+.pr-asamalar { display: flex; gap: .4rem; flex-wrap: wrap; margin: .5rem 0; }
+.pr-asama {
+  flex: 1 1 140px; padding: .5rem .65rem; border-radius: 10px;
+  border: 1px solid var(--cizgi); background: var(--zemin);
+  font-size: .8rem; line-height: 1.35; opacity: .55; transition: opacity .2s, border-color .2s;
+}
+.pr-asama strong { display: block; font-size: .84rem; }
+.pr-asama.pr-asama-aktif { opacity: 1; border-color: var(--amber); box-shadow: 0 0 0 2px color-mix(in srgb, var(--amber) 30%, transparent); }
+.pr-asama.pr-asama-bitti { opacity: .85; border-color: var(--yesil); }
+.pr-asama-bitti strong::after { content: ' ✓'; color: var(--yesil); }
+
+/* ---------- Bileşik ızgara: kullanıcının tarif ettiği "kareye bölünmüş" görsel ---------- */
+/* Yoğun oranlar (7:4 → 28 hücre) telefonda 8 px'lik hücrelere düşüyordu:
+   ızgara KENDİ İÇİNDE yatay kayar, sayfa gövdesi asla kaymaz. */
+.pr-izgara-sar { margin: .6rem 0; min-width: 0; }
+.pr-izgara-kaydir { min-width: 0; overflow-x: auto; overflow-y: hidden; }
+.pr-izgara {
+  position: relative;                /* imleç buna göre konumlanır — kaydırmayla birlikte gider */
+  display: grid; gap: 3px; border-radius: 12px;
+  background: var(--cizgi); padding: 3px; min-width: max-content;
+}
+.pr-hucre {
+  position: relative; min-height: 54px; min-width: 22px; border-radius: 8px;
+  background: var(--zemin); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  font-size: .66rem; color: var(--metin-soluk);
+}
+.pr-hucre-no { position: absolute; top: 3px; left: 5px; font-size: .6rem; opacity: .45; }
+/* 12'den çok hücrede numaralar okunmaz hâle geliyor; sesler yeterli işaret */
+.pr-izgara-yogun .pr-hucre-no { display: none; }
+.pr-izgara-yogun .pr-isaret { width: 78%; }
+/* Vuruş işaretleri: üst şerit sağ el, alt şerit sol el */
+.pr-isaret { width: 60%; height: 9px; border-radius: 5px; background: transparent; }
+.pr-isaret-sag.dolu { background: var(--pr-sag); }
+.pr-isaret-sol.dolu { background: var(--pr-sol); }
+.pr-hucre-ortak { background: color-mix(in srgb, var(--pr-ortak) 18%, var(--zemin)); }
+.pr-hucre-ortak .pr-isaret.dolu { background: var(--pr-ortak); }
+
+/* Çalan hücre: imleç geçtiğinde parlar */
+.pr-hucre.pr-simdi { box-shadow: inset 0 0 0 2px var(--amber); background: color-mix(in srgb, var(--amber) 12%, var(--zemin)); }
+
+/* Kaydırılan imleç çizgisi — ızgaranın İÇİNDE, böylece kaydırmada hizası bozulmaz */
+.pr-imlec {
+  position: absolute; top: 3px; bottom: 3px; width: 2px; background: var(--amber);
+  border-radius: 2px; pointer-events: none; opacity: 0; transform: translateX(-1px);
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--amber) 55%, transparent);
+  z-index: 2;
+}
+.pr-imlec.pr-imlec-acik { opacity: 1; }
+
+/* ---------- Daire görselleştirmesi ---------- */
+.pr-gorseller { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 1rem; align-items: center; }
+.pr-gorseller > * { min-width: 0; }
+@media (max-width: 780px) { .pr-gorseller { grid-template-columns: 1fr; } }
+.pr-daire-sar { display: flex; justify-content: center; }
+.pr-daire { width: 100%; max-width: 240px; height: auto; }
+.pr-daire-nokta { transition: r .08s, opacity .08s; }
+.pr-daire-nokta.pr-parla { opacity: 1; }
+
+/* ---------- Padlar ---------- */
+.pr-padlar { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; margin: .8rem 0 .4rem; }
+.pr-pad {
+  position: relative; overflow: hidden; padding: 1.1rem .8rem; border-radius: 16px;
+  border: 3px solid var(--cizgi); background: var(--zemin); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: .25rem;
+  font-weight: 700; letter-spacing: .04em; user-select: none;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: transform .06s, box-shadow .12s, border-color .12s;
+}
+.pr-pad kbd {
+  font: inherit; font-size: .78rem; padding: .1rem .45rem; border-radius: 6px;
+  background: var(--cizgi); border: 0;
+}
+.pr-pad small { font-weight: 500; font-size: .72rem; opacity: .75; }
+.pr-pad-sol { border-color: color-mix(in srgb, var(--pr-sol) 55%, transparent); }
+.pr-pad-sag { border-color: color-mix(in srgb, var(--pr-sag) 55%, transparent); }
+.pr-pad-sol .pr-pad-ad { color: var(--pr-sol); }
+.pr-pad-sag .pr-pad-ad { color: var(--pr-sag); }
+.pr-pad:active, .pr-pad.pr-pad-vuruldu { transform: scale(.97); }
+.pr-pad-sol.pr-pad-vuruldu { box-shadow: 0 0 0 4px color-mix(in srgb, var(--pr-sol) 45%, transparent); }
+.pr-pad-sag.pr-pad-vuruldu { box-shadow: 0 0 0 4px color-mix(in srgb, var(--pr-sag) 45%, transparent); }
+/* Bu aşamada kullanılmayan el soluk durur */
+.pr-pad[data-pasif="1"] { opacity: .35; cursor: default; }
+
+/* Vuruş halkası: her dokunuşta dışa açılan iz */
+.pr-dalga {
+  position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; pointer-events: none; animation: pr-dalga-ac .5s ease-out forwards;
+}
+@keyframes pr-dalga-ac {
+  from { transform: scale(1); opacity: .55; }
+  to   { transform: scale(11); opacity: 0; }
+}
+
+/* ---------- Sahne / sayaç ---------- */
+.pr-sahne-ust { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.pr-faz { font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; color: var(--metin-soluk); }
+.pr-buyuk-sayac { font-size: 2.6rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.pr-dongu-sayaci { font-size: .82rem; color: var(--metin-soluk); font-variant-numeric: tabular-nums; }
+
+/* ---------- Canlı geri bildirim ---------- */
+.pr-canli { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: .5rem; }
+.pr-canli-oge { flex: 1 1 120px; }
+.pr-canli-oge b { display: block; font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+.pr-canli-oge span { font-size: .72rem; color: var(--metin-soluk); }
+
+/* ---------- Sonuç ---------- */
+.pr-skor-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: .7rem; margin: .6rem 0; }
+.pr-skor-grid > div { padding: .55rem .7rem; border-radius: 10px; background: var(--zemin); }
+.pr-skor-grid strong { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.pr-skor-grid span { font-size: .7rem; color: var(--metin-soluk); }
+.pr-ana-skor { grid-column: span 2; background: color-mix(in srgb, var(--amber) 14%, var(--zemin)) !important; }
+.pr-ana-skor strong { font-size: 2.2rem; }
+
+.pr-el-sonuclar { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+@media (max-width: 620px) { .pr-el-sonuclar, .pr-padlar { grid-template-columns: 1fr; } }
+.pr-el-sonuclar article { padding: .6rem .75rem; border-radius: 10px; border: 1px solid var(--cizgi); }
+.pr-el-sonuclar article h3 { margin: 0 0 .3rem; font-size: .9rem; }
+.pr-el-sag { border-left: 4px solid var(--pr-sag); }
+.pr-el-sol { border-left: 4px solid var(--pr-sol); }
+.pr-el-satir { display: flex; justify-content: space-between; font-size: .8rem; padding: .1rem 0; }
+.pr-el-satir span { color: var(--metin-soluk); }
+
+/* Sapma dağılımı: her vuruş bir nokta, orta çizgi = tam zamanında */
+.pr-sapma-grafik { position: relative; height: 66px; margin: .5rem 0; border-radius: 8px; background: var(--zemin); overflow: hidden; }
+.pr-sapma-orta { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: var(--cizgi); }
+.pr-sapma-nokta { position: absolute; width: 8px; height: 8px; border-radius: 50%; margin: -4px 0 0 -4px; opacity: .8; }
+.pr-sapma-etiket { position: absolute; bottom: 2px; font-size: .62rem; color: var(--metin-soluk); }
+
+.pr-yorum { font-size: .84rem; line-height: 1.5; }
+.pr-mnemonik {
+  display: inline-flex; gap: .35rem; flex-wrap: wrap; align-items: center;
+  padding: .4rem .6rem; border-radius: 10px; background: var(--zemin); font-size: .9rem;
+}
+.pr-mnemonik b { padding: .1rem .3rem; border-radius: 5px; }
+.pr-mnemonik b[data-el="sag"] { background: color-mix(in srgb, var(--pr-sag) 30%, transparent); }
+.pr-mnemonik b[data-el="sol"] { background: color-mix(in srgb, var(--pr-sol) 30%, transparent); }
+.pr-mnemonik b[data-el="ortak"] { background: color-mix(in srgb, var(--pr-ortak) 35%, transparent); }
+
+.pr-kaydet-form { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; margin-top: .6rem; }
+
+/* Hareket duyarlılığı: animasyonu kapatmak isteyen kullanıcıya saygı */
+@media (prefers-reduced-motion: reduce) {
+  .pr-dalga { animation: none; opacity: 0; }
+  .pr-oran-btn:hover { transform: none; }
+  .pr-imlec { transition: none; }
+}

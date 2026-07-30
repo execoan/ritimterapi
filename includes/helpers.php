@@ -214,7 +214,20 @@ const KATILIM_LABELS = ['katildi' => 'Katıldı', 'gec' => 'Geç geldi', 'gelmed
 const GRUP_TUR_LABELS = ['grup' => 'Grup dersi', 'ozel' => 'Özel ders'];
 const PROTOKOL_LABELS = ['vurus_tutturma' => 'Vuruş Tutturma', 'bpm_bulma' => 'BPM Bulma',
                          'ritim_okuma' => 'Ritim Okuma', 'spontan_tempo' => 'Spontan Tempo',
-                         'aksak_bulma' => 'Aksak Vuruş Algısı', 'icsel_ritim' => 'İçsel Ritim'];
+                         'aksak_bulma' => 'Aksak Vuruş Algısı', 'icsel_ritim' => 'İçsel Ritim',
+                         'poliritim' => 'Poliritim'];
+
+/**
+ * Seri anahtarını okunur etikete çevirir. Varyantlı protokoller "protokol|varyant"
+ * biçiminde anahtarlanır (bkz. db.php v16): 'poliritim|3:2' → 'Poliritim · 3:2'.
+ * Varyantsız anahtar eskisi gibi çalışır.
+ */
+function protokol_etiketi(string $anahtar): string
+{
+    [$kod, $varyant] = array_pad(explode('|', $anahtar, 2), 2, '');
+    $ad = PROTOKOL_LABELS[$kod] ?? $kod;
+    return $varyant === '' ? $ad : $ad . ' · ' . $varyant;
+}
 const EV_TUR_LABELS = ['serbest' => 'Serbest (işaretlemeli)', 'metronom' => 'Metronomlu süre',
                        'vurus_tutturma' => 'Vuruş Tutturma (mini)', 'ritim_okuma' => 'Ritim Okuma',
                        'icsel_ritim' => 'İçsel Ritim (mini)'];

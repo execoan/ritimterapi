@@ -91,7 +91,7 @@ require APP_DIR . '/includes/view/header.php';
      altında kalması "değişim yok" demek değildir — <em>ölçümle ayırt edilemiyor</em> demektir.</p>
   <?php foreach ($protokolRapor['haftalik'] as $pKod => $haftalar):
       ksort($haftalar); ?>
-  <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(PROTOKOL_LABELS[$pKod] ?? $pKod) ?>
+  <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(protokol_etiketi($pKod)) ?>
     <?php if ($pKod === 'aksak_bulma'): ?>
     <span class="rozet rozet-gri" title="Ev programında çalışılmayan, saf dinleme ölçümü">eğitilmeyen sonda</span>
     <?php endif; ?>

@@ -21,7 +21,7 @@ $yaz = fn(array $satir) => fputcsv($cikti, $satir, ';', '"', '\\');
 if ($tur === 'protokol') {
     // Ham ölçüler de dışa aktarılır: skor sabit kaymayı içinde taşır, asıl
     // analiz kararlılık (SD) ve detay JSON'u üzerinden yapılır.
-    $yaz(['Tarih', 'Saat', 'Öğrenci', 'Grup', 'Protokol', 'Skor (0-100)',
+    $yaz(['Tarih', 'Saat', 'Öğrenci', 'Grup', 'Protokol', 'Varyant', 'Skor (0-100)',
           'Kararlılık SD (ms)', 'BPM', 'Kaynak', 'Standart ölçüm', 'Kalibrasyon kalitesi',
           'Not', 'Ham veri (JSON)']);
     $st = db()->query('SELECT p.*, o.kod,
@@ -39,6 +39,7 @@ if ($tur === 'protokol') {
             $r['kod'],
             $r['grup_ad'] ?? '',
             PROTOKOL_LABELS[$r['protokol']] ?? $r['protokol'],
+            (string)($r['varyant'] ?? ''),
             (int)$r['skor'],
             $r['sd_ms'] !== null && $r['sd_ms'] !== '' ? (int)$r['sd_ms'] : '',
             $r['bpm'] !== null ? (int)$r['bpm'] : '',

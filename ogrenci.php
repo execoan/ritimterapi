@@ -314,11 +314,18 @@ require APP_DIR . '/includes/view/header.php';
     <div class="bos-durum">Henüz protokol kaydı yok. <a href="<?= e(url('metronom.php')) ?>">Metronom Stüdyosu</a>'nda
       vuruş tutturma veya BPM bulma çalışması yapıp bu öğrenciye kaydedin.</div>
   <?php else: ?>
-    <?php foreach (PROTOKOL_LABELS as $pKod => $pAd):
-        $serisi = array_values(array_filter($protokolSonuclari, fn($r) => $r['protokol'] === $pKod));
-        if (!$serisi) { continue; }
+    <?php
+    /* Varyant AYRI seri: 3:2 poliritim skoru ile 7:4 skoru aynı çubuk
+       grafikte okunamaz (bkz. db.php v16). Varyantsız protokoller eskisi gibi. */
+    $protokolSerileri = [];
+    foreach ($protokolSonuclari as $r) {
+        $protokolSerileri[protokol_seri_anahtari((string)$r['protokol'], (string)($r['varyant'] ?? ''))][] = $r;
+    }
+    protokol_seri_sirala($protokolSerileri);
+    ?>
+    <?php foreach ($protokolSerileri as $pKod => $serisi):
         $serisi = array_reverse($serisi); // eskiden yeniye trend ?>
-    <h3 style="margin-top:.8rem"><?= e($pAd) ?> — zaman içinde skor</h3>
+    <h3 style="margin-top:.8rem"><?= e(protokol_etiketi($pKod)) ?> — zaman içinde skor</h3>
     <div class="cubuk-satir" style="align-items:flex-end;gap:6px;height:74px;margin-bottom:.4rem">
       <?php foreach ($serisi as $r): ?>
       <div title="<?= e(format_date_tr(substr($r['created_at'], 0, 10))) ?> · <?= (int)$r['skor'] ?>/100<?= $r['bpm'] ? ' · ' . (int)$r['bpm'] . ' BPM' : '' ?>"
@@ -333,7 +340,7 @@ require APP_DIR . '/includes/view/header.php';
         <?php foreach ($protokolSonuclari as $r): ?>
         <tr>
           <td><?= e(format_date_tr(substr($r['created_at'], 0, 10))) ?> <?= e(substr($r['created_at'], 11, 5)) ?></td>
-          <td><?= e(PROTOKOL_LABELS[$r['protokol']] ?? $r['protokol']) ?></td>
+          <td><?= e(protokol_etiketi(protokol_seri_anahtari((string)$r['protokol'], (string)($r['varyant'] ?? '')))) ?></td>
           <td class="sayi"><?= $r['bpm'] ? (int)$r['bpm'] : '—' ?></td>
           <td class="sayi"><strong><?= (int)$r['skor'] ?></strong>/100<?= !empty($r['standart']) ? ' <span title="Standart koşullarda ölçüm (📏)">📏</span>' : '' ?></td>
           <td><?= e(mb_strimwidth((string)$r['notlar'], 0, 50, '…')) ?></td>
