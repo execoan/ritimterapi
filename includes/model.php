@@ -1415,6 +1415,11 @@ const ON_KAYIT_KITLE_LABELS = [
     'cocuk' => 'Çocuk / genç (8–15)', 'yetiskin' => 'Yetişkin (18+)',
     'belirtilmedi' => 'Belirtilmedi',
 ];
+const ON_KAYIT_DERS_TURU_LABELS = [
+    'grup' => 'Grup dersi',
+    'ozel' => 'Özel ders',
+    'kararsiz' => 'Kararsız / görüşmede belirlenecek',
+];
 
 /**
  * Tanıtım sitesindeki genel iletişim formundan gelen talebi kaydeder
@@ -1439,6 +1444,11 @@ function pre_registration_save(array $d): array
     }
     $kitle = (string)($d['kitle'] ?? 'belirtilmedi');
     if (!isset(ON_KAYIT_KITLE_LABELS[$kitle])) { $kitle = 'belirtilmedi'; }
+    $dersTuru = (string)($d['ders_turu'] ?? 'kararsiz');
+    if (!isset(ON_KAYIT_DERS_TURU_LABELS[$dersTuru])) { $dersTuru = 'kararsiz'; }
+    $ziyaretciMesaji = trim((string)($d['mesaj'] ?? ''));
+    $kayitMesaji = 'Ders tercihi: ' . ON_KAYIT_DERS_TURU_LABELS[$dersTuru]
+        . ($ziyaretciMesaji !== '' ? ' · ' . $ziyaretciMesaji : '');
 
     // Oturum başına saatlik sınır: aynı ziyaretçi formu doldurup durmasın
     $simdi = time();
@@ -1454,7 +1464,7 @@ function pre_registration_save(array $d): array
             mb_substr($ad, 0, 80),
             mb_substr($iletisim, 0, 120),
             $kitle,
-            mb_substr(trim((string)($d['mesaj'] ?? '')), 0, 600),
+            mb_substr($kayitMesaji, 0, 600),
             mb_substr(trim((string)($d['profil'] ?? '')), 0, 300),
             'yeni',
             now_str(),

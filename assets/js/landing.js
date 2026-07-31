@@ -285,7 +285,7 @@
   })();
 
   /* ================================================================
-     ZAMAN ÖLÇEĞİ — kaydırma ilerledikçe 12 haftadan milisaniyeye
+     ZAMAN ÖLÇEĞİ — kaydırma ilerledikçe 2 aylık programdan milisaniyeye
      ================================================================ */
   (function zamanOlcegi() {
     var bolum = document.getElementById('olcek');
@@ -297,8 +297,8 @@
     var halkalar = bolum.querySelectorAll('.t-olcek-halka span');
 
     var ADIMLAR = [
-      { etiket: '12 HAFTA',      deger: '7 257 600 000 ms',
-        aciklama: 'Bir dönem böyle başlar: on iki hafta, yirmi dört oturum.' },
+      { etiket: '2 AY',          deger: '4 838 400 000 ms',
+        aciklama: 'Yoğunlaştırılmış akış: sekiz hafta, on altı oturum.' },
       { etiket: 'BİR OTURUM',    deger: '2 700 000 ms',
         aciklama: 'Kırk beş dakika. Isınma, hedef çalışma, oyun ve sakinleşme.' },
       { etiket: 'BİR ÇALIŞMA',   deger: '480 000 ms',
@@ -338,6 +338,201 @@
     window.addEventListener('scroll', guncelle, { passive: true });
     window.addEventListener('resize', guncelle);
     guncelle();
+  })();
+
+  /* ================================================================
+     TEK CANLI DENEY — EKSİK VURUŞ
+     Dört sesli vuruştan sonra beşinci vuruş susar. Ziyaretçi o sessiz
+     hedefi tek dokunuşla tamamlar. Sürgü, seviye veya teknik terim yoktur.
+     ================================================================ */
+  (function eksikVurus() {
+    var kok = document.getElementById('sessizMeydan');
+    if (!kok) { return; }
+
+    var baslatBtn = document.getElementById('meydanBaslat');
+    var vurBtn = document.getElementById('meydanVur');
+    var durumEl = document.getElementById('meydanDurum');
+    var etiketEl = document.getElementById('meydanEtiket');
+    var merkezEl = document.getElementById('meydanMerkez');
+    var altEl = document.getElementById('meydanAlt');
+    var halka = document.getElementById('meydanHalka');
+    var sonuc = document.getElementById('meydanSonuc');
+    var sonucBaslik = document.getElementById('meydanSonucBaslik');
+    var sonucDetay = document.getElementById('meydanSonucDetay');
+    var noktalar = Array.prototype.slice.call(document.querySelectorAll('#meydanNoktalar span'));
+    var profilAlan = document.getElementById('kayitProfil');
+    var profilBilgi = document.getElementById('profilEklendi');
+    var profilBilgiMetin = document.getElementById('profilEklendiMetin');
+
+    var TEMPO_HAVUZU = [78, 84, 90];
+    var aktif = false;
+    var vurusAcik = false;
+    var hedefZaman = 0;
+    var zamanlayicilar = [];
+
+    function zamanlayiciEkle(fn, gecikme) {
+      zamanlayicilar.push(setTimeout(fn, Math.max(0, gecikme)));
+    }
+
+    function zamanlayicilariTemizle() {
+      zamanlayicilar.forEach(clearTimeout);
+      zamanlayicilar = [];
+    }
+
+    function gorunumuSifirla() {
+      noktalar.forEach(function (n) { n.classList.remove('yandi', 'tamamlandi'); });
+      kok.classList.remove('dinliyor', 'sira-sende', 'bitti');
+      halka.classList.remove('vur', 'tamamlandi');
+      sonuc.hidden = true;
+      vurBtn.disabled = true;
+      vurusAcik = false;
+      merkezEl.textContent = 'HAZIR';
+      altEl.textContent = '4 ses + 1 sessizlik';
+      etiketEl.textContent = 'NASIL ÇALIŞIR?';
+    }
+
+    function gorselVurus(zaman, sira) {
+      zamanlayiciEkle(function () {
+        if (!aktif) { return; }
+        noktalar.forEach(function (n) { n.classList.remove('yandi'); });
+        if (noktalar[sira]) { noktalar[sira].classList.add('yandi', 'tamamlandi'); }
+        halka.classList.add('vur');
+        vurusuDuyur(sira === 0 ? 1.15 : 0.8);
+        zamanlayiciEkle(function () {
+          halka.classList.remove('vur');
+          if (noktalar[sira]) { noktalar[sira].classList.remove('yandi'); }
+        }, 130);
+      }, (zaman - ctx.currentTime) * 1000);
+    }
+
+    function sonucuFormaEkle(metin) {
+      if (profilAlan) { profilAlan.value = metin; }
+      if (profilBilgi && profilBilgiMetin) {
+        profilBilgi.hidden = false;
+        profilBilgiMetin.textContent = metin;
+      }
+    }
+
+    function bitir(sapmaMs) {
+      if (!aktif) { return; }
+      aktif = false;
+      vurusAcik = false;
+      zamanlayicilariTemizle();
+      vurBtn.disabled = true;
+      baslatBtn.textContent = '↻ Bir Daha Dene';
+      kok.classList.remove('dinliyor', 'sira-sende');
+      kok.classList.add('bitti');
+      sonuc.hidden = false;
+
+      if (sapmaMs === null) {
+        merkezEl.textContent = 'KAÇTI';
+        altEl.textContent = 'Bir sonraki tur hazır';
+        etiketEl.textContent = 'BU TUR TAMAMLANMADI';
+        durumEl.textContent = 'Sessiz vuruş geçti. Bir sonraki turda dört sesi dinleyip beşinciyi sen tamamla.';
+        sonucBaslik.textContent = 'Vuruşu duymadan sürdürmek ilk anda şaşırtabilir.';
+        sonucDetay.textContent = 'İstersen hemen yeniden deneyebilirsin.';
+        sonucuFormaEkle('');
+        return;
+      }
+
+      var mutlak = Math.round(Math.abs(sapmaMs));
+      var yon = sapmaMs < 0 ? 'erken' : 'geç';
+      noktalar.forEach(function (n) { n.classList.remove('yandi'); });
+      if (noktalar[4]) { noktalar[4].classList.add('yandi', 'tamamlandi'); }
+      halka.classList.add('tamamlandi');
+      merkezEl.textContent = 'BULDUN';
+      altEl.textContent = mutlak + ' ms ' + yon;
+      etiketEl.textContent = 'EKSİK VURUŞ TAMAMLANDI';
+
+      if (mutlak <= 70) {
+        sonucBaslik.textContent = 'Tam yerine çok yakın.';
+        durumEl.textContent = 'Sessizlik geldi ama nabız sende devam etti.';
+      } else if (mutlak <= 160) {
+        sonucBaslik.textContent = 'Nabzı korudun.';
+        durumEl.textContent = 'Eksik vuruşu ' + mutlak + ' ms ' + yon + ' tamamladın.';
+      } else {
+        sonucBaslik.textContent = 'Bir tur daha?';
+        durumEl.textContent = 'Vuruş ' + mutlak + ' ms ' + yon + ' geldi. Ritmi yeniden dinleyebilirsin.';
+      }
+      sonucDetay.textContent = mutlak + ' ms ' + yon + ' · cihaz gecikmesi bu kısa tanıtımda kalibre edilmez.';
+      sonucuFormaEkle('Eksik vuruş deneyi: ' + mutlak + ' ms ' + yon);
+    }
+
+    function vur() {
+      if (!aktif || !vurusAcik) { return; }
+      var sapma = (ctx.currentTime - hedefZaman) * 1000;
+      vurusAcik = false;
+      klik(ctx.currentTime, true, 'yumusak');
+      vurusuDuyur(1.25);
+      // Düğmeyi aynı click döngüsü içinde devre dışı bırakmak bazı
+      // tarayıcı/erişilebilirlik katmanlarında tıklamayı iptal edilmiş
+      // gösterebilir. Sonuç ekranını bir sonraki görevde aç.
+      setTimeout(function () { bitir(sapma); }, 0);
+    }
+
+    function durdur() {
+      zamanlayicilariTemizle();
+      aktif = false;
+      vurusAcik = false;
+      sesKes();
+      gorunumuSifirla();
+      baslatBtn.textContent = '▶ Ritmi Başlat';
+      durumEl.textContent = 'Tur durduruldu. Hazır olduğunda dört vuruşu yeniden dinleyebilirsin.';
+    }
+
+    function baslat() {
+      if (aktif) { durdur(); return; }
+      digerleriniKapat('eksikvurus');
+      sesHazirla();
+      sesKes();
+      gorunumuSifirla();
+
+      var bpm = TEMPO_HAVUZU[Math.floor(Math.random() * TEMPO_HAVUZU.length)];
+      var aralik = 60 / bpm;
+      var ilk = ctx.currentTime + 0.45;
+      hedefZaman = ilk + 4 * aralik;
+      aktif = true;
+      kok.classList.add('dinliyor');
+      baslatBtn.textContent = '■ Durdur';
+      etiketEl.textContent = 'DİNLİYORSUN';
+      merkezEl.textContent = 'DİNLE';
+      altEl.textContent = 'Vuruşları içinde say';
+      durumEl.textContent = 'Dört vuruş geliyor. Beşincisi sessiz kalacak.';
+
+      for (var i = 0; i < 4; i++) {
+        var zaman = ilk + i * aralik;
+        klik(zaman, i === 0, 'tahta');
+        gorselVurus(zaman, i);
+      }
+
+      var sonSes = ilk + 3 * aralik;
+      zamanlayiciEkle(function () {
+        if (!aktif) { return; }
+        kok.classList.remove('dinliyor');
+        kok.classList.add('sira-sende');
+        etiketEl.textContent = 'SIRA SENDE';
+        merkezEl.textContent = 'ŞİMDİ?';
+        altEl.textContent = 'Bir sonraki vuruş sessiz';
+        durumEl.textContent = 'Nabzı içinde sürdür. Eksik vuruşun geldiğini hissettiğinde dokun.';
+        vurBtn.disabled = false;
+        vurusAcik = true;
+      }, (sonSes - ctx.currentTime) * 1000 + 145);
+
+      zamanlayiciEkle(function () { bitir(null); }, (hedefZaman - ctx.currentTime) * 1000 + 1200);
+    }
+
+    baslatBtn.addEventListener('click', baslat);
+    vurBtn.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      vur();
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.code === 'Space' && aktif && vurusAcik) {
+        ev.preventDefault();
+        vur();
+      }
+    });
+    acikModuller.push({ ad: 'eksikvurus', durdur: function () { if (aktif) { durdur(); } } });
   })();
 
   /* ================================================================
@@ -1032,5 +1227,18 @@
 
     baslatBtn.addEventListener('click', baslat);
     acikModuller.push({ ad: 'herotempo', durdur: function () { if (calisiyor) { durdur(); } } });
+  })();
+
+  /* Program kartındaki seçim, iletişim formundaki ders tercihini hazırlar. */
+  (function dersTuruSecimi() {
+    var baglantilar = document.querySelectorAll('[data-ders-tercihi]');
+    if (!baglantilar.length) { return; }
+    baglantilar.forEach(function (baglanti) {
+      baglanti.addEventListener('click', function () {
+        var deger = baglanti.getAttribute('data-ders-tercihi');
+        var alan = document.querySelector('input[name="ders_turu"][value="' + deger + '"]');
+        if (alan) { alan.checked = true; }
+      });
+    });
   })();
 })();

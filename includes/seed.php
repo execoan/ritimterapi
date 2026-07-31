@@ -149,6 +149,40 @@ function seed_site(): void
 {
     $pdo = db();
     if ((int)$pdo->query('SELECT COUNT(*) FROM site_bolumleri')->fetchColumn() > 0) {
+        // Eski varsayılan 12 haftalık tanıtımı, yalnız kullanıcı tarafından
+        // değiştirilmemiş alanlarda 2 aylık yoğun programa taşı.
+        $baslikGuncelle = $pdo->prepare(
+            'UPDATE site_bolumleri SET baslik = ? WHERE anahtar = ? AND baslik = ?'
+        );
+        $baslikGuncelle->execute([
+            '2 Aylık Yoğunlaştırılmış Program',
+            'program',
+            'Program: iki iz, on iki hafta',
+        ]);
+        $metinGuncelle = $pdo->prepare(
+            'UPDATE site_icerik SET deger = ? WHERE anahtar = ? AND deger = ?'
+        );
+        foreach ([
+            ['8', 'sayi_1_deger', '12'],
+            ['haftalık yoğun program', 'sayi_1_etiket', 'haftalık program'],
+            ['16', 'sayi_2_deger', '24'],
+        ] as [$yeni, $anahtar, $eski]) {
+            $metinGuncelle->execute([$yeni, $anahtar, $eski]);
+        }
+        $eskiProgramAciklama = 'RitimOdak programı iki bağımsız izde yürür: öğrenci izi (8–15 yaş) ve yetişkin izi (18+). '
+            . 'Her hafta bir hedef, her oturumda planlı bir akış vardır; ilerleme kararları kayıtla verilir. '
+            . 'Katılım için ritim/müzik geçmişi gerekmez.';
+        $yeniProgramAciklama = 'RitimOdak yoğunlaştırılmış programı sekiz hafta boyunca iki bağımsız izde yürür: '
+            . 'öğrenci izi (8–15 yaş) ve yetişkin izi (18+). Haftada iki oturumla her hafta yeni bir hedef çalışılır; '
+            . 'ilerleme kararları kayıtla verilir. Katılım için ritim/müzik geçmişi gerekmez.';
+        $metinGuncelle->execute([$yeniProgramAciklama, 'program_aciklama', $eskiProgramAciklama]);
+        $eskiHeroAciklama = 'Küçük grup ritim atölyeleri: metronomla senkronizasyon, dur–devam oyunları, '
+            . 'ritim hafızası ve grup senkronisi. Her teknik, bilimsel literatürdeki karşılığıyla '
+            . 'birlikte kanıt düzeyi etiketiyle çalışılır — ne fazlası vaat edilir, ne eksiği söylenir.';
+        $yeniHeroAciklama = 'Özel ders ve küçük grup ritim programları: metronomla senkronizasyon, dur–devam oyunları, '
+            . 'ritim hafızası ve birlikte çalma. Her teknik, bilimsel literatürdeki karşılığıyla '
+            . 'birlikte kanıt düzeyi etiketiyle çalışılır — ne fazlası vaat edilir, ne eksiği söylenir.';
+        $metinGuncelle->execute([$yeniHeroAciklama, 'hero_aciklama', $eskiHeroAciklama]);
         // Sonradan eklenen bölümler mevcut kuruluma da (bir kez) eklenir.
         $pdo->exec("INSERT OR IGNORE INTO site_bolumleri (anahtar, baslik, sira, gorunur)
                     SELECT 'galeri', 'Atölyeden kareler',
@@ -176,7 +210,7 @@ function seed_site(): void
         // [anahtar, başlık, sıra]
         ['deney',       'Kulağını test et — canlı deneyler', 1],
         ['yontem',      'Atölyede bir oturum nasıl akar?', 2],
-        ['program',     'Program: iki iz, on iki hafta', 3],
+        ['program',     '2 Aylık Yoğunlaştırılmış Program', 3],
         ['bilim',       'Literatür ne söylüyor, atölyede nasıl yankılanıyor?', 4],
         ['nabiz',       'Dünyanın nabzı', 5],
         ['protokoller', 'Metronom modülü ve dikkat protokolleri', 6],
@@ -193,17 +227,17 @@ function seed_site(): void
     $metinler = [
         'hero_ustbaslik'  => 'RİTİM · DİKKAT · ÖZ-DÜZENLEME',
         'hero_baslik'     => "Vuruşu bul.\nRitmi koru.\nKendi temponu keşfet.",
-        'hero_aciklama'   => 'Küçük grup ritim atölyeleri: metronomla senkronizasyon, dur–devam oyunları, '
-                           . 'ritim hafızası ve grup senkronisi. Her teknik, bilimsel literatürdeki karşılığıyla '
+        'hero_aciklama'   => 'Özel ders ve küçük grup ritim programları: metronomla senkronizasyon, dur–devam oyunları, '
+                           . 'ritim hafızası ve birlikte çalma. Her teknik, bilimsel literatürdeki karşılığıyla '
                            . 'birlikte kanıt düzeyi etiketiyle çalışılır — ne fazlası vaat edilir, ne eksiği söylenir.',
         'serit_metin'     => 'SENKRONİZASYON · DÜRTÜ KONTROLÜ · ÇALIŞMA BELLEĞİ · BİLİŞSEL ESNEKLİK · '
                            . 'GRUP SENKRONİSİ · MOTOR KOORDİNASYON · KENDİNİ İFADE',
-        'sayi_1_deger'    => '12', 'sayi_1_etiket' => 'haftalık program',
-        'sayi_2_deger'    => '24', 'sayi_2_etiket' => 'oturumluk akış',
+        'sayi_1_deger'    => '8',  'sayi_1_etiket' => 'haftalık yoğun program',
+        'sayi_2_deger'    => '16', 'sayi_2_etiket' => 'oturumluk akış',
         'sayi_3_deger'    => '18', 'sayi_3_etiket' => 'teknik kütüphanede',
         'sayi_4_deger'    => '4',  'sayi_4_etiket' => 'kanıt düzeyi etiketi',
-        'program_aciklama' => 'RitimOdak programı iki bağımsız izde yürür: öğrenci izi (8–15 yaş) ve yetişkin izi (18+). '
-                           . 'Her hafta bir hedef, her oturumda planlı bir akış vardır; ilerleme kararları kayıtla verilir. '
+        'program_aciklama' => 'RitimOdak yoğunlaştırılmış programı sekiz hafta boyunca iki bağımsız izde yürür: öğrenci izi (8–15 yaş) ve yetişkin izi (18+). '
+                           . 'Haftada iki oturumla her hafta yeni bir hedef çalışılır; ilerleme kararları kayıtla verilir. '
                            . 'Katılım için ritim/müzik geçmişi gerekmez.',
         'bizkimiz_metin'  => 'RitimTerapi; fizik öğretmenliğinden gelen ölçme alışkanlığını, ritim atölyesi '
                            . 'eğitmenliğinin sahne enerjisiyle birleştiren bir eğitim girişimidir. Dalgalar, '

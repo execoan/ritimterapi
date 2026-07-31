@@ -56,7 +56,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RitimTerapi — Ritim, Dikkat ve Öz-Düzenleme Atölyesi</title>
-<meta name="description" content="Küçük grup ritim atölyeleri: bilimsel literatürden beslenen, kanıt düzeyi etiketli teknikler; şeffaf oturum kaydı ve raporlama.">
+<meta name="description" content="Özel ders ve küçük grup ritim programları: bilimsel literatürden beslenen, kanıt düzeyi etiketli teknikler; şeffaf oturum kaydı ve raporlama.">
 <meta name="theme-color" content="#0c0a09">
 <link rel="manifest" href="<?= e(url('manifest.json')) ?>">
 <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
@@ -72,7 +72,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <a class="t-marka" href="#ust"><?= metronom_svg('t-logo', 'tg') ?><span>RitimTerapi</span></a>
     <div class="t-nav-linkler">
       <?php foreach ($bolumler as $b): ?>
-      <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Deneyler', 'yontem' => 'Yöntem', 'program' => 'Program',
+      <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Canlı Deney', 'yontem' => 'Yöntem', 'program' => 'Program',
           'bilim' => 'Bilim', 'nabiz' => 'Nabız', 'protokoller' => 'Protokoller', 'moxo' => 'MOXO',
           'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'iletisim' => 'İletişim'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
@@ -140,7 +140,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
       <a class="t-hero-davet" href="#deney">
         <span class="t-hero-davet-nokta" aria-hidden="true"></span>
-        Şimdi dinleyin: saniyede kaç ses duyuyorsunuz? <b>Deneyi aç ↓</b>
+        Bir vuruş kaybolacak. Yerini bulabilir misiniz? <b>Hazır mısınız? ↓</b>
       </a>
       <div class="t-ekolayzer" id="ekolayzer" aria-hidden="true">
         <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
@@ -175,141 +175,68 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <section class="t-bolum t-deney-bolum" id="deney">
   <div class="t-deney-fon" aria-hidden="true"></div>
   <div class="t-kapsayici">
-    <p class="t-bolum-ustbaslik kayarak">ŞİMDİ DİNLEYİN</p>
-    <h2 class="kayarak"><?= e($bolum['baslik']) ?></h2>
-    <p class="t-bolum-aciklama kayarak"><?= e(site_text('deney_aciklama')) ?></p>
+    <p class="t-bolum-ustbaslik kayarak">7 SANİYELİK CANLI DENEY</p>
+    <h2 class="kayarak">Ritim sustuğunda, vuruş sende kalır mı?</h2>
+    <p class="t-bolum-aciklama kayarak">
+      Dört vuruşu dinle. Beşinci vuruş sessiz kalacak. Onu tam olması gereken yerde
+      tek dokunuşla sen tamamla.
+    </p>
 
-    <!-- ===== Deney 1: ritim → ton eşiği ===== -->
-    <article class="t-deney kayarak" id="deney1">
-      <div class="t-deney-bas">
-        <span class="t-deney-no">01</span>
+    <article class="t-tek-deney kayarak" id="sessizMeydan">
+      <div class="t-tek-deney-ust">
+        <span class="t-canli-rozet"><i aria-hidden="true"></i> CANLI SES</span>
         <div>
-          <h3>Saniyede kaç ses duyuyorsunuz?</h3>
-          <p class="t-deney-alt">Vuruşlar hızlandıkça bir yerde <em>saymayı bırakır, nota duymaya başlarsınız</em>.
-             O sınırı kendi kulağınızla bulun.</p>
+          <h3>Eksik vuruş</h3>
+          <p>Kulaklık gerekmez. Sesi açman ve tek bir kez dokunman yeterli.</p>
         </div>
+        <span class="t-tek-deney-sure">≈ 7 sn</span>
       </div>
 
-      <div class="t-deney-sahne">
-        <canvas class="t-dalga" id="d1Dalga" width="900" height="150" aria-hidden="true"></canvas>
-        <div class="t-deney-okuma">
-          <div class="t-deney-buyuk"><span id="d1Hz">4</span><small>vuruş / saniye</small></div>
-          <div class="t-deney-durum" id="d1Durum">Ayrı vuruşlar — sayabilirsiniz</div>
-          <div class="t-deney-nota" id="d1Nota" hidden></div>
-        </div>
-      </div>
-
-      <label class="t-kaydirac-satir">
-        <span>Yavaş</span>
-        <input type="range" id="d1Surgu" class="t-kaydirac" min="1" max="120" value="4" step="1"
-               aria-label="Saniyedeki vuruş sayısı">
-        <span>Hızlı</span>
-      </label>
-
-      <div class="t-deney-butonlar">
-        <button type="button" class="t-btn t-btn-dolu" id="d1Btn">▶ Deneyi Başlat</button>
-        <button type="button" class="t-btn t-btn-cerceve" id="d1Otomatik">⟳ Yavaştan hızlıya otomatik</button>
-        <button type="button" class="t-btn t-btn-cerceve" id="d1Isaretle">🎯 İşte burada tek sese döndü</button>
-      </div>
-
-      <p class="t-deney-bilgi">
-        <strong>Neden böyle?</strong> Ritim ve nota aslında aynı olgunun iki hızı. Ayrı ayrı duyduğunuz
-        vuruşlar saniyede yaklaşık <strong>20</strong>'yi geçince kulak onları tek tek ayıramaz ve
-        <strong>perde (ton)</strong> olarak algılar. Atölyede çalıştığımız her şey bu eşiğin
-        <em>altındaki</em> dünyada geçer: saniyeler, yarım saniyeler ve milisaniyeler.
-      </p>
-    </article>
-
-    <!-- ===== Deney 2: milisaniye hassasiyeti ===== -->
-    <article class="t-deney kayarak" id="deney2">
-      <div class="t-deney-bas">
-        <span class="t-deney-no">02</span>
-        <div>
-          <h3>Vuruşu ne kadar yakalıyorsunuz?</h3>
-          <p class="t-deney-alt">8 vuruş çalacak. Siz de birlikte vurun — her vuruşun kaç milisaniye
-             kaydığını göstereceğiz.</p>
-        </div>
-      </div>
-
-      <div class="t-deney-sahne t-deney-sahne-tap">
-        <button type="button" class="t-tap-pad" id="d2Pad">
-          <span id="d2PadYazi">VUR</span>
-          <small>boşluk tuşu da olur</small>
-        </button>
-        <div class="t-deney-okuma">
-          <div class="t-deney-buyuk"><span id="d2Sonuc">—</span><small>ortalama sapma (ms)</small></div>
-          <div class="t-deney-durum" id="d2Durum">Başlat'a basın, 4 vuruş hazırlık sayacağız.</div>
-          <div class="t-sapma-serit" id="d2Serit" aria-hidden="true"></div>
-        </div>
-      </div>
-
-      <div class="t-deney-butonlar">
-        <button type="button" class="t-btn t-btn-dolu" id="d2Btn">▶ Başlat</button>
-      </div>
-
-      <p class="t-deney-bilgi">
-        <strong>Ne anlama geliyor?</strong> İnsanlar metronoma genellikle birkaç on milisaniye
-        <em>önce</em> vurur; bu bilinen ve normal bir eğilimdir. Önemli olan tek bir vuruş değil,
-        vuruşların <strong>ne kadar tutarlı</strong> olduğudur. Bu sayfadaki hızlı gösterim
-        cihaz gecikmesini hesaba katmaz — atölyedeki ölçümde cihaz kalibre edilir ve
-        tutarlılık ayrıca hesaplanır. <em>Bu bir değerlendirme değildir.</em>
-      </p>
-    </article>
-
-    <!-- ===== Deney 3: aksayanı bul ===== -->
-    <article class="t-deney kayarak" id="deney3">
-      <div class="t-deney-bas">
-        <span class="t-deney-no">03</span>
-        <div>
-          <h3>Aksayanı duyabilir misiniz?</h3>
-          <p class="t-deney-alt">Altı vuruşluk bir dizi çalacak. Ya kusursuz düzenli olacak,
-             ya da bir vuruş azıcık kayacak. Hangisi?</p>
-        </div>
-      </div>
-
-      <div class="t-deney-sahne t-deney-sahne-aksak">
-        <div class="t-aksak-noktalar" id="d3Noktalar" aria-hidden="true">
-          <i></i><i></i><i></i><i></i><i></i><i></i>
-        </div>
-        <div class="t-deney-okuma">
-          <div class="t-deney-durum" id="d3Durum">Hazır olduğunuzda başlatın.</div>
-          <div class="t-aksak-cevaplar" id="d3Cevaplar" hidden>
-            <button type="button" class="t-btn t-btn-cerceve" data-cevap="duzenli">✓ Düzenliydi</button>
-            <button type="button" class="t-btn t-btn-cerceve" data-cevap="aksak">⚠ Aksadı</button>
+      <div class="t-tek-deney-sahne">
+        <div class="t-tek-deney-gorsel" aria-hidden="true">
+          <div class="t-ritim-yol" id="meydanNoktalar">
+            <span data-sira="0">1</span>
+            <span data-sira="1">2</span>
+            <span data-sira="2">3</span>
+            <span data-sira="3">4</span>
+            <span class="eksik" data-sira="4">?</span>
           </div>
-          <div class="t-aksak-skor" id="d3Skor"></div>
+          <div class="t-sessiz-halka" id="meydanHalka">
+            <i></i><i></i><i></i>
+            <strong id="meydanMerkez">HAZIR</strong>
+            <small id="meydanAlt">4 ses + 1 sessizlik</small>
+          </div>
+        </div>
+
+        <div class="t-tek-deney-panel">
+          <p class="t-meydan-etiket" id="meydanEtiket">NASIL ÇALIŞIR?</p>
+          <p class="t-meydan-durum" id="meydanDurum" role="status">
+            Başlatınca dört vuruş duyacaksın. Bir sonraki vuruş sessiz olacak;
+            tam o anda büyük düğmeye dokun.
+          </p>
+          <button type="button" class="t-btn t-btn-dolu t-btn-buyuk t-meydan-baslat" id="meydanBaslat">
+            ▶ Ritmi Başlat
+          </button>
+          <button type="button" class="t-meydan-vur" id="meydanVur" disabled>
+            <span>VURUŞU TAMAMLA</span>
+            <small>boşluk tuşu da olur</small>
+          </button>
+          <div class="t-meydan-sonuc" id="meydanSonuc" hidden>
+            <strong id="meydanSonucBaslik"></strong>
+            <span id="meydanSonucDetay"></span>
+          </div>
         </div>
       </div>
 
-      <div class="t-deney-butonlar">
-        <button type="button" class="t-btn t-btn-dolu" id="d3Btn">▶ 3 Tur Oyna</button>
+      <div class="t-tek-deney-alt">
+        <span>🎧 Ses tarayıcında üretilir</span>
+        <span>🔒 Otomatik kaydedilmez</span>
+        <span>◎ Bu bir değerlendirme değildir</span>
       </div>
-
-      <p class="t-deney-bilgi">
-        <strong>Kulak ne kadar hassas?</strong> Eğitimli dinleyiciler düzenli bir dizideki
-        yüzde birkaçlık kaymayı fark edebilir. Bu bir <em>algı</em> ölçümüdür; el hareketi
-        gerektirmez. Atölye yazılımında bunun kademeli zorluklu hâli var — ve programda
-        bilerek <strong>çalıştırmadığımız</strong> bir ölçüm olarak duruyor, çünkü karşılaştırma
-        yapabilmek için "eğitilmemiş" bir referans gerekiyor.
-      </p>
     </article>
-
-    <!-- ===== Ritim profili: üç deneyin ortak sonucu ===== -->
-    <div class="t-profil" id="ritimProfil" hidden>
-      <div class="t-profil-isik" aria-hidden="true"></div>
-      <p class="t-profil-ustbaslik">RİTİM PROFİLİN</p>
-      <div class="t-profil-rozetler" id="profilRozetler"></div>
-      <p class="t-profil-metin" id="profilMetin"></p>
-      <div class="t-profil-butonlar">
-        <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit" id="profilKayitBtn">→ Profilimle iletişime geç</a>
-        <button type="button" class="t-btn t-btn-cerceve" id="profilSifirla">↻ Deneyleri sıfırla</button>
-      </div>
-      <p class="t-profil-not">Bu profil yalnız tarayıcınızda oluşur; deney sonuçları hiçbir yere
-         kaydedilmez. Formu doldurursanız yalnız özet cümlesi talebinize eklenir.</p>
-    </div>
 
     <div class="t-deney-cta kayarak">
-      <p><?= e(site_text('deney_cta')) ?></p>
+      <p>Bir vuruşla başlıyor. Birlikte çalınca gerçek bir atölyeye dönüşüyor.</p>
       <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit">→ İletişime Geç</a>
     </div>
   </div>
@@ -320,9 +247,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
   <div class="t-olcek-sabit">
     <div class="t-olcek-halka" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="t-olcek-icerik">
-      <p class="t-olcek-etiket" id="olcekEtiket">12 HAFTA</p>
-      <div class="t-olcek-deger" id="olcekDeger">7 257 600 000 ms</div>
-      <p class="t-olcek-aciklama" id="olcekAciklama">Bir dönem böyle başlar: on iki hafta, yirmi dört oturum.</p>
+      <p class="t-olcek-etiket" id="olcekEtiket">2 AY</p>
+      <div class="t-olcek-deger" id="olcekDeger">4 838 400 000 ms</div>
+      <p class="t-olcek-aciklama" id="olcekAciklama">Yoğunlaştırılmış akış: sekiz hafta, on altı oturum.</p>
       <div class="t-olcek-cubuk"><i id="olcekDolu"></i></div>
       <p class="t-olcek-ipucu">↓ kaydırmaya devam edin</p>
     </div>
@@ -372,9 +299,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <div class="t-kart-dizi">
       <article class="t-kart kayarak" data-tilt>
         <div class="t-kart-ikon">🥁</div>
-        <h3>Küçük grup, canlı ritim</h3>
-        <p>4–6 kişilik gruplar; el davulu, pad ve beden perküsyonu. Isınma, temel zamanlama,
-           haftanın hedefi ve sakinleşme — planlı bir akış.</p>
+        <h3>Özel ders veya küçük grup</h3>
+        <p>Bire bir çalışmada kişisel tempo ve hedefler; küçük grupta ortak nabız, sıra alma ve
+           birlikte üretme öne çıkar. İki biçim de planlı bir oturum akışını izler.</p>
       </article>
       <article class="t-kart kayarak" data-tilt>
         <div class="t-kart-ikon">📚</div>
@@ -405,6 +332,46 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <h2 class="kayarak"><?= e($bolum['baslik']) ?></h2>
     <p class="t-bolum-aciklama kayarak"><?= e(site_text('program_aciklama')) ?></p>
 
+    <div class="t-program-ozet kayarak" aria-label="Program özeti">
+      <div><strong>8</strong><span>hafta</span></div>
+      <div><strong>16</strong><span>oturum</span></div>
+      <div><strong>2</strong><span>ders biçimi</span></div>
+      <div><strong>2</strong><span>yaş programı</span></div>
+    </div>
+
+    <h3 class="t-program-baslik kayarak"><span>1</span> Ders biçimini seçin</h3>
+    <div class="t-ders-turu-dizi">
+      <article class="t-ders-turu t-ders-turu-grup kayarak">
+        <div class="t-ders-turu-ikon" aria-hidden="true">🥁</div>
+        <div>
+          <p class="t-ders-turu-ust">BİRLİKTE ÜRETİM</p>
+          <h3>Grup Dersi</h3>
+          <p>Ortak nabzı dinleme, sırayla liderlik etme ve farklı ritim katmanlarını birlikte koruma üzerine kurulur.</p>
+          <ul>
+            <li>Çocuk ve gençlerde 4–6 kişi</li>
+            <li>Yetişkinlerde 4–8 kişi</li>
+            <li>Grup senkronisi ve birlikte çalma</li>
+          </ul>
+          <a class="t-ders-turu-link" href="#kayit" data-ders-tercihi="grup">Grup dersini seç →</a>
+        </div>
+      </article>
+      <article class="t-ders-turu t-ders-turu-ozel kayarak">
+        <div class="t-ders-turu-ikon" aria-hidden="true">🎧</div>
+        <div>
+          <p class="t-ders-turu-ust">KİŞİSEL TEMPO</p>
+          <h3>Özel Ders</h3>
+          <p>Tempo, zorluk ve çalışma sırası katılımcıya göre ayarlanır; eğitmenle bire bir geri bildirimle ilerler.</p>
+          <ul>
+            <li>Kişiye uygun başlangıç temposu</li>
+            <li>Esnek hedef ve ders planı</li>
+            <li>Bire bir ritim, koordinasyon ve okuma çalışması</li>
+          </ul>
+          <a class="t-ders-turu-link" href="#kayit" data-ders-tercihi="ozel">Özel dersi seç →</a>
+        </div>
+      </article>
+    </div>
+
+    <h3 class="t-program-baslik kayarak"><span>2</span> Katılımcıya uygun program izini seçin</h3>
     <div class="t-iz-dizi">
       <article class="t-iz kayarak" data-tilt>
         <div class="t-iz-bas">
@@ -412,8 +379,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
           <div><h3>Çocuk &amp; Genç</h3><p class="t-iz-alt">8–15 yaş · RitimOdak-Ö izi</p></div>
         </div>
         <ul class="t-iz-liste">
-          <li><b>45 dk</b> oturum · <b>4–6</b> kişilik grup</li>
-          <li>Haftada 2 uygulama, 12 haftalık kademeli akış</li>
+          <li><b>45 dk</b> oturum · özel ders veya <b>4–6</b> kişilik grup</li>
+          <li>Haftada 2 uygulama, 8 haftalık yoğunlaştırılmış akış</li>
           <li>Görsel kartlar, oyunlaştırılmış görevler, kısa yönergeler</li>
           <li>Ritim/müzik geçmişi gerekmez</li>
         </ul>
@@ -427,7 +394,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
           <div><h3>Yetişkin</h3><p class="t-iz-alt">18+ · RitimOdak-Y izi</p></div>
         </div>
         <ul class="t-iz-liste">
-          <li><b>60 dk</b> oturum · <b>4–8</b> kişilik grup</li>
+          <li><b>60 dk</b> oturum · özel ders veya <b>4–8</b> kişilik grup</li>
+          <li>Haftada 2 oturum, 8 haftalık yoğunlaştırılmış akış</li>
           <li>Her katılımcı bir gerçek yaşam hedefi seçer (odak bloğu, göreve dönüş…)</li>
           <li>Masa tapping seçeneği; iş/öğrenim simülasyonları</li>
           <li>Haftalık mikro uygulamalarla ev pratiği</li>
@@ -438,7 +406,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </article>
     </div>
 
-    <h3 class="t-alt-baslik kayarak">Standart oturum akışı (çocuk izi, 45 dk)</h3>
+    <h3 class="t-program-baslik kayarak"><span>3</span> Her oturumun anlaşılır bir omurgası vardır</h3>
+    <p class="t-program-yardim kayarak">Aşağıdaki örnek çocuk programının 45 dakikalık akışıdır; özel derste süreler katılımcıya göre ayarlanabilir.</p>
     <div class="t-akis kayarak" id="oturumAkisi">
       <?php
       $akis = [['Giriş', 4], ['Isınma', 5], ['Zamanlama', 8], ['Bilişsel hedef', 12], ['Oyun & grup', 9], ['Sakinleşme', 5], ['Kayıt', 2]];
@@ -450,22 +419,18 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <?php endforeach; ?>
     </div>
 
-    <h3 class="t-alt-baslik kayarak">12 haftalık yolculuk</h3>
+    <h3 class="t-program-baslik kayarak"><span>4</span> 2 aylık yoğunlaştırılmış program haritası</h3>
     <div class="t-yolculuk kayarak">
       <?php
       $evreler = [
         ['1–2', 'Temel ritim ve güvenli katılım',
-         'İlk iki hafta güven inşa etmeye ayrılır: metronoma eşlik ile sabit vuruşu bulma, vücut perküsyonuyla ısınma ve dur–devam oyunlarıyla işaretle başlayıp işaretle durma. Amaç, katılımcının odaya ve gruba güvenle katılabileceği, hatanın rahat karşılandığı bir zemin kurmaktır.'],
-        ['3–4', 'Bellek ve koordinasyon',
-         'Bu haftalarda ritmik dizi tekrarı ile kısa kalıpları ezberden yeniden çalma ve iki el/ayak koordinasyonu gerektiren vücut perküsyonu kombinasyonları çalışılır. Kalıplar kademeli uzar; bir sonrakine geçmeden önce mevcut kalıp rahatça tekrarlanabilmelidir.'],
-        ['5–6', 'Seçici dikkat ve dürtü kontrolü',
-         'Hedef Tını çalışmasında yalnız belirli bir sese tepki verilir, diğerleri göz ardı edilir; Bekle–Dinle–Vur kartlarıyla da tepkiyi erteleme pratiği yapılır. Amaç, her uyarana anında tepki vermek yerine seçerek ve bekleyerek katılabilmektir.'],
-        ['7–8', 'Esneklik ve çift görev',
-         'Kural Değiştir çalışmasında işaretle birlikte önceden öğrenilen kural aniden tersine döner; Çift Hat çalışmasında ise ritim tutarken aynı anda ikinci bir görev (ör. kategori sayma) eklenir. İkisi de değişen koşullara uyum sağlama pratiğidir.'],
-        ['9–10', 'Senkroni ve liderlik',
-         'Daire Senkronisi çalışmasıyla grup içinde giriş sırasını dinleyerek yakalama, Ritim Planla–Uygula–Onar çalışmasıyla da kendi kısa ritmini tasarlayıp grupla paylaşma pratiği yapılır. Katılımcı burada hem takip eden hem yön veren tarafı dener.'],
-        ['11–12', 'Aktarım ve kapanış',
-         'Ritimden Sessiz Göreve çalışmasında kısa bir ritim eşliğinin ardından sessiz bir iş/görev bloğuna geçilir — atölyede kurulan düzenin oda dışına taşınması denenir. Son iki hafta ayrıca dönem boyunca çalışılanların gözden geçirildiği kapanış haftalarıdır.'],
+         'İlk iki hafta güven inşa etmeye ayrılır: metronoma eşlik ile sabit vuruşu bulma, vücut perküsyonuyla ısınma ve dur–devam oyunlarıyla işaretle başlayıp işaretle durma. Amaç, katılımcının çalışma alanına ve eğitmene güvenebileceği, hatanın rahat karşılandığı bir zemin kurmaktır.'],
+        ['3–4', 'Bellek, koordinasyon ve seçici dikkat',
+         'Ritmik dizi tekrarıyla kısa kalıpları ezberden yeniden çalma, iki el/ayak koordinasyonu ve yalnız hedef tınıya cevap verme birlikte çalışılır. Kalıplar kademeli uzar; zorluk aynı anda yalnız bir basamak yükseltilir.'],
+        ['5–6', 'Dürtü kontrolü, esneklik ve çift görev',
+         'Bekle–Dinle–Vur ile tepkiyi erteleme, Kural Değiştir ile yeni işarete uyum sağlama ve Çift Hat ile ritmi korurken ikinci bir görevi sürdürme çalışılır. Yoğun akışta doğruluk, hızdan önce gelir.'],
+        ['7–8', 'Grup senkronisi, aktarım ve kapanış',
+         'Daire Senkronisi ve Ritim Planla–Uygula–Onar ile katılımcı hem takip eden hem yön veren tarafı dener. Son aşamada ritimden sessiz göreve geçiş yapılır; çalışılanlar gözden geçirilir ve kişiye uygun devam planı oluşturulur.'],
       ];
       foreach ($evreler as $i => [$hafta, $ad, $detay]): ?>
       <div class="t-evre" tabindex="0" style="--gecikme:<?= $i * .1 ?>s">
@@ -568,8 +533,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
           </div>
           <div class="t-adim" style="--gecikme:.12s">
             <span class="t-adim-no">2</span>
-            <div><strong>12 haftalık atölye programı</strong>
-              <p>Haftalık oturumlar + ev çalışmaları; atölye kendi iç ölçümlerini ayrıca tutar.</p></div>
+            <div><strong>2 aylık yoğunlaştırılmış atölye programı</strong>
+              <p>Haftada iki oturum + kısa ev çalışmaları; atölye kendi iç ölçümlerini ayrıca tutar.</p></div>
           </div>
           <div class="t-adim" style="--gecikme:.24s">
             <span class="t-adim-no">3</span>
@@ -691,8 +656,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <p class="t-bolum-ustbaslik">İLETİŞİM</p>
       <h2>Merak ettiklerinizi sorun</h2>
       <p class="t-bolum-aciklama">
-        Adınızı ve size ulaşabileceğimiz bir yolu bırakın; grup saatleri, dönem takvimi ve
-        aklınıza takılan her şey için size dönelim.
+        Adınızı ve size ulaşabileceğimiz bir yolu bırakın; özel ders veya grup programı,
+        uygun günler ve aklınıza takılan her şey için size dönelim.
       </p>
       <ul class="t-liste">
         <li>Ritim veya müzik geçmişi gerekmez — hiç başlamamış olmak sorun değil.</li>
@@ -737,12 +702,29 @@ function metronom_svg(string $sinif, string $gradyanId): string
           <option value="yetiskin">Yetişkin (18+)</option>
         </select>
       </label>
+      <fieldset class="t-ders-secim">
+        <legend>Ders tercihiniz</legend>
+        <div class="t-ders-secim-grid">
+          <label>
+            <input type="radio" name="ders_turu" value="grup" required>
+            <span><b>🥁 Grup dersi</b><small>Birlikte çalma ve grup senkronisi</small></span>
+          </label>
+          <label>
+            <input type="radio" name="ders_turu" value="ozel" required>
+            <span><b>🎧 Özel ders</b><small>Kişiye göre tempo ve çalışma planı</small></span>
+          </label>
+          <label>
+            <input type="radio" name="ders_turu" value="kararsiz" required>
+            <span><b>Kararsızım</b><small>Görüşmede birlikte belirleyelim</small></span>
+          </label>
+        </div>
+      </fieldset>
       <label class="t-alan">
         <span>Eklemek istediğiniz bir şey var mı? <small>(isteğe bağlı)</small></span>
         <textarea name="mesaj" rows="3" maxlength="600" placeholder="Uygun gün/saatiniz, merak ettikleriniz…"></textarea>
       </label>
       <div class="t-profil-eklendi" id="profilEklendi" hidden>
-        🎧 Ritim profiliniz talebe eklenecek: <span id="profilEklendiMetin"></span>
+        🎧 Canlı deneme sonucunuz talebe eklenecek: <span id="profilEklendiMetin"></span>
       </div>
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk t-tam-genislik">Mesajımı Gönder →</button>
       <p class="t-kayit-alt">Formu göndermek sizi hiçbir şeye bağlamaz.</p>
