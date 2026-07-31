@@ -883,10 +883,20 @@ require APP_DIR . '/includes/view/header.php';
 </div>
 
 <script>
+/*
+ * GÜVENLİK: <script> içine gömülen her JSON'da JSON_HEX_TAG|JSON_HEX_AMP
+ * ZORUNLU. Bunlar olmadan koruma yalnız PHP'nin varsayılan '/' kaçırmasına
+ * kalıyordu; ölçtüm: </script> kaçışı engelleniyor AMA teknik adına yazılan
+ * bir "<!--<script>" dizisi HTML ayrıştırıcısını çift-kaçış durumuna sokup
+ * SONRAKİ script bloklarını yutuyordu (sayfanın JS'i sessizce kırılıyor).
+ * Ayrıca aşağıdaki üçüncü ifade JSON_UNESCAPED_SLASHES kullanıyor — o bayrak
+ * buraya da kopyalansa örtük koruma düşer ve doğrudan saklı XSS olurdu.
+ */
 /* Uyarlanan zorluk için: her öğrencinin protokol başına SON skoru */
-window.SON_SKORLAR = <?= json_encode($sonSkorlar, JSON_UNESCAPED_UNICODE) ?>;
-/* Ders akışı: seçili oturumun teknik planı (yoksa null) */
-window.DERS_AKISI = <?= json_encode($akisOturum, JSON_UNESCAPED_UNICODE) ?>;
+window.SON_SKORLAR = <?= json_encode($sonSkorlar, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
+/* Ders akışı: seçili oturumun teknik planı (yoksa null) — grup/teknik adları
+   eğitmenin serbest metni, yedek geri yüklemesiyle dışarıdan da gelebilir */
+window.DERS_AKISI = <?= json_encode($akisOturum, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 /* Hesaba bağlı çalışma merkezi başlangıç verisi */
 window.METRONOM_CALISMA_VERI = <?= json_encode([
     'api' => url('metronom-api.php'),

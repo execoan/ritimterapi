@@ -22,9 +22,16 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } else {
         if (time() - (int)$deneme['son'] >= 30) { $deneme = ['adet' => 0, 'son' => 0]; }
 
-        // Tek tıkla hızlı giriş (geliştirme kolaylığı; gizli.php'de HIZLI_GIRIS=false ile kapanır)
+        /*
+         * Tek tıkla hızlı giriş — YALNIZ eğitmenin kendi makinesinden.
+         * start.bat sunucuyu 0.0.0.0'a bağlar (telefon/tablet bağlanabilsin);
+         * hızlı giriş ağa da açık olsaydı aynı Wi-Fi'daki herkes tek tıkla
+         * panele, yani öğrenci kayıtlarına ve veli notlarına girerdi.
+         * Yerelde kolaylık aynen sürüyor; ağdan giren şifre yazar.
+         * (gizli.php'de HIZLI_GIRIS=false ile tamamen kapatılabilir.)
+         */
         $hizli = (string)($_POST['hizli'] ?? '');
-        if (HIZLI_GIRIS && $hizli !== '' && array_key_exists($hizli, PANEL_KULLANICILAR)) {
+        if (HIZLI_GIRIS && yerel_istek_mi() && $hizli !== '' && array_key_exists($hizli, PANEL_KULLANICILAR)) {
             unset($_SESSION['giris_deneme']);
             session_regenerate_id(true);
             $_SESSION['egitmen'] = 1;
@@ -131,7 +138,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <div class="giris-hata"><?= e($hataMesaji) ?></div>
     <?php endif; ?>
 
-    <?php if (HIZLI_GIRIS): ?>
+    <?php if (HIZLI_GIRIS && yerel_istek_mi()): ?>
     <form method="post" action="<?= e(url('giris.php')) ?>" class="giris-hizli">
       <?= csrf_field() ?>
       <input type="hidden" name="hedef" value="<?= e($hedef) ?>">
@@ -154,7 +161,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
       </label>
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk giris-btn">Giriş Yap</button>
     </form>
-    <?php if (HIZLI_GIRIS): ?>
+    <?php if (HIZLI_GIRIS && yerel_istek_mi()): ?>
     <p class="giris-ipucu">Hızlı giriş geliştirme kolaylığıdır; yayına alırken
        <code>storage/gizli.php</code> içinde kapatın ve şifreleri değiştirin.</p>
     <?php endif; ?>

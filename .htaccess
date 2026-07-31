@@ -1,0 +1,41 @@
+# RitimTerapi — Apache/XAMPP htdocs kurulumu için erişim koruması.
+#
+# NEDEN VAR: router.php yalnız "php -S" (start.bat) ile çalışırken devrededir.
+# Uygulama XAMPP htdocs altına konursa router hiç çağrılmaz ve
+# storage/ritim.sqlite doğrudan indirilebilir hâle gelir — veritabanında
+# öğrenci kodları, doğum yılları, veli notları ve erişim kodları var.
+# Bu dosya o kurulumda router.php ile aynı işi yapar.
+
+# Dizin listelemeyi kapat
+Options -Indexes
+
+# Uygulama içi dizinler ve nokta dosyaları
+RedirectMatch 403 (?i)^/?(storage|includes|test|docs|node_modules)(/|$)
+RedirectMatch 403 (?i)(^|/)\.
+
+# Veri ve yapılandırma uzantıları — dizin kuralı delinse bile son emniyet
+<FilesMatch "(?i)\.(sqlite|sqlite-wal|sqlite-shm|db|sql|bak|ini|log|bat|cmd|ps1)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
+
+# Yüklenen görsellerin çalıştırılabilir olarak yorumlanmasını engelle
+<Directory "assets/img/galeri">
+  <IfModule mod_php.c>
+    php_flag engine off
+  </IfModule>
+  AddType text/plain .php .phtml .phar
+</Directory>
+
+# router.php ile aynı güvenlik başlıkları (bootstrap zaten yolluyor;
+# statik dosyalar için de geçerli olsun)
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "same-origin"
+</IfModule>

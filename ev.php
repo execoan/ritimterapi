@@ -15,13 +15,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     $islem = (string)($_POST['islem'] ?? '');
 
     if ($islem === 'giris') {
+        /*
+         * Deneme kilidi — giris.php'deki eğitmen kapısıyla aynı desen.
+         * Erişim kodu 29 harfli alfabede 6 hane (≈594 milyon) olduğu için
+         * kaba kuvvet zaten pratik değil; bu kilit günlük şişirmeyi ve
+         * otomatik deneme gürültüsünü kesmek için.
+         */
+        $deneme = $_SESSION['ev_giris_deneme'] ?? ['adet' => 0, 'son' => 0];
+        if (time() - (int)$deneme['son'] >= 60) { $deneme = ['adet' => 0, 'son' => 0]; }
+        if ($deneme['adet'] >= 8) {
+            flash_set('hata', 'Çok fazla deneme oldu. Bir dakika bekleyip tekrar dene.');
+            redirect('ev.php');
+        }
         $ogrenci = student_by_code((string)($_POST['kod'] ?? ''));
         if ($ogrenci) {
+            unset($_SESSION['ev_giris_deneme']);
             session_regenerate_id(true);
             $_SESSION['ev_ogrenci_id'] = (int)$ogrenci['id'];
             flash_set('basari', 'Hoş geldin ' . $ogrenci['kod'] . '! 🥁');
         } else {
             usleep(400000);
+            $_SESSION['ev_giris_deneme'] = ['adet' => (int)$deneme['adet'] + 1, 'son' => time()];
             flash_set('hata', 'Kod bulunamadı. Eğitmeninden aldığın 6 haneli kodu kontrol et.');
         }
         redirect('ev.php');

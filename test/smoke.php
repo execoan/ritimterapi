@@ -250,6 +250,41 @@ dogrula(git_('test/smoke.php', $jar)['durum'] === 403, 'test/ dışarıya kapal�
 $y = ham_istek('/assets/../storage/gizli.php');
 dogrula($y['durum'] !== 200 && !str_contains($y['govde'], 'PANEL_KULLANICILAR'), 'yol gezinmesi (..) engelli');
 
+/*
+ * REGRESYON — router.php yol normalleştirmesi.
+ * Bu liste gerçek bir açıktan doğdu: "/storage%5Critim.sqlite" (%5C = ters
+ * bölü) 200 dönüp TÜM veritabanını girişsiz veriyordu. Eski denetim yalnız
+ * düz "storage/ritim.sqlite" biçimine bakıyordu, o yüzden yakalayamadı.
+ * Yeni bir ayırıcı/kodlama numarası akla geldikçe BU LİSTEYE eklenmeli.
+ */
+$sizdiranlar = [];
+$hedefler = [
+    'storage%5Critim.sqlite', '//storage/ritim.sqlite', '///storage/ritim.sqlite',
+    '//storage%5Critim.sqlite', '/./storage/ritim.sqlite', '/.//storage/ritim.sqlite',
+    'STORAGE%5CRITIM.SQLITE', 'sToRaGe%5Critim.sqlite', 'storage%5C%5Critim.sqlite',
+    '%2f%2fstorage%5Critim.sqlite', 'storage%5Cgizli.php', '//storage/gizli.php',
+    'includes%5Cdb.php', '//includes/model.php', '.git%5Cconfig', '//.git/config',
+    'test%5Csmoke.php', '//test/smoke.php', 'docs%5Colcum-kilavuzu.md',
+    'ritim.sqlite', 'start.bat',
+];
+foreach ($hedefler as $h) {
+    $y = ham_istek('/' . $h);
+    if ($y['durum'] === 200) { $sizdiranlar[] = $h . ' (' . strlen($y['govde']) . ' bayt)'; }
+}
+dogrula(!$sizdiranlar,
+    'ayırıcı/kodlama varyantlarının hiçbiri korunan dosyayı sızdırmıyor',
+    implode(', ', $sizdiranlar));
+
+/* Sızan gövde gerçekten veritabanı mıydı? (sihirli bayt ile kesin denetim) */
+$y = ham_istek('/storage%5Critim.sqlite');
+dogrula(!str_starts_with($y['govde'], 'SQLite format 3'),
+    'ters bölü varyantı SQLite dosyası döndürmüyor');
+
+/* Apache/htdocs kurulumu için de koruma dosyası bulunmalı (router orada çalışmaz) */
+$ht = $KOK . '/.htaccess';
+dogrula(is_file($ht) && str_contains((string)file_get_contents($ht), 'storage'),
+    '.htaccess var ve storage dizinini engelliyor (XAMPP htdocs kurulumu)');
+
 /* =================================================================
    C) KİMLİK KAPISI (güvenlik)
    ================================================================= */
@@ -746,7 +781,7 @@ dogrula($t !== '', 'tanıtım sayfasında CSRF alanı var');
 gonder('index.php', ['islem' => 'on_kayit', 'ad' => 'CSRFSIZ-TALEP', 'iletisim' => '0555 000 00 00'], $halkJar);
 $y = gonder('index.php', ['islem' => 'on_kayit', 'csrf_token' => $t,
     'ad' => 'Duman Talep', 'iletisim' => 'duman@example.test', 'kitle' => 'cocuk',
-    'mesaj' => 'duman testi', 'profil' => 'eşik 20 Hz'], $halkJar);
+    'ders_turu' => 'ozel', 'mesaj' => 'duman testi', 'profil' => 'eşik 20 Hz'], $halkJar);
 dogrula($y['durum'] >= 300 && $y['durum'] < 400, 'geçerli talep kabul edildi (yönlendirme)', 'durum ' . $y['durum']);
 // Bal küpü dolu → kayıt OLUŞMAMALI
 $t = csrf_al('index.php', $halkJar);
@@ -761,6 +796,7 @@ dogrula(str_contains($liste, 'Duman Talep'), 'talep panelde görünüyor');
 dogrula(!str_contains($liste, 'CSRFSIZ-TALEP'), 'CSRF jetonu olmadan talep oluşmuyor');
 dogrula(!str_contains($liste, 'Bot Talep'), 'bal küpü dolu gönderim kaydedilmiyor');
 dogrula(!str_contains($liste, 'kisa@example.test'), 'geçersiz ad reddediliyor');
+dogrula(str_contains($liste, 'Ders tercihi: Özel ders'), 'grup/özel ders tercihi talebe eklendi');
 dogrula(str_contains($liste, 'eşik 20 Hz'), 'ritim profili talebe eklendi');
 dogrula(str_contains(git_('panel.php', $jar)['govde'], 'yeni iletişim talebi'), 'panelde yeni talep uyarısı var');
 // Ziyaretçi iletişim talepleri listesini GÖREMEMELİ

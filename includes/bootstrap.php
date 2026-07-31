@@ -25,11 +25,30 @@ define('APP_NAME', 'RitimTerapi');
 // Veliye giden çıktılarda kullanılan ad — "terapi" sözcüğü geçmez (CLAUDE.md).
 define('REPORT_BRAND', 'Ritim Atölyesi');
 
+/**
+ * İstek eğitmenin KENDİ makinesinden mi geliyor?
+ *
+ * Uygulama start.bat ile 0.0.0.0'a bağlanır (telefon/tablet aynı Wi-Fi'dan
+ * girebilsin diye). Bu, hata ayıklama kolaylıklarının ağdaki HERKESE açık
+ * olması demek — o yüzden bunlar yalnız yerel istekte etkin:
+ *   • display_errors (yol ve SQL sızdırır)
+ *   • ayrıntılı hata mesajı
+ *   • HIZLI_GIRIS tek tık butonları (bkz. giris.php)
+ */
+function yerel_istek_mi(): bool
+{
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    return $ip === '127.0.0.1' || $ip === '::1' || $ip === '' || PHP_SAPI === 'cli';
+}
+
 error_reporting(E_ALL);
-@ini_set('display_errors', '1'); // yerel tek kullanıcılı uygulama
+// Hatalar ekrana YALNIZ yerelde basılır; ağdan gelen istekte yalnız günlüğe.
+@ini_set('display_errors', yerel_istek_mi() ? '1' : '0');
+@ini_set('log_errors', '1');
 
 // Temel güvenlik başlıkları (yerelde de zarar vermez)
 if (!headers_sent()) {
+    header_remove('X-Powered-By');          // PHP sürümünü duyurma
     header('X-Content-Type-Options: nosniff');
     header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: same-origin');
@@ -96,10 +115,15 @@ set_exception_handler(function (Throwable $ex) {
         http_response_code(500);
         header('Content-Type: text/html; charset=UTF-8');
     }
+    // Ayrıntı yalnız eğitmenin kendi makinesinde; ağdan gelen istekte SQL
+    // ve dosya yolu sızdırmamak için genel mesaj gösterilir.
+    $ayrinti = yerel_istek_mi()
+        ? htmlspecialchars($ex->getMessage(), ENT_QUOTES, 'UTF-8')
+        : 'Sorun kaydedildi. Eğitmenin bilgisayarındaki günlükten ayrıntı görülebilir.';
     echo '<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>Hata</title></head>'
        . '<body style="font-family:system-ui,sans-serif;background:#f8fafc;color:#0f172a;padding:3rem;text-align:center">'
        . '<h1 style="font-size:1.3rem">Beklenmeyen bir sorun oluştu</h1>'
-       . '<p>' . htmlspecialchars($ex->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>'
+       . '<p>' . $ayrinti . '</p>'
        . '<p><a href="javascript:location.reload()">Sayfayı yenile</a></p></body></html>';
     exit;
 });
