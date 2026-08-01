@@ -1275,4 +1275,35 @@
       });
     });
   })();
+
+  /* ================================================================
+     Hareket denetimi (WCAG 2.2.2 — Duraklat, Durdur, Gizle)
+     ================================================================ */
+  (function () {
+    var btn = document.getElementById('tHareketAnahtari');
+    if (!btn) { return; }
+    var ANAHTAR = 'ritim-hareket-kapali';
+    var metin = btn.querySelector('.t-hareket-metin');
+
+    function uygula(kapali, yaz) {
+      document.documentElement.classList.toggle('hareket-kapali', kapali);
+      btn.setAttribute('aria-pressed', kapali ? 'true' : 'false');
+      btn.title = kapali ? 'Sayfadaki hareketi geri aç' : 'Sayfadaki hareketi durdur';
+      if (metin) { metin.textContent = kapali ? 'Hareketi aç' : 'Hareketi durdur'; }
+      if (yaz) { try { localStorage.setItem(ANAHTAR, kapali ? '1' : '0'); } catch (e) {} }
+    }
+
+    /* Kullanıcının açık tercihi işletim sistemi tercihini EZER; hiç seçim
+       yapmadıysa sistem tercihi (varsa) düğmeye yansır. */
+    var kayitli = null;
+    try { kayitli = localStorage.getItem(ANAHTAR); } catch (e) {}
+    var sistem = window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    uygula(kayitli !== null ? kayitli === '1' : !!sistem, false);
+
+    btn.addEventListener('click', function () {
+      uygula(btn.getAttribute('aria-pressed') !== 'true', true);
+    });
+  })();
+
 })();

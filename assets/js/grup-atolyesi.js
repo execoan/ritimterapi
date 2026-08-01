@@ -145,6 +145,10 @@
       btn.className = 'grup-protokol-secim' + (i === 0 ? ' secili' : '');
       btn.setAttribute('role', 'radio');
       btn.setAttribute('aria-checked', i === 0 ? 'true' : 'false');
+      /* Radyo grubunda TEK Tab durağı olur, seçim ok tuşlarıyla değişir
+         (WAI-ARIA APG "Radio Group"). Hepsi Tab durağı olsaydı klavye
+         kullanıcısı grubu geçmek için beş kez Tab'a basardı. */
+      btn.setAttribute('tabindex', i === 0 ? '0' : '-1');
       btn.dataset.protokol = p.id;
 
       var ikon = document.createElement('span');
@@ -160,6 +164,19 @@
       btn.appendChild(ikon);
       btn.appendChild(metin);
       btn.addEventListener('click', function () { protokolSec(p.id); });
+      btn.addEventListener('keydown', function (ev) {
+        var adim = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[ev.key];
+        var n = core.PROTOKOLLER.length;
+        var j = null;
+        if (adim) { j = (i + adim + n) % n; }
+        else if (ev.key === 'Home') { j = 0; }
+        else if (ev.key === 'End') { j = n - 1; }
+        if (j === null) { return; }
+        ev.preventDefault();
+        protokolSec(core.PROTOKOLLER[j].id);
+        var hedef = el.kartlar.querySelector('[data-protokol="' + core.PROTOKOLLER[j].id + '"]');
+        if (hedef) { hedef.focus(); }
+      });
       el.kartlar.appendChild(btn);
     });
   }
@@ -172,6 +189,11 @@
       var secili = btn.dataset.protokol === id;
       btn.classList.toggle('secili', secili);
       btn.setAttribute('aria-checked', secili ? 'true' : 'false');
+      /* Tab durağı hep SEÇİLİ olana taşınır; yoksa kullanıcı gruba geri
+         döndüğünde odak seçili olmayan bir karta düşer. */
+      if (btn.getAttribute('role') === 'radio') {
+        btn.setAttribute('tabindex', secili ? '0' : '-1');
+      }
     });
     ozetGuncelle();
   }

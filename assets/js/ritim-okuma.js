@@ -346,7 +346,10 @@ window.RitimOkuma = (function () {
       '      <button type="button" class="btn btn-tehlike btn-kucuk ro-kal-durdur">Durdur</button>' +
       '    </div>' +
       '  </section>' +
-      '  <div class="ro-baslangic-sayaci" hidden aria-live="assertive" aria-atomic="true">' +
+      /* Sayaç her VURUŞTA değişir. aria-live="assertive" olsaydı 60 BPM'de
+         saniyede bir kez ekran okuyucuyu keserdi ve alıştırma yönergesi
+         hiç duyulmazdı. Tik'ler görsel; duyuru bir kez, sayaç başlarken. */
+      '  <div class="ro-baslangic-sayaci" hidden aria-hidden="true">' +
       '    <small>Başlangıca</small><strong>4</strong><span>vuruş kaldı</span>' +
       '  </div>' +
       '  <div class="ro-durum" role="status" aria-live="polite">Ritmi dinleyebilir veya doğrudan okumaya başlayabilirsin.</div>' +
@@ -835,6 +838,11 @@ window.RitimOkuma = (function () {
     }
 
     function baslangicSayaciniGoster(deger, aciklama, simdi) {
+      /* Ekran okuyucuya TEK duyuru: sayaç görünür olurken. Sonraki tikler
+         sessiz geçer (aria-hidden), böylece durum bölgesi bloke olmaz. */
+      if (baslangicSayacEl.hidden && durumEl) {
+        durumEl.textContent = simdi ? 'Başlıyor.' : deger + ' ' + aciklama + ', hazırlan.';
+      }
       baslangicSayacEl.hidden = false;
       baslangicSayacEl.classList.toggle('ro-simdi', !!simdi);
       baslangicSayacEl.querySelector('small').textContent = simdi ? 'İlk nota' : 'Başlangıca';

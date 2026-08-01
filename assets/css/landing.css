@@ -1125,3 +1125,28 @@ body.tanitim::after {
   color: #fff; font-size: 1.1rem; cursor: pointer; line-height: 1;
 }
 .t-lightbox-kapat:focus-visible { outline: 3px solid var(--t-amber); outline-offset: 2px; }
+
+/* ---------- Hareket denetimi (WCAG 2.2.2) ---------- */
+/*
+ * Seçici LİSTESİ tutulmuyor bilerek: yukarıdaki prefers-reduced-motion
+ * blokları elle sayılmış seçicilerden oluşuyor ve yeni animasyon eklendikçe
+ * kaçınılmaz olarak eskiyor (denetimde tam da bu olmuştu). Buradaki evrensel
+ * kalıp bugünkü ve yarınki her animasyonu kapsar.
+ */
+html.hareket-kapali *,
+html.hareket-kapali *::before,
+html.hareket-kapali *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0s !important;
+  transition-duration: .001ms !important;
+  transition-delay: 0s !important;
+}
+html.hareket-kapali { scroll-behavior: auto !important; }
+
+.t-hareket-anahtari { gap: .35rem; }
+.t-hareket-anahtari[aria-pressed="true"] {
+  background: rgba(217, 119, 6, .18);
+  border-color: #d97706;
+}
+@media (max-width: 980px) { .t-hareket-anahtari .t-hareket-metin { display: none; } }

@@ -78,6 +78,14 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <?php endforeach; ?>
     </div>
     <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">İletişim</a>
+    <?php /* WCAG 2.2.2 (Duraklat/Durdur/Gizle): sayfada 5 sn'den uzun süren,
+             kendiliğinden başlayan hareket var (kayan şerit, yörünge, parçacıklar).
+             İşletim sistemi tercihi (prefers-reduced-motion) zaten dinleniyor;
+             bu düğme onu ayarlayamayan kullanıcıya sayfa içi denetim verir. */ ?>
+    <button type="button" class="t-btn t-btn-cerceve t-hareket-anahtari" id="tHareketAnahtari"
+            aria-pressed="false" title="Sayfadaki hareketi durdur">
+      <span aria-hidden="true">🌀</span><span class="t-hareket-metin">Hareketi durdur</span>
+    </button>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
       <?= $girisli ? 'Panele Git' : 'Giriş Yap' ?>
     </a>

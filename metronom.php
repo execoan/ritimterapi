@@ -615,15 +615,15 @@ require APP_DIR . '/includes/view/header.php';
   </section>
 
   <div class="m-sekmeler" role="tablist" id="mSekmeler" data-acilacak="<?= e($acilacakProtokol) ?>">
-    <button type="button" class="m-sekme aktif" role="tab" aria-selected="true" data-sekme="vurus">🎯 Vuruş Tutturma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="bpm">🎧 BPM Bulma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="spontan">🫀 Spontan Tempo</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="aksak">🕳 Aksak Bulma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" data-sekme="icsel">🧭 İçsel Ritim</button>
+    <button type="button" class="m-sekme aktif" role="tab" aria-selected="true" id="mSekme-vurus" aria-controls="sekme-vurus" tabindex="0" data-sekme="vurus">🎯 Vuruş Tutturma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-bpm" aria-controls="sekme-bpm" tabindex="-1" data-sekme="bpm">🎧 BPM Bulma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-spontan" aria-controls="sekme-spontan" tabindex="-1" data-sekme="spontan">🫀 Spontan Tempo</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-aksak" aria-controls="sekme-aksak" tabindex="-1" data-sekme="aksak">🕳 Aksak Bulma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-icsel" aria-controls="sekme-icsel" tabindex="-1" data-sekme="icsel">🧭 İçsel Ritim</button>
   </div>
 
   <!-- Vuruş Tutturma -->
-  <div class="m-sekme-icerik" id="sekme-vurus">
+  <div class="m-sekme-icerik" id="sekme-vurus" role="tabpanel" aria-labelledby="mSekme-vurus" tabindex="0">
     <p class="alan-ipucu">4 vuruş hazırlık dinlenir → <strong>sesli fazda</strong> metronomla birlikte vurulur →
        metronom susar, <strong>sessiz fazda</strong> içsel tempoyla devam edilir. Her vuruşun milisaniye
        sapması ölçülür.</p>
@@ -676,7 +676,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 
   <!-- BPM Bulma -->
-  <div class="m-sekme-icerik" id="sekme-bpm" hidden>
+  <div class="m-sekme-icerik" id="sekme-bpm" hidden role="tabpanel" aria-labelledby="mSekme-bpm" tabindex="0">
     <p class="alan-ipucu">Sistem gizli bir tempoda 8 vuruş çalar; ardından aynı tempoyu
        <strong>8 vuruşla sen sürdürürsün</strong>. Tahminin gerçek BPM ile karşılaştırılır; 3 tur oynanır.</p>
     <div class="filtre-satir">
@@ -718,7 +718,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 
   <!-- Spontan Tempo -->
-  <div class="m-sekme-icerik" id="sekme-spontan" hidden>
+  <div class="m-sekme-icerik" id="sekme-spontan" hidden role="tabpanel" aria-labelledby="mSekme-spontan" tabindex="0">
     <p class="alan-ipucu">BAASTA türü <strong>serbest (unpaced) tapping</strong>: metronom yok —
        kendi rahat hızında <strong>21 vuruş</strong> yap. Kişisel doğal tempon (SMT) ve
        vuruşlarının tutarlılığı ölçülür. Dönem başı/sonu karşılaştırması için birebirdir.</p>
@@ -752,7 +752,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 
   <!-- Aksak Bulma -->
-  <div class="m-sekme-icerik" id="sekme-aksak" hidden>
+  <div class="m-sekme-icerik" id="sekme-aksak" hidden role="tabpanel" aria-labelledby="mSekme-aksak" tabindex="0">
     <p class="alan-ipucu">BAASTA türü <strong>anizokroni algısı</strong>: 6 vuruşluk dizi çalınır —
        ya kusursuz düzenlidir ya da bir vuruş hafifçe <em>aksar</em>. Hangisi olduğunu söyle; 8 tur.
        Motorsuz, saf <strong>dinleme/algı</strong> ölçümüdür.</p>
@@ -797,7 +797,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 
   <!-- İçsel Ritim (sessizlik merdiveni) -->
-  <div class="m-sekme-icerik" id="sekme-icsel" hidden>
+  <div class="m-sekme-icerik" id="sekme-icsel" hidden role="tabpanel" aria-labelledby="mSekme-icsel" tabindex="0">
     <p class="alan-ipucu">"Rastgele sus" özelliğinin <strong>ölçülen</strong> hâli: metronom
        kademe kademe susar (<strong>%0 → %25 → %50 → %75</strong>), sen her vuruşta vurmaya
        devam edersin. Sessiz vuruşlardaki sapma ayrı ölçülür; içsel sayımın dönem boyunca

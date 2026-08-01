@@ -814,6 +814,51 @@ dogrula(str_contains($og, '83') && str_contains($og, "\u{1F4CF}"), 'protokol son
  * bölümünde bozulmadan durduğu denetleniyor.
  */
 bolum('HTML bütünlüğü (açık yorum / bozuk ayrıştırma)');
+/* -------- Erişilebilirlik desenleri (WCAG 2.1.1 / 2.2.2 / 4.1.2) --------
+   Bu bağlar kolay kopar: yeni sekme eklenirken aria-controls unutulur ve
+   ekran okuyucu sekmeyi panelle ilişkilendiremez; hata sessizdir. */
+$mg = git_('metronom.php', $jar)['govde'];
+preg_match_all('/<button[^>]*role="tab"[^>]*>/i', $mg, $mt);
+$sekmeSayisi = count($mt[0]);
+$eksikBag = [];
+foreach ($mt[0] as $etiket) {
+    if (!preg_match('/aria-controls="([^"]+)"/', $etiket, $mc)
+        || !preg_match('/\sid="([^"]+)"/', $etiket, $mi)
+        || !preg_match('/tabindex="(0|-1)"/', $etiket)) { $eksikBag[] = $etiket; continue; }
+    if (!preg_match('/<div[^>]*id="' . preg_quote($mc[1], '/') . '"[^>]*role="tabpanel"[^>]*aria-labelledby="'
+        . preg_quote($mi[1], '/') . '"/i', $mg)) { $eksikBag[] = $mc[1]; }
+}
+dogrula($sekmeSayisi >= 5 && !$eksikBag,
+    "sekmeler tabpanel'e bağlı (aria-controls + aria-labelledby + gezici tabindex)");
+/* Gezici odak: şerit TEK Tab durağı olmalı, yoksa klavye kullanıcısı
+   beş sekmeyi tek tek Tab'lamak zorunda kalır. */
+dogrula(substr_count($mg, 'tabindex="0"') >= 1
+     && preg_match_all('/role="tab"[^>]*tabindex="0"/', $mg) === 1, 'sekme şeridinde tek Tab durağı var');
+
+$ig = git_('index.php', $jar)['govde'];
+dogrula(str_contains($ig, 'id="tHareketAnahtari"') && str_contains($ig, 'aria-pressed'),
+    'tanıtım sayfasında hareket denetimi var (WCAG 2.2.2)');
+$lc = git_('assets/css/landing.css', $jar)['govde'];
+dogrula(str_contains($lc, 'html.hareket-kapali *'), 'hareket-kapalı kuralı tüm animasyonları kapsıyor');
+$lj = git_('assets/js/landing.js', $jar)['govde'];
+dogrula(str_contains($lj, 'prefers-reduced-motion') && str_contains($lj, 'ritim-hareket-kapali'),
+    'hareket tercihi işletim sistemi ayarını okuyor ve kalıcı');
+
+$gj = git_('assets/js/grup-atolyesi.js', $jar)['govde'];
+dogrula(str_contains($gj, "ArrowRight") && str_contains($gj, "'tabindex'"),
+    'radyo grubunda ok tuşu gezinmesi ve gezici odak var');
+
+/* Geri sayım her vuruşta değişir; assertive olsaydı ekran okuyucuyu
+   saniyede bir keserdi (WCAG 4.1.3 amacına aykırı kullanım). */
+$rj = git_('assets/js/ritim-okuma.js', $jar)['govde'];
+/* Yalnız ÜRETİLEN etikete bak: 'assertive' sözcüğü açıklama satırında
+   geçebilir ve düz arama boşuna kırmızı yakar. */
+preg_match_all('/<div[^>]*class="ro-baslangic-sayaci"[^>]*>/', $rj, $mSay);
+$sayacEtiket = $mSay[0][0] ?? '';
+dogrula($sayacEtiket !== '' && !str_contains($sayacEtiket, 'assertive')
+     && str_contains($sayacEtiket, 'aria-hidden="true"'),
+    'geri sayım tik başına duyuru yapmıyor (assertive yerine aria-hidden)');
+
 /* Nonce'a geçince gömülü blokların gerçekten nonce alması gerekir; almazsa
    sayfa sessizce ölür (CSP bloklar, sunucu yine 200 döner). */
 $nonceli = 0; $noncesiz = [];

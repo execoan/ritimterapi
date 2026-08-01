@@ -1584,17 +1584,43 @@
      ================================================================ */
   /* Sekme değişince çalışan testi durdur: aksi hâlde önceki protokolün
      zamanlanmış sesleri ve sayaçları arka planda sürer. */
-  document.querySelectorAll('.m-sekme').forEach(function (s) {
-    s.addEventListener('click', function () {
-      if (!s.classList.contains('aktif')) { digerleriniIptalEt(''); }
-      document.querySelectorAll('.m-sekme').forEach(function (x) {
-        x.classList.remove('aktif');
-        x.setAttribute('aria-selected', 'false');
-      });
-      s.classList.add('aktif');
-      s.setAttribute('aria-selected', 'true');
-      document.querySelectorAll('.m-sekme-icerik').forEach(function (x) { x.hidden = true; });
-      byId('sekme-' + s.dataset.sekme).hidden = false;
+  var sekmeler = Array.prototype.slice.call(document.querySelectorAll('.m-sekme'));
+
+  /* Gezici odak (roving tabindex): sekme şeridi TEK Tab durağıdır, sekmeler
+     arasında ok tuşuyla gezilir (WAI-ARIA APG "Tabs"). Beş sekmeyi Tab ile
+     tek tek geçmek zorunda kalmak klavye kullanıcısını yorar. */
+  function sekmeSec(s, odakla) {
+    if (!s) { return; }
+    if (!s.classList.contains('aktif')) { digerleriniIptalEt(''); }
+    sekmeler.forEach(function (x) {
+      x.classList.remove('aktif');
+      x.setAttribute('aria-selected', 'false');
+      x.setAttribute('tabindex', '-1');
+    });
+    s.classList.add('aktif');
+    s.setAttribute('aria-selected', 'true');
+    s.setAttribute('tabindex', '0');
+    document.querySelectorAll('.m-sekme-icerik').forEach(function (x) { x.hidden = true; });
+    var panel = byId('sekme-' + s.dataset.sekme);
+    if (panel) { panel.hidden = false; }
+    if (odakla) { s.focus(); }
+  }
+
+  sekmeler.forEach(function (s, i) {
+    s.addEventListener('click', function () { sekmeSec(s, false); });
+    s.addEventListener('keydown', function (ev) {
+      var adim = { ArrowRight: 1, ArrowLeft: -1 }[ev.key];
+      var hedef = null;
+      if (adim) {
+        hedef = sekmeler[(i + adim + sekmeler.length) % sekmeler.length];
+      } else if (ev.key === 'Home') {
+        hedef = sekmeler[0];
+      } else if (ev.key === 'End') {
+        hedef = sekmeler[sekmeler.length - 1];
+      }
+      if (!hedef) { return; }
+      ev.preventDefault();
+      sekmeSec(hedef, true);
     });
   });
 
