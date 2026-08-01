@@ -136,6 +136,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 
 /* ---- Görünüm ---- */
+/*
+ * VERİ ENVANTERİ — hangi kişisel veri, ne kadar, ne kadar süre?
+ * İnternete açılan bir kurulumda eğitmenin bunu görebilmesi gerekiyor;
+ * "ne sakladığımı bilmiyorum" savunulabilir bir konum değil.
+ */
+$envanter = [];
+foreach ([
+    ['ogrenciler',        'Katılımcı kaydı',      'kod (takma ad), doğum yılı, veli notu, erişim kodu', 'Öğrenci silinene kadar'],
+    ['katilim',           'Yoklama ve gözlem',    'katılım durumu, gözlem notu',                        'Öğrenciyle birlikte silinir'],
+    ['protokol_sonuclari','Ölçüm sonucu',         'skor, tempo, ayrıntı JSON',                          'Öğrenciyle birlikte silinir'],
+    ['on_kayitlar',       'İletişim talebi',      'GERÇEK AD + telefon/e-posta',                        'Sonuçlanan 180 gün, bekleyen 365 gün'],
+    ['ev_tamamlama',      'Ev çalışması işareti', 'tarih, işaret',                                      'Öğrenciyle birlikte silinir'],
+] as [$tablo, $ad, $icerik, $sure]) {
+    try { $adet = (int)db()->query("SELECT COUNT(*) FROM {$tablo}")->fetchColumn(); }
+    catch (Throwable $e) { $adet = -1; }
+    $envanter[] = ['tablo' => $tablo, 'ad' => $ad, 'icerik' => $icerik, 'sure' => $sure, 'adet' => $adet];
+}
+
 $dbBoyut = is_file($dbDosya) ? filesize($dbDosya) : 0;
 $yedekler = [];
 $dosyalar = array_merge(glob($yedekDizin . '/otomatik-*.sqlite') ?: [],
@@ -152,7 +170,42 @@ $boyutYaz = function (int $b): string {
 $PAGE_TITLE = 'Yedekleme';
 require APP_DIR . '/includes/view/header.php';
 ?>
-<div class="sayfa-baslik"><h1>Yedekleme</h1></div>
+<div class="sayfa-baslik"><h1>Yedekleme ve veri</h1></div>
+
+<section class="kart" aria-labelledby="envanterBaslik">
+  <div class="kart-baslik">
+    <div>
+      <h2 id="envanterBaslik">Hangi kişisel veri tutuluyor?</h2>
+      <span class="alan-ipucu">Saklama süresi dolan kayıtlar günde bir otomatik silinir.</span>
+    </div>
+    <span class="rozet rozet-gri"><?= e(dagitim_kipi() === 'yayin' ? 'Yayın kipi' : 'Yerel kip') ?></span>
+  </div>
+  <div class="tablo-sar">
+    <table class="tablo">
+      <thead><tr><th scope="col">Kayıt türü</th><th scope="col">İçerdiği veri</th>
+        <th scope="col" class="sayi">Adet</th><th scope="col">Saklama süresi</th></tr></thead>
+      <tbody>
+        <?php foreach ($envanter as $ev): ?>
+        <tr>
+          <td><?= e($ev['ad']) ?></td>
+          <td><?= e($ev['icerik']) ?></td>
+          <td class="sayi"><?= $ev['adet'] < 0 ? '—' : (int)$ev['adet'] ?></td>
+          <td><?= e($ev['sure']) ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <p class="bilgi-kutu">
+    <strong>Yedek dosyaları şifrelenmemiş SQLite kopyalarıdır</strong> ve yukarıdaki verinin
+    tamamını içerir. Sunucuda tutuluyorsa dosya sistemi erişimi olan herkes okuyabilir;
+    indirdiğinizde de bilgisayarınızda düz olarak durur. Otomatik yedekler son 10,
+    geri yükleme öncesi emniyet kopyaları son 5 tutulur; 90 günden eskiler silinir.
+    Bir katılımcıyı sildiğinizde yoklama, gözlem ve ölçüm kayıtları da birlikte silinir
+    (veritabanı düzeyinde CASCADE) — ama <em>eski yedeklerde</em> kalmaya devam eder.
+  </p>
+</section>
+
 
 <div class="kart">
   <div class="kart-baslik">

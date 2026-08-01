@@ -71,6 +71,51 @@ function auto_backup_daily(): void
     foreach (array_slice($eskiler, 0, max(0, count($eskiler) - 10)) as $dosya) {
         @unlink($dosya);
     }
+    /*
+     * Geri yükleme öncesi emniyet kopyaları da BİRİKİYORDU. Her biri tam bir
+     * kişisel veri kopyası; süresiz saklamak veri asgariliğine aykırı.
+     * Son 5 tutulur, ayrıca 90 günden eski olan silinir.
+     */
+    $emniyet = glob($dizin . '/oncesi-*.sqlite') ?: [];
+    sort($emniyet);
+    foreach (array_slice($emniyet, 0, max(0, count($emniyet) - 5)) as $dosya) {
+        @unlink($dosya);
+    }
+    $sinir = time() - 90 * 86400;
+    foreach (glob($dizin . '/*.sqlite') ?: [] as $dosya) {
+        if (@filemtime($dosya) < $sinir) { @unlink($dosya); }
+    }
+}
+
+/**
+ * KİŞİSEL VERİ SAKLAMA SÜRESİ — otomatik temizlik.
+ *
+ * on_kayitlar tablosu tanıtım sitesinden gelen iletişim taleplerini tutar:
+ * GERÇEK AD + telefon/e-posta. Bunlar yalnız geri dönüş yapmak için gerekli;
+ * sonuçlandıktan sonra süresiz saklamak veri asgariliğine aykırıdır.
+ *
+ * Kural: sonuçlanmış talepler ('kayit' veya 'vazgecti') 180 gün sonra,
+ * hiç dokunulmamış 'yeni' talepler 365 gün sonra silinir. Süreler
+ * storage/gizli.php'de TALEP_SAKLAMA_GUN ile değiştirilebilir.
+ */
+function purge_expired_personal_data(): void
+{
+    $bugun = date('Y-m-d');
+    if (site_text('sistem_veri_temizlik_gun') === $bugun) { return; }   // günde bir
+    $sonuclanan = defined('TALEP_SAKLAMA_GUN') ? max(30, (int)TALEP_SAKLAMA_GUN) : 180;
+    $bekleyen = max($sonuclanan, 365);
+    try {
+        db()->prepare("DELETE FROM on_kayitlar
+                        WHERE durum IN ('kayit','vazgecti')
+                          AND created_at < datetime('now', ?)")
+            ->execute(['-' . $sonuclanan . ' days']);
+        db()->prepare("DELETE FROM on_kayitlar
+                        WHERE created_at < datetime('now', ?)")
+            ->execute(['-' . $bekleyen . ' days']);
+        site_text_set('sistem_veri_temizlik_gun', $bugun);
+    } catch (Throwable $e) {
+        error_log('RitimTerapi veri temizliği hatası: ' . $e->getMessage());
+    }
 }
 
 /**

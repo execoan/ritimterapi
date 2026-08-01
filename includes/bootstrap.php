@@ -359,3 +359,4 @@ seed_unsupported_technique_studies();     // arka plan kaynakları; kanıt düze
 seed_timbre_technique_2026();             // "Kalın–İnce Tını" tekniği + 7 doğrulanmış kaynak
 ensure_student_codes();
 auto_backup_daily();
+purge_expired_personal_data();   // saklama süresi dolan iletişim talepleri
