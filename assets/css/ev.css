@@ -549,3 +549,14 @@
   display: block; margin-bottom: .35rem; font-size: .85rem; font-weight: 700;
   color: var(--t-metin, #f5f5f4); text-align: left;
 }
+
+/*
+ * Hareket duyarlılığı — ev.php çocuk tarafı; bu dosyada blok hiç yoktu.
+ * Vuruş hızında değişen öğeler durur, renk/opaklık bilgisi korunur.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ro-hece.ro-caliyor, .ro-hece.ro-demo-aktif, .ro-hece.ro-okuma-aktif,
+  .ro-nota, .ro-pad, .ev-gun, .ev-seri {
+    animation: none !important; transition: none !important; transform: none !important;
+  }
+}

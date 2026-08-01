@@ -1100,8 +1100,11 @@ body.tanitim::after {
   .t-deney-fon, .t-hero-davet-nokta, .t-nabiz-halka, .t-sapma-serit i,
   .t-profil, .t-profil-isik, .t-kayit-fon, .t-tempo-isik,
   .t-tempo-secenek.dogru, .t-tempo-secenek.yanlis, .t-tempo-sonuc.basari, .t-tempo-sonuc.hata,
-  .t-canli-rozet i, .t-sessiz-halka i, .t-tek-deney.sira-sende .t-meydan-vur
-    { animation: none !important; }
+  .t-canli-rozet i, .t-sessiz-halka i, .t-tek-deney.sira-sende .t-meydan-vur,
+  /* Vurus hizinda degisen ogeler de dahil (denetimde disarida kalmislardi) */
+  .t-moxo-onson, .t-tempo-ikon, .t-tempo-nokta, .t-vurus-halkasi, .t-serit-ic
+    { animation: none !important; transition: none !important; transform: none !important; }
+  html { scroll-behavior: auto; }
   .t-nabiz-halka { opacity: .25; }
   /* Sinematik ölçek bölümü kısalır: yapışkan sahne yerine tek ekran */
   .t-olcek { height: auto; }

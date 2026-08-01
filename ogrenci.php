@@ -39,6 +39,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } else {
         $res = student_save($_POST, $id);
         flash_set($res['ok'] ? 'basari' : 'hata', $res['ok'] ? 'Öğrenci güncellendi.' : $res['error']);
+        /* Hata varsa girilen veri KAYBOLMASIN — yeniden yazdırmak angarya ve
+           uzun bir veli notunda gerçek veri kaybı demek (gruplar.php deseni). */
+        if (!$res['ok']) { set_old($_POST); }
     }
     redirect('ogrenci.php?id=' . $id);
 }
@@ -91,10 +94,10 @@ require APP_DIR . '/includes/view/header.php';
     <input type="hidden" name="id" value="<?= $id ?>">
     <div class="form-grid">
       <label class="form-alan">Kod (takma ad)
-        <input type="text" name="kod" class="girdi" value="<?= e($ogrenci['kod']) ?>" maxlength="40" required>
+        <input type="text" name="kod" class="girdi" value="<?= e(old('kod', $ogrenci['kod'])) ?>" maxlength="40" required>
       </label>
       <label class="form-alan">Doğum yılı
-        <input type="number" name="dogum_yili" class="girdi" value="<?= e((string)$ogrenci['dogum_yili']) ?>"
+        <input type="number" name="dogum_yili" class="girdi" value="<?= e((string)old('dogum_yili', $ogrenci['dogum_yili'])) ?>"
                min="1920" max="<?= (int)now()->format('Y') ?>">
       </label>
       <label class="form-alan">Durum
@@ -102,7 +105,7 @@ require APP_DIR . '/includes/view/header.php';
         <span class="onay-kutu"><input type="checkbox" name="aktif" value="1" <?= (int)$ogrenci['aktif'] === 1 ? 'checked' : '' ?>> Öğrenci aktif</span>
       </label>
       <label class="form-alan form-genis">Veli notu
-        <textarea name="veli_notu" class="girdi" maxlength="500"><?= e($ogrenci['veli_notu']) ?></textarea>
+        <textarea name="veli_notu" class="girdi" maxlength="500"><?= e(old('veli_notu', $ogrenci['veli_notu'])) ?></textarea>
       </label>
     </div>
     <div class="form-butonlar">

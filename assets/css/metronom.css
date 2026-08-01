@@ -576,7 +576,23 @@
   .m-kaydet-form .girdi { max-width: none !important; flex: 1 1 100%; }
 }
 
+/*
+ * HAREKET DUYARLILIGI (WCAG 2.3.3 + 2.3.1).
+ * Onceki blok yalniz birkac sus ogesini kapsiyordu; VURUS HIZINDA degisen
+ * ogeler (nokta dizisi, sayac, poliritim noktalari ve ozellikle FLAS MODU)
+ * disarida kalmisti. Flas, tum sahneyi kaplayan bir gradyani her vuruste
+ * aciyor — cocuk grubuyla projeksiyonda en riskli oge budur.
+ * RENK/OPAKLIK bilgisi korunur, yalniz GECIS ve YANIP SONME durur.
+ */
 @media (prefers-reduced-motion: reduce) {
   .m-durum.calisiyor .m-durum-nokta { animation: none; }
   .m-sarkac, .m-halka, .m-ilerleme-dolu, .m-sarki { transition: none; }
+  .m-nokta, .m-nokta.aktif, .m-sayac, .m-sayac-simdi, .m-poli-nokta {
+    animation: none !important; transition: none !important; transform: none !important;
+  }
+  /* Flas modu tamamen kapali: yanip sonme uyarani reduced-motion'da uretilmez */
+  .m-flas, .m-flas.flas, .m-flas.flas-aksan {
+    opacity: 0 !important; transition: none !important;
+  }
+  html { scroll-behavior: auto; }
 }

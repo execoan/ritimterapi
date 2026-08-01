@@ -128,3 +128,10 @@
   .motor-el-metrikler { grid-template-columns: repeat(2, 1fr); }
   .motor-dialog-secenekler { grid-template-columns: 1fr; }
 }
+
+/* Hareket duyarlılığı — bu dosyada blok yoktu */
+@media (prefers-reduced-motion: reduce) {
+  .motor-el-pad, .motor-ilerleme span, .motor-kal-pad, .motor-hata-nokta {
+    animation: none !important; transition: none !important; transform: none !important;
+  }
+}

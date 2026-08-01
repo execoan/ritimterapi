@@ -442,6 +442,12 @@
    */
   var duyuruZamani = null;
   var sonDuyurulan = '';
+  /** Kullanici isletim sisteminde hareketi azaltmayi secmis mi? */
+  function hareketAzaltilmis() {
+    return typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
   function durumGuncelle(metin, calisiyor) {
     if (!m.el.durumMetin) { return; }
     m.el.durumMetin.textContent = metin;
@@ -599,9 +605,19 @@
       if (sesli && vurgu > 0) {
         m.el.halka.classList.add(vurgu === 2 ? 'vur-aksan' : 'vur');
         setTimeout(function () { m.el.halka.classList.remove('vur', 'vur-aksan'); }, 100);
-        if (m.el.flasModu.checked) {
-          m.el.flas.classList.add(vurgu === 2 ? 'flas-aksan' : 'flas');
-          setTimeout(function () { m.el.flas.classList.remove('flas', 'flas-aksan'); }, 90);
+        /*
+         * FLAS MODU — yanip sonme siniri (WCAG 2.3.1).
+         * Tum sahneyi kaplayan gradyan her vuruste aciliyordu; 176 BPM ustunde
+         * saniyede 3'ten fazla flas demek ve cocuk grubuyla projeksiyonda en
+         * riskli oge bu. Iki koruma: (a) hareket azaltma acikken HIC flaslama,
+         * (b) vurus araligi 0,34 sn'nin altindaysa yalniz OLCU BASLARINDA.
+         */
+        if (m.el.flasModu.checked && !hareketAzaltilmis()) {
+          var araSn = 60 / Math.max(1, m.bpm);
+          if (araSn >= 0.34 || vurgu === 2) {
+            m.el.flas.classList.add(vurgu === 2 ? 'flas-aksan' : 'flas');
+            setTimeout(function () { m.el.flas.classList.remove('flas', 'flas-aksan'); }, 90);
+          }
         }
         if (m.el.titresim.checked && navigator.vibrate) {
           navigator.vibrate(vurgu === 2 ? 40 : 20);

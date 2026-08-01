@@ -109,6 +109,7 @@ require APP_DIR . '/includes/view/header.php';
             <td class="sayi"><?= (int)$p['sure_dk'] ?> dk</td>
             <td>
               <input type="text" name="teknik_notu[<?= $tid ?>]" class="girdi" maxlength="200"
+                     aria-label="<?= e($p['ad']) ?> — uygulama notu"
                      value="<?= e($p['uygulama_notu']) ?>" placeholder="Tempo, uyarlama, gözlem…">
             </td>
           </tr>
@@ -151,6 +152,7 @@ require APP_DIR . '/includes/view/header.php';
             </td>
             <td>
               <input type="text" name="gozlem[<?= (int)$oid ?>]" class="girdi" maxlength="300"
+                     aria-label="<?= e($k['kod'] ?? 'Katılımcı') ?> — gözlem notu"
                      value="<?= e($mevcutYoklama[$oid]['gozlem_notu'] ?? '') ?>"
                      placeholder="Kısa gözlem (veli raporunda görünebilir)">
             </td>

@@ -22,6 +22,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } else {
         $res = technique_save($_POST, $id);
         flash_set($res['ok'] ? 'basari' : 'hata', $res['ok'] ? 'Teknik güncellendi.' : $res['error']);
+        if (!$res['ok']) { set_old($_POST); }
     }
     redirect('teknik.php?id=' . $id);
 }
@@ -52,7 +53,7 @@ require APP_DIR . '/includes/view/header.php';
     <input type="hidden" name="id" value="<?= $id ?>">
     <div class="form-grid">
       <label class="form-alan">Teknik adı
-        <input type="text" name="ad" class="girdi" value="<?= e($teknik['ad']) ?>" maxlength="80" required>
+        <input type="text" name="ad" class="girdi" value="<?= e(old('ad', $teknik['ad'])) ?>" maxlength="80" required>
       </label>
       <label class="form-alan">Kategori
         <input type="text" name="kategori" class="girdi" value="<?= e($teknik['kategori']) ?>" maxlength="60" required list="kategoriListesi">
@@ -92,10 +93,10 @@ require APP_DIR . '/includes/view/header.php';
         <span class="onay-kutu"><input type="checkbox" name="aktif" value="1" <?= (int)$teknik['aktif'] === 1 ? 'checked' : '' ?>> Teknik aktif (planlarda seçilebilir)</span>
       </label>
       <label class="form-alan form-genis">Açıklama (nasıl uygulanır)
-        <textarea name="aciklama" class="girdi" maxlength="1500" rows="4"><?= e($teknik['aciklama']) ?></textarea>
+        <textarea name="aciklama" class="girdi" maxlength="1500" rows="4"><?= e(old('aciklama', $teknik['aciklama'])) ?></textarea>
       </label>
       <label class="form-alan form-genis">Kaynak
-        <input type="text" name="kaynak" class="girdi" value="<?= e($teknik['kaynak']) ?>" maxlength="300">
+        <input type="text" name="kaynak" class="girdi" value="<?= e(old('kaynak', $teknik['kaynak'])) ?>" maxlength="300">
       </label>
     </div>
     <div class="form-butonlar">

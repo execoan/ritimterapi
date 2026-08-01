@@ -696,11 +696,19 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <h3>İletişim formu</h3>
       <label class="t-alan">
         <span>Adınız</span>
-        <input type="text" name="ad" maxlength="80" required placeholder="Nasıl hitap edelim?">
+        <input type="text" name="ad" maxlength="80" required autocomplete="name"
+               placeholder="Nasıl hitap edelim?">
       </label>
       <label class="t-alan">
         <span>Telefon veya e-posta</span>
-        <input type="text" name="iletisim" maxlength="120" required placeholder="Size nasıl ulaşalım?">
+        <!-- Alan tek: telefon VEYA e-posta kabul ediyor. WCAG 1.3.5 tek bir
+             autocomplete jetonu ister; ikisini birden yazamayiz. Alani ikiye
+             bolmek model tarafinda degisiklik gerektirir (tek sutun) — su an
+             en dogru jeton "tel" degil, genel iletisim oldugu icin verilmiyor;
+             bunun yerine inputmode ve aciklama ile yardim ediliyor. -->
+        <input type="text" name="iletisim" maxlength="120" required
+               aria-describedby="iletisimIpucu" placeholder="Size nasıl ulaşalım?">
+        <small id="iletisimIpucu" class="t-alan-ipucu">Telefon veya e-posta yazabilirsiniz.</small>
       </label>
       <label class="t-alan">
         <span>Kimin için?</span>

@@ -159,10 +159,13 @@ require APP_DIR . '/includes/view/header.php';
           <span class="alan-ipucu plan-kategori"><?= e($p['kategori']) ?></span>
           <span class="rozet plan-kanit rozet-kanit-<?= e($p['kanit_duzeyi']) ?>"><?= e(KANIT_LABELS[$p['kanit_duzeyi']] ?? '') ?></span>
           <input type="text" name="uygulama_notu[]" class="girdi plan-not-girdi" maxlength="200"
+                 aria-label="<?= e($p['ad']) ?> — uygulama notu"
                  placeholder="Uygulama notu (isteğe bağlı)" value="<?= e($p['uygulama_notu']) ?>">
         </div>
         <label class="form-alan" style="width:86px">dk
-          <input type="number" name="sure_dk[]" class="girdi plan-sure-girdi" value="<?= (int)$p['sure_dk'] ?>" min="1" max="120">
+          <input type="number" name="sure_dk[]" class="girdi plan-sure-girdi"
+                 aria-label="<?= e($p['ad']) ?> — süre (dakika)"
+                 value="<?= (int)$p['sure_dk'] ?>" min="1" max="120">
         </label>
         <button type="button" class="btn btn-kucuk btn-tehlike plan-kaldir" title="Plandan çıkar">✕</button>
       </li>
