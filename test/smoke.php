@@ -312,6 +312,56 @@ $t = csrf_al('giris.php', $jar);
 $y = gonder('giris.php', ['csrf_token' => $t, 'kullanici' => 'admin', 'sifre' => 'yanlis'], $jar);
 dogrula(str_contains($y['govde'], 'doğru değil'), 'yanlış şifre reddediliyor');
 
+/*
+ * REGRESYON — TERS VEKİL ALTINDA TEK TIK GİRİŞ.
+ *
+ * Bu denetim gerçek bir açıktan doğdu: hızlı giriş yalnız
+ * REMOTE_ADDR === '127.0.0.1' koşuluna bakıyordu. Sunucuda uygulama
+ * nginx/Apache ters vekilinin arkasında PHP-FPM ile çalışır ve orada
+ * REMOTE_ADDR HER İSTEK İÇİN 127.0.0.1'dir — yani şifresiz tek tık girişi
+ * tüm internete açılırdı. Artık iki koşul birlikte aranıyor: DAGITIM='yerel'
+ * VE döngü arayüzü. Test yerleşik sunucuda koştuğu için REMOTE_ADDR zaten
+ * 127.0.0.1'dir; yani bu senaryonun BİREBİR kendisi sınanıyor.
+ */
+$gizliYol = $TEMP . '/gizli.php';
+$gizliYedek = (string)file_get_contents($gizliYol);
+// HIZLI_GIRIS açık + DAGITIM yayın → tek tık giriş KAPALI olmalı
+file_put_contents($gizliYol,
+    "<?php\ndefine('PANEL_KULLANICILAR', ['admin' => '{$SIFRE}']);\n"
+    . "define('DAGITIM', 'yayin');\ndefine('HIZLI_GIRIS', true);\n");
+$vekilJar = [];
+$t = csrf_al('giris.php', $vekilJar);
+gonder('giris.php', ['csrf_token' => $t, 'hizli' => 'admin'], $vekilJar);
+$y = git_('panel.php', $vekilJar);
+dogrula($y['durum'] >= 300 && str_contains($y['yer'], 'giris.php'),
+    'DAGITIM=yayin iken tek tık giriş REDDEDİLİYOR (ters vekil senaryosu)',
+    'durum ' . $y['durum']);
+// Butonlar da hiç basılmamalı — görünmeyen ama çalışan bir yol kalmasın
+$y = git_('giris.php', $vekilJar);
+dogrula(!str_contains($y['govde'], 'name="hizli"'),
+    'DAGITIM=yayin iken tek tık butonları HTML\'de hiç yok');
+
+// Aynı yapılandırma yerel dağıtımda ÇALIŞMALI (kolaylık kaybolmasın)
+file_put_contents($gizliYol,
+    "<?php\ndefine('PANEL_KULLANICILAR', ['admin' => '{$SIFRE}']);\n"
+    . "define('DAGITIM', 'yerel');\ndefine('HIZLI_GIRIS', true);\n");
+$yerelJar = [];
+$t = csrf_al('giris.php', $yerelJar);
+gonder('giris.php', ['csrf_token' => $t, 'hizli' => 'admin'], $yerelJar);
+$y = git_('panel.php', $yerelJar);
+dogrula($y['durum'] === 200, 'DAGITIM=yerel iken tek tık giriş çalışıyor', 'durum ' . $y['durum']);
+file_put_contents($gizliYol, $gizliYedek);   // yapılandırmayı geri koy
+
+/* Şifre özeti: düz metin yazılan gizli.php kendiliğinden özete çevrildi mi? */
+$t = csrf_al('giris.php', $jar);            // bir istek atıp göçü tetikle
+$gizliSonrasi = (string)file_get_contents($gizliYol);
+dogrula(str_contains($gizliSonrasi, '$2y$') && !str_contains($gizliSonrasi, "'{$SIFRE}'"),
+    'düz metin şifre kendiliğinden password_hash özetine çevrildi');
+$t = csrf_al('giris.php', $jar);
+$y = gonder('giris.php', ['csrf_token' => $t, 'kullanici' => 'admin', 'sifre' => $SIFRE], $jar);
+dogrula($y['durum'] >= 300 && !str_contains($y['yer'], 'giris.php'),
+    'özete çevrildikten sonra ESKİ şifreyle giriş hâlâ çalışıyor (kurulum kırılmadı)');
+
 // Deneme kilidi: ayrı oturumda 5 başarısız → 6. denemede kilit; kilitliyken doğru şifre bile geçmez
 $kilitJar = [];
 for ($i = 0; $i < 5; $i++) {

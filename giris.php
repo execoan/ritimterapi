@@ -31,7 +31,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
          * (gizli.php'de HIZLI_GIRIS=false ile tamamen kapatılabilir.)
          */
         $hizli = (string)($_POST['hizli'] ?? '');
-        if (HIZLI_GIRIS && yerel_istek_mi() && $hizli !== '' && array_key_exists($hizli, PANEL_KULLANICILAR)) {
+        if (HIZLI_GIRIS && yerel_istek_mi() && $hizli !== '' && array_key_exists($hizli, PANEL_HESAPLAR)) {
             unset($_SESSION['giris_deneme']);
             session_regenerate_id(true);
             $_SESSION['egitmen'] = 1;
@@ -41,8 +41,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
         $kullanici = strtolower(trim((string)($_POST['kullanici'] ?? '')));
         $sifre = (string)($_POST['sifre'] ?? '');
-        $beklenen = PANEL_KULLANICILAR[$kullanici] ?? null;
-        if ($beklenen !== null && $sifre !== '' && hash_equals((string)$beklenen, $sifre)) {
+        /* Şifreler artık password_hash ile saklanıyor; doğrulama sabit sürelidir
+           ve kullanıcı adının var olup olmadığını zamanlamayla sızdırmaz. */
+        if ($sifre !== '' && panel_sifre_dogrula($kullanici, $sifre)) {
             unset($_SESSION['giris_deneme']);
             session_regenerate_id(true);
             $_SESSION['egitmen'] = 1;

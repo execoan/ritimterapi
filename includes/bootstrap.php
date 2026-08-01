@@ -26,19 +26,55 @@ define('APP_NAME', 'RitimTerapi');
 define('REPORT_BRAND', 'Ritim Atölyesi');
 
 /**
+ * DAĞITIM KİPİ — uygulama nerede çalışıyor?
+ *
+ * 'yerel'   : eğitmenin kendi makinesi / atölye Wi-Fi'ı (start.bat)
+ * 'yayin'   : internete açık sunucu
+ *
+ * storage/gizli.php içinde DAGITIM sabitiyle belirlenir. Tanımlı değilse
+ * GÜVENLİ TARAF seçilir: 'yayin'. Yani bir kurulum yapılandırılmayı unutursa
+ * kolaylıklar kapalı kalır, açık kalmaz.
+ */
+function dagitim_kipi(): string
+{
+    return (defined('DAGITIM') && DAGITIM === 'yerel') ? 'yerel' : 'yayin';
+}
+
+/**
  * İstek eğitmenin KENDİ makinesinden mi geliyor?
  *
- * Uygulama start.bat ile 0.0.0.0'a bağlanır (telefon/tablet aynı Wi-Fi'dan
- * girebilsin diye). Bu, hata ayıklama kolaylıklarının ağdaki HERKESE açık
- * olması demek — o yüzden bunlar yalnız yerel istekte etkin:
- *   • display_errors (yol ve SQL sızdırır)
- *   • ayrıntılı hata mesajı
- *   • HIZLI_GIRIS tek tık butonları (bkz. giris.php)
+ * !!! REMOTE_ADDR'E TEK BAŞINA GÜVENİLMEZ !!!
+ * Uygulama yayında tipik olarak nginx/Apache ters vekilinin arkasında
+ * PHP-FPM ile çalışır ve orada REMOTE_ADDR HER İSTEK İÇİN 127.0.0.1'dir.
+ * Yalnız IP'ye bakan bir "yerel mi?" denetimi, yayına alındığı anda
+ * şifresiz tek-tık girişi TÜM İNTERNETE açardı.
+ *
+ * Bu yüzden iki koşul birlikte aranır:
+ *   1) dağıtım kipi açıkça 'yerel' olarak yapılandırılmış olacak, VE
+ *   2) isteğin kaynağı gerçekten döngü arayüzü olacak.
+ * X-Forwarded-For gibi istemcinin uydurabileceği başlıklara HİÇ bakılmaz.
  */
 function yerel_istek_mi(): bool
 {
+    if (PHP_SAPI === 'cli') { return true; }
+    if (dagitim_kipi() !== 'yerel') { return false; }   // yayında asla
     $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
-    return $ip === '127.0.0.1' || $ip === '::1' || $ip === '' || PHP_SAPI === 'cli';
+    return $ip === '127.0.0.1' || $ip === '::1' || $ip === '';
+}
+
+/** İstek HTTPS üzerinden mi geldi? (ters vekil başlığı yalnız yerelden kabul) */
+function guvenli_baglanti_mi(): bool
+{
+    if (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') { return true; }
+    if ((int)($_SERVER['SERVER_PORT'] ?? 0) === 443) { return true; }
+    /* Ters vekil başlığına YALNIZ döngü arayüzünden gelen istekte güvenilir;
+       aksi hâlde istemci başlığı uydurup Secure çerezi düşürebilir. */
+    $ip = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    if ($ip === '127.0.0.1' || $ip === '::1') {
+        $p = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+        if ($p === 'https') { return true; }
+    }
+    return false;
 }
 
 error_reporting(E_ALL);
@@ -46,25 +82,52 @@ error_reporting(E_ALL);
 @ini_set('display_errors', yerel_istek_mi() ? '1' : '0');
 @ini_set('log_errors', '1');
 
-// Temel güvenlik başlıkları (yerelde de zarar vermez)
 if (!headers_sent()) {
     header_remove('X-Powered-By');          // PHP sürümünü duyurma
     header('X-Content-Type-Options: nosniff');
-    header('X-Frame-Options: SAMEORIGIN');
     header('Referrer-Policy: same-origin');
+    /* frame-ancestors, X-Frame-Options'ın yerini alır (CSP2+); ikisi de yollanır
+       çünkü eski tarayıcılar yalnız başlığı anlar. */
+    header('X-Frame-Options: SAMEORIGIN');
+    header('Permissions-Policy: geolocation=(), camera=(), payment=(), usb=(), interest-cohort=()');
     header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; "
-        . "style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'");
+        . "style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; "
+        . "base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+    /* HSTS yalnız gerçekten HTTPS'teyken: HTTP üzerinden yollamak anlamsız,
+       yanlış kurulumda siteyi erişilemez kılabilir. */
+    if (guvenli_baglanti_mi()) {
+        header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+    }
 }
 
 if (session_status() === PHP_SESSION_NONE) {
-    session_name('RITIMSESSID');
+    $guvenli = guvenli_baglanti_mi();
+    session_name($guvenli ? '__Host-RITIMSESS' : 'RITIMSESSID');
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
+        'secure'   => $guvenli,      // HTTPS'te çerez düz metin bağlantıya gitmez
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
     session_start();
+
+    /*
+     * OTURUM ÖMRÜ — iki ayrı sınır:
+     *  • boşta kalma: 2 saat işlem yoksa düşer (paylaşılan cihaz riski)
+     *  • mutlak    : 12 saat sonra her hâlükârda düşer (çalınan çerez süresiz olmasın)
+     */
+    $simdi = time();
+    $bosta = 2 * 3600;
+    $mutlak = 12 * 3600;
+    $son = (int)($_SESSION['_son_islem'] ?? 0);
+    $bas = (int)($_SESSION['_oturum_basi'] ?? 0);
+    if (($son && $simdi - $son > $bosta) || ($bas && $simdi - $bas > $mutlak)) {
+        $_SESSION = [];
+        session_regenerate_id(true);
+    }
+    if (empty($_SESSION['_oturum_basi'])) { $_SESSION['_oturum_basi'] = $simdi; }
+    $_SESSION['_son_islem'] = $simdi;
 }
 
 require __DIR__ . '/helpers.php';
@@ -73,26 +136,107 @@ require __DIR__ . '/seed.php';
 require __DIR__ . '/model.php';
 
 /*
- * Eğitmen giriş şifresi — storage/gizli.php içinde tutulur (ilk çalıştırmada
- * varsayılanla oluşturulur). Uygulama Wi-Fi ağına açık çalıştığı için panel
- * hafif bir şifre kapısının arkasındadır; tanıtım sayfası herkese açıktır.
+ * Eğitmen giriş hesapları — storage/gizli.php.
+ *
+ * ŞİFRELER ARTIK ÖZETLENMİŞ (password_hash) SAKLANIR. Önceden düz metindi;
+ * yerelde tek kullanıcılı bir araç için savunulabilirdi, internete açılan bir
+ * kurulumda değil — dosyayı okuyabilen (yedek, günlük, hatalı yapılandırma)
+ * doğrudan şifreyi ele geçiriyordu.
+ *
+ * Eski kurulumlar kırılmaz: düz metin bir değer görülürse ilk açılışta
+ * kendiliğinden özete çevrilir ve dosya yeniden yazılır (bkz. gizli_dosyayi_tasi).
  */
 $gizliDosya = STORAGE_DIR . '/gizli.php';
+
+/** Değer bir password_hash çıktısı mı? ($2y$, $argon2 …) */
+function sifre_ozeti_mi(string $deger): bool
+{
+    return (bool)preg_match('/^\$(2y|2a|2b|argon2i|argon2id)\$/', $deger);
+}
+
+/** gizli.php'yi verilen hesaplarla (özetlenmiş) yeniden yazar. */
+function gizli_dosyayi_yaz(string $yol, array $hesaplar, string $dagitim, bool $hizli): bool
+{
+    $satirlar = [];
+    foreach ($hesaplar as $ad => $ozet) {
+        $satirlar[] = "    '" . str_replace("'", "\\'", (string)$ad) . "' => '" . str_replace("'", "\\'", (string)$ozet) . "',";
+    }
+    $icerik = "<?php\n"
+        . "// RitimTerapi gizli yapılandırma — bu dosya sürüm denetimine GİRMEZ.\n"
+        . "//\n"
+        . "// Şifreler password_hash ile ÖZETLENMİŞTİR; düz metin yazmayın.\n"
+        . "// Şifre değiştirmek için düz metin yazıp kaydedin — uygulama ilk açılışta\n"
+        . "// kendiliğinden özete çevirir ve bu dosyayı yeniden yazar.\n"
+        . "define('PANEL_KULLANICILAR', [\n" . implode("\n", $satirlar) . "\n]);\n\n"
+        . "// 'yerel' = kendi makineniz/atölye Wi-Fi'ı · 'yayin' = internete açık sunucu.\n"
+        . "// Tanımlı değilse GÜVENLİ taraf ('yayin') seçilir.\n"
+        . "define('DAGITIM', '" . ($dagitim === 'yerel' ? 'yerel' : 'yayin') . "');\n\n"
+        . "// Tek tıkla giriş butonları — YALNIZ 'yerel' dağıtımda ve yalnız\n"
+        . "// döngü arayüzünden gelen istekte çalışır. Yayında etkisizdir.\n"
+        . "define('HIZLI_GIRIS', " . ($hizli ? 'true' : 'false') . ");\n";
+    return @file_put_contents($yol, $icerik, LOCK_EX) !== false;
+}
+
 if (!is_file($gizliDosya)) {
     if (!is_dir(STORAGE_DIR)) { @mkdir(STORAGE_DIR, 0755, true); }
-    @file_put_contents($gizliDosya,
-        "<?php\n// Giriş hesapları: kullanıcı adı => şifre. Düzenleyerek değiştirin.\n"
-        . "define('PANEL_KULLANICILAR', ['admin' => 'ritim', 'egitmen' => 'ritim']);\n"
-        . "// Giriş ekranındaki tek tıkla Admin/Eğitmen butonları (yayınlarken false yapın).\n"
-        . "define('HIZLI_GIRIS', true);\n");
+    /* İlk kurulum: rastgele şifre üretilir ve YALNIZ bir kez ekranda gösterilir.
+       Varsayılan 'ritim' şifresiyle kurulmuş bir uygulama internete açılırsa
+       ilk denenecek şey odur. */
+    $ilkSifre = bin2hex(random_bytes(6));
+    gizli_dosyayi_yaz($gizliDosya, [
+        'admin'   => password_hash($ilkSifre, PASSWORD_DEFAULT),
+        'egitmen' => password_hash($ilkSifre, PASSWORD_DEFAULT),
+    ], 'yerel', true);
+    @file_put_contents(STORAGE_DIR . '/ILK-SIFRE.txt',
+        "RitimTerapi ilk giriş şifresi: {$ilkSifre}\n\n"
+        . "Kullanıcı adları: admin, egitmen\n"
+        . "Şifreyi değiştirmek için storage/gizli.php dosyasında ilgili satıra düz metin\n"
+        . "yeni şifreyi yazın; uygulama ilk açılışta özete çevirir.\n"
+        . "BU DOSYAYI OKUDUKTAN SONRA SİLİN.\n");
 }
 if (is_file($gizliDosya)) { require $gizliDosya; }
-if (!defined('PANEL_SIFRE')) { define('PANEL_SIFRE', 'ritim'); }
-// Eski kurulumla uyum: yalnız PANEL_SIFRE tanımlıysa iki hesap da onu kullanır.
+
+/* Eski kurulum uyumu: yalnız PANEL_SIFRE tanımlıysa iki hesap da onu kullanır. */
 if (!defined('PANEL_KULLANICILAR')) {
-    define('PANEL_KULLANICILAR', ['admin' => PANEL_SIFRE, 'egitmen' => PANEL_SIFRE]);
+    $eski = defined('PANEL_SIFRE') ? PANEL_SIFRE : 'ritim';
+    define('PANEL_KULLANICILAR', ['admin' => $eski, 'egitmen' => $eski]);
 }
-if (!defined('HIZLI_GIRIS')) { define('HIZLI_GIRIS', true); }
+if (!defined('HIZLI_GIRIS')) { define('HIZLI_GIRIS', false); }
+
+/*
+ * DÜZ METİNDEN ÖZETE TAŞIMA — bir kez, kendiliğinden.
+ * Kullanıcının şifresini bilmeye gerek yok: dosyadaki düz metin değer
+ * özetlenip dosya yeniden yazılır. Şifre aynı kalır, saklanışı değişir.
+ */
+$duzMetinVar = false;
+$hesaplarOzet = [];
+foreach (PANEL_KULLANICILAR as $ad => $deger) {
+    $deger = (string)$deger;
+    if (sifre_ozeti_mi($deger)) { $hesaplarOzet[$ad] = $deger; continue; }
+    $hesaplarOzet[$ad] = password_hash($deger, PASSWORD_DEFAULT);
+    $duzMetinVar = true;
+}
+if ($duzMetinVar && is_writable($gizliDosya)) {
+    gizli_dosyayi_yaz($gizliDosya, $hesaplarOzet,
+        dagitim_kipi(), defined('HIZLI_GIRIS') && HIZLI_GIRIS);
+}
+/** Doğrulamada kullanılacak nihai hesap listesi (her zaman özetli). */
+define('PANEL_HESAPLAR', $hesaplarOzet);
+
+/**
+ * Şifre doğrulama. Kullanıcı adı bilinmese bile SABİT SÜRE harcanır —
+ * aksi hâlde yanıt süresi "bu kullanıcı var mı?" bilgisini sızdırır.
+ */
+function panel_sifre_dogrula(string $kullanici, string $sifre): bool
+{
+    $ozet = PANEL_HESAPLAR[$kullanici] ?? null;
+    if ($ozet === null) {
+        /* Sahte doğrulama: zamanlama farkını kapatır */
+        password_verify($sifre, '$2y$10$usesomesillystringfoxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+        return false;
+    }
+    return password_verify($sifre, (string)$ozet);
+}
 
 function educator_logged_in(): bool
 {
