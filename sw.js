@@ -7,7 +7,7 @@
    Not: CACHE_ADI değişince aktivasyonda eski cache silinir.
    ======================================================= */
 
-var CACHE_ADI   = 'ritim-v29';
+var CACHE_ADI   = 'ritim-v30';
 /* Çevrimdışı sayfası SW'nin kendi konumuna göre çözülür (alt dizin kurulumunda da doğru). */
 var OFFLINE_URL = new URL('offline.html', self.location).pathname;
 
@@ -21,6 +21,7 @@ var KABUK = [
   'assets/css/grup-atolyesi.css',
   'assets/css/ev.css',
   'assets/css/poliritim.css',
+  'assets/css/tini.css',
   'assets/js/app.js',
   'assets/js/landing.js',
   'assets/js/metronom.js',
@@ -37,6 +38,8 @@ var KABUK = [
   'assets/js/ritim-okuma-sayfa.js',
   'assets/js/poliritim-cekirdegi.js',
   'assets/js/poliritim-studyo.js',
+  'assets/js/tini-cekirdegi.js',
+  'assets/js/tini-kartlari.js',
   'assets/vendor/abcjs/abcjs-basic-min.js',
   'assets/js/belge-duzenle.js',
   'assets/img/favicon.svg',

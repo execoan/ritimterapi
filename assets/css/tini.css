@@ -1,0 +1,136 @@
+/* ============================================================
+   Kalın–İnce Kalıp Kartları — atölye aracı.
+   Tasarım kısıtı: bu ekran ODANIN ÖTESİNDEN okunacak (yansıtılır).
+   Bu yüzden simgeler büyük, kontrast yüksek, metin az.
+   ============================================================ */
+
+.tk-sayfa-baslik { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.tk-gizli-baslik {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/* ---------- Kademe seçici ---------- */
+.tk-kademeler { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .8rem; }
+.tk-kademe-btn {
+  flex: 1 1 190px; padding: .6rem .8rem; border: 2px solid var(--cizgi);
+  border-radius: 12px; background: var(--kart-zemin); color: inherit;
+  cursor: pointer; text-align: left; font: inherit;
+  transition: border-color .15s, background .15s;
+}
+.tk-kademe-btn:hover { border-color: var(--amber); }
+.tk-kademe-btn[aria-pressed="true"] {
+  border-color: var(--amber); background: var(--amber-acik);
+}
+.tk-kademe-btn b { display: block; font-size: .95rem; }
+.tk-kademe-btn small { display: block; margin-top: .15rem; font-size: .74rem; color: var(--metin-soluk); line-height: 1.35; }
+
+.tk-ayar-satir { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-start; }
+.tk-ayar-satir .form-alan { flex: 1 1 180px; }
+.tk-birim { display: flex; align-items: center; gap: .5rem; }
+.tk-birim input[type="range"] { flex: 1; }
+.tk-birim b { min-width: 2.4rem; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------- Sahne ---------- */
+.tk-sahne-ust { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.tk-kademe-etiket {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem; margin-right: .5rem; border-radius: 50%;
+  background: var(--amber); color: #fff; font-weight: 800;
+}
+.tk-sahne-ust strong { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+/* Grup şeridi: kim çalıyor, kim susuyor */
+.tk-grup-serit { display: flex; gap: .6rem; margin: .8rem 0 .4rem; flex-wrap: wrap; }
+.tk-grup-kutu {
+  flex: 1 1 160px; padding: .5rem .75rem; border-radius: 10px;
+  border: 2px solid var(--cizgi); background: var(--zemin);
+  font-size: .85rem; line-height: 1.4;
+}
+.tk-grup-kutu b { display: block; font-size: .95rem; }
+.tk-grup-kalin { border-color: #7c4a1e; }
+.tk-grup-ince  { border-color: #1e6b7c; }
+.tk-grup-susuyor { opacity: .5; }
+.tk-grup-susuyor b::after { content: ' — bu turda susuyor'; font-weight: 400; font-size: .8rem; }
+
+/* ---------- Kalıp gösterimi (asıl görsel) ---------- */
+.tk-kalip {
+  display: flex; align-items: center; justify-content: center;
+  gap: clamp(1rem, 4vw, 3rem); flex-wrap: wrap;
+  min-height: clamp(150px, 26vh, 260px);
+  margin: .6rem 0; padding: 1.2rem .8rem;
+  border-radius: 16px; background: var(--zemin);
+  border: 1px solid var(--cizgi);
+}
+.tk-olay {
+  display: flex; flex-direction: column; align-items: center; gap: .5rem;
+}
+.tk-simge {
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .09s ease, filter .09s ease;
+}
+/* KALIN = geniş dikdörtgen (belgedeki simge) */
+.tk-simge-kalin {
+  width: clamp(76px, 13vw, 150px); height: clamp(30px, 5vw, 56px);
+  border-radius: 7px; background: #7c4a1e;
+}
+/* İNCE = daire (belgedeki simge) */
+.tk-simge-ince {
+  width: clamp(44px, 7.5vw, 84px); height: clamp(44px, 7.5vw, 84px);
+  border-radius: 50%; background: #1e6b7c;
+}
+.tk-olay-etiket { font-size: clamp(.8rem, 1.6vw, 1.05rem); font-weight: 700; letter-spacing: .04em; }
+.tk-olay-sira { font-size: .7rem; color: var(--metin-soluk); }
+
+/* Çalarken vurgulanan olay */
+.tk-olay-aktif .tk-simge { transform: scale(1.14); filter: brightness(1.25); }
+.tk-olay-aktif .tk-olay-etiket { color: var(--amber-koyu); }
+
+/* El görünümü: simge yerine emoji — küçük yaşta daha okunur */
+.tk-gorunum-el .tk-simge { background: transparent; width: auto; height: auto; }
+.tk-gorunum-el .tk-simge::before { font-size: clamp(2.6rem, 8vw, 5.5rem); line-height: 1; }
+.tk-gorunum-el .tk-simge-kalin::before { content: '✊'; }
+.tk-gorunum-el .tk-simge-ince::before  { content: '✋'; }
+
+.tk-okunur { text-align: center; color: var(--metin-soluk); font-size: .9rem; margin: .2rem 0 .8rem; }
+
+.tk-butonlar { display: flex; gap: .7rem; justify-content: center; align-items: center; flex-wrap: wrap; }
+.tk-nav { min-width: 3.4rem; font-size: 1.1rem; }
+.tk-cal { min-width: 8.5rem; font-size: 1.05rem; }
+.tk-alt-butonlar { display: flex; gap: .5rem; justify-content: center; flex-wrap: wrap; margin-top: .7rem; }
+
+.tk-adimlar { margin: .4rem 0 .8rem; padding-left: 1.3rem; line-height: 1.6; }
+.tk-adimlar li { margin-bottom: .35rem; }
+.tk-adimlar strong { color: var(--amber-koyu); }
+
+/* ---------- Tam ekran (yansıtma) ---------- */
+.tk-sahne:fullscreen {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 2rem; border-radius: 0;
+}
+.tk-sahne:fullscreen .tk-kalip { min-height: 46vh; border: 0; }
+.tk-sahne:fullscreen .tk-simge-kalin { width: clamp(140px, 20vw, 320px); height: clamp(54px, 8vw, 110px); }
+.tk-sahne:fullscreen .tk-simge-ince  { width: clamp(84px, 12vw, 170px); height: clamp(84px, 12vw, 170px); }
+.tk-sahne:fullscreen .tk-gorunum-el .tk-simge::before { font-size: clamp(5rem, 14vw, 11rem); }
+
+/* ---------- Yazdırma: kartlar kesilip kullanılabilsin ---------- */
+@media print {
+  .tk-ayar, .tk-butonlar, .tk-alt-butonlar, .tk-sahne-arac, .ust-bar, .alt-bilgi { display: none !important; }
+  .tk-yazdir-sayfa { display: block !important; }
+  .tk-sahne { display: none !important; }
+}
+.tk-yazdir-sayfa { display: none; }
+.tk-yazdir-kart {
+  break-inside: avoid; page-break-inside: avoid;
+  border: 2px solid #333; border-radius: 10px; padding: .8rem;
+  margin-bottom: .6rem;
+}
+.tk-yazdir-kart h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.tk-yazdir-satir { display: flex; align-items: center; gap: 1.2rem; }
+.tk-yazdir-satir .tk-simge-kalin { width: 68px; height: 26px; background: #333; }
+.tk-yazdir-satir .tk-simge-ince  { width: 38px; height: 38px; background: #333; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-simge { transition: none; }
+  .tk-olay-aktif .tk-simge { transform: none; }
+}

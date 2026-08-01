@@ -32,6 +32,7 @@ jobs:
           node test/motor-koordinasyon.test.js
           node test/grup-atolyesi.test.js
           node test/poliritim.test.js
+          node test/tini.test.js
 
       - name: Duman testini çalıştır
         run: |

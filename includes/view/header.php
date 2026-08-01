@@ -23,6 +23,7 @@ $navYapisi = [
         ['dosya' => 'motor-studyo.php','ikon' => '👐', 'etiket' => 'Motor Koordinasyon', 'not' => 'İki el ritim ve zamanlama çalışması'],
         ['dosya' => 'poliritim.php',  'ikon' => '🌀', 'etiket' => 'Poliritim Stüdyosu', 'not' => 'İki elde farklı ritim, aşamalı çalışma'],
         ['dosya' => 'ritim-okuma.php','ikon' => '🎼', 'etiket' => 'Ritim Okuma', 'not' => '384 kademeli alıştırma, notadan deşifre'],
+        ['dosya' => 'tini-kartlari.php','ikon' => '🔊', 'etiket' => 'Kalın–İnce Kartları', 'not' => 'Atölye aracı — kalıp göster ve çal, puanlama yok'],
     ]],
 
     ['tur' => 'menu', 'ikon' => '📚', 'etiket' => 'İçerik', 'ogeler' => [
