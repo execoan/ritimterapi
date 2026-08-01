@@ -267,20 +267,80 @@ function kanit_rozet(string $duzey): string
  * Veliye giden serbest metinde geçmemesi gereken ifadeler (CLAUDE.md kırmızı
  * çizgileri). Bulunan ifadeleri döndürür; boş dizi = temiz.
  */
+/*
+ * Denetimden çıkan iki kusur burada giderildi:
+ *
+ * 1) ÖRTÜK SONUÇ VAADİ kaçıyordu. Şu cümlelerin hiçbiri eski listeye takılmıyordu:
+ *    "odaklanmasına yardımcı oluyor" · "belirgin gelişme gösterdi" ·
+ *    "akranlarına göre daha hızlı ilerliyor" · "enerjisini yönetmeyi öğrendi"
+ *    Hiçbiri yasaklı sözcük içermiyor ama hepsi CLAUDE.md §2'nin yasakladığı
+ *    sonuç vaadi. Ayrıca §2'de açıkça yasaklanan "enerji" listede hiç yoktu.
+ *
+ * 2) YANLIŞ POZİTİF üretiyordu. Çıplak alt-dize araması yüzünden "kalıbı
+ *    tanıdı", "arkadaşlarıyla tanıştı", "ritmi tanımladı" → "tanı" olarak
+ *    işaretleniyordu; "hatasını fark edip düzeltti" → "düzelt". Üstelik bu
+ *    cümlenin kardeşi ogrenci-rapor.php'de HAZIR CÜMLE olarak öneriliyor.
+ *    Yanlış pozitif uyarıyı ucuzlatır; eğitmen bir süre sonra kırmızı kutuyu
+ *    okumadan kapatır — yani koruma kendini yok eder.
+ *    Çözüm: kök + izinli Türkçe ek deseni, artı bir istisna listesi.
+ */
+
+/** Kırmızı çizgi kalıpları: kök => sonrasına izin verilen ek deseni (regex). */
+const KILITLI_DIL_KALIPLARI = [
+    // Klinik / sağlık
+    'terapi' => '', 'tedavi' => '', 'hasta' => '', 'danışan' => '', 'semptom' => '',
+    'dehb' => '', 'dikkat eksikliği' => '', 'hiperakt' => '', 'gelişim geriliği' => '',
+    'otizm' => '', 'disleksi' => '', 'klinik' => '', 'teşhis' => '', 'bozukluğ' => '',
+    'spektrum' => '', 'psikolog' => '', 'psikiyatr' => '', 'rapor aldı' => '',
+    // "tanı" YALNIZ tanı-koyma anlamında: "tanıdı/tanıştı/tanımla" hariç tutulur
+    'tanı' => '(?![dşmyv])',
+    'iyileş' => '', 'düzel' => '(?!t?me?y)',   // "düzeltti" gözlemsel olabilir → aşağıda istisna
+    // Psödobilim (§2'de açıkça sayılanlar)
+    'rezonans' => '', 'titreşim' => '', 'hücresel' => '', 'enerji' => '', 'frekans' => '',
+    'şifa' => '', 'çakra' => '', 'blokaj' => '',
+    // Normatif değerlendirme
+    'geride kal' => '', 'geri kal' => '', 'yaşına göre' => '', 'riskli' => '',
+    'akran' => '', 'yaşıt' => '', 'ortalamanın' => '', 'normalin' => '', 'yetersiz' => '',
+    // Sonuç vaadi (açık)
+    'geliştir' => '', 'iyi gel' => '', 'düzelt' => '',
+    // Sonuç vaadi (örtük) — asıl boşluk buradaydı
+    // DİKKAT — Türkçe çekim: "sağla" + "-ıyor" → "sağlıyor" (sondaki a düşer).
+    // Kökü "sağla" yazmak "sağlıyor"u kaçırır; o yüzden kökler kısa tutuldu.
+    'yardımcı ol' => '', 'katkı sağl' => '', 'destekliyor' => '', 'fayda' => '',
+    'yarar' => '', 'işe yar' => '', 'olumlu etki' => '', 'ilerleme kaydet' => '',
+    'kazanım' => '', 'daha iyi' => '', 'sakinleş' => '', 'rahatla' => '',
+    'özgüven' => '', 'gelişme göster' => '', 'gelişim' => '',
+];
+
+/**
+ * Yanlış pozitif istisnaları: bu kalıplar geçiyorsa o eşleşme sayılmaz.
+ * Hepsi GÖZLEMSEL ifadelerdir — ne yapıldığını anlatır, sonuç iddia etmez.
+ */
+const KILITLI_DIL_ISTISNALARI = [
+    'tanıdı', 'tanıştı', 'tanımla', 'tanıyor', 'tanır',
+    'düzeltti', 'düzeltir', 'düzeltme yaptı', 'kendi kendini düzelt',
+];
+
+/**
+ * Veliye giden serbest metinde geçmemesi gereken ifadeler (CLAUDE.md kırmızı
+ * çizgileri). Bulunan ifadeleri döndürür; boş dizi = temiz.
+ */
 function locked_language_flags(string $text): array
 {
-    $t = tr_sort_key($text); // küçük harfe indirger (tr kurallı), sıralama eki zararsız
-    $yasakli = [
-        'terapi', 'tedavi', 'tanı', 'hasta', 'danışan', 'iyileş', 'semptom',
-        'dehb', 'dikkat eksikliği', 'hiperakt', 'gelişim geriliği', 'otizm',
-        'disleksi', 'klinik', 'rezonans', 'titreşim', 'hücresel', 'geride kal',
-        'yaşına göre geride', 'riskli', 'düzelt', 'iyi gel', 'geliştir',
-    ];
-    $bulunan = [];
-    foreach ($yasakli as $kelime) {
-        if (mb_strpos($t, tr_sort_key($kelime)) !== false) {
-            $bulunan[] = $kelime;
-        }
+    $t = mb_strtolower($text, 'UTF-8');
+    // Türkçe büyük harf inceliği: I→ı, İ→i (mb_strtolower ikisini de kaçırabilir)
+    $t = str_replace(['ı', 'İ', 'I'], ['ı', 'i', 'ı'], $t);
+
+    // İstisna geçen bölümleri metinden düşür ki kök eşleşmesi tetiklenmesin
+    $tarama = $t;
+    foreach (KILITLI_DIL_ISTISNALARI as $istisna) {
+        $tarama = str_replace(mb_strtolower($istisna, 'UTF-8'), ' ', $tarama);
     }
-    return $bulunan;
+
+    $bulunan = [];
+    foreach (KILITLI_DIL_KALIPLARI as $kok => $ek) {
+        $desen = '/' . preg_quote(mb_strtolower($kok, 'UTF-8'), '/') . $ek . '/u';
+        if (preg_match($desen, $tarama)) { $bulunan[] = $kok; }
+    }
+    return array_values(array_unique($bulunan));
 }

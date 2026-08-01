@@ -19,7 +19,13 @@ if (!valid_date_ymd($to))   { $to = today(); }
 $rapor = report_student($ogrenciId, $from, $to);
 $evOzet = report_student_home($ogrenciId, $from, $to);
 
-// Dil denetimi: gözlem notlarında kırmızı çizgi ifadeleri ara
+/*
+ * Dil denetimi — VELIYE BASILAN HER SERBEST METİN.
+ * Önceden yalnız gözlem notu taranıyordu; oysa teknik adı, kategori, ev
+ * çalışması adı ve grup adı da bu belgeye basılıyor. "Dikkat Geliştirme
+ * Egzersizi" adlı bir teknik veya "Terapi Nabzı" adlı bir ev çalışması
+ * hiçbir denetimden geçmeden veli raporuna giriyordu.
+ */
 $dilSorunlari = [];
 foreach ($rapor['gozlemler'] as $g) {
     $bulunan = locked_language_flags((string)$g['gozlem_notu']);
@@ -27,6 +33,16 @@ foreach ($rapor['gozlemler'] as $g) {
         $dilSorunlari[] = ['tarih' => $g['tarih'], 'oturum_id' => (int)$g['oturum_id'], 'kelimeler' => $bulunan];
     }
 }
+foreach ($rapor['teknikler'] as $t) {
+    $bulunan = locked_language_flags($t['ad'] . ' ' . $t['kategori']);
+    if ($bulunan) { $dilSorunlari[] = ['tarih' => '', 'alan' => 'Teknik: ' . $t['ad'], 'kelimeler' => $bulunan]; }
+}
+foreach ($evOzet as $eo) {
+    $bulunan = locked_language_flags((string)$eo['ad']);
+    if ($bulunan) { $dilSorunlari[] = ['tarih' => '', 'alan' => 'Ev çalışması: ' . $eo['ad'], 'kelimeler' => $bulunan]; }
+}
+$bulunan = locked_language_flags((string)($ogrenci['grup_ad'] ?? ''));
+if ($bulunan) { $dilSorunlari[] = ['tarih' => '', 'alan' => 'Grup adı', 'kelimeler' => $bulunan]; }
 
 $PAGE_TITLE = 'Veli Raporu — ' . $ogrenci['kod'];
 require APP_DIR . '/includes/view/header.php';
@@ -46,7 +62,11 @@ require APP_DIR . '/includes/view/header.php';
   <ul style="margin:.4rem 0 0;padding-left:1.2rem">
     <?php foreach ($dilSorunlari as $ds): ?>
     <li>
-      <a href="<?= e(url('oturum.php?id=' . $ds['oturum_id'])) ?>"><?= e(format_date_tr($ds['tarih'], false)) ?> oturumu</a>:
+      <?php if (!empty($ds['oturum_id'])): ?>
+        <a href="<?= e(url('oturum.php?id=' . $ds['oturum_id'])) ?>"><?= e(format_date_tr($ds['tarih'], false)) ?> oturumu</a>:
+      <?php else: ?>
+        <strong><?= e($ds['alan'] ?? 'Alan') ?></strong>:
+      <?php endif; ?>
       <em>“<?= e(implode('”, “', $ds['kelimeler'])) ?>”</em>
     </li>
     <?php endforeach; ?>
@@ -60,6 +80,10 @@ require APP_DIR . '/includes/view/header.php';
 
 <?php $BELGE_ETIKET = 'Raporu'; require APP_DIR . '/includes/view/belge-arac-cubugu.php'; ?>
 <div class="kart" data-belge>
+  <?php if ($dilSorunlari): ?>
+  <!-- Yazdırmada DA görünür: dil denetimi geçilmeden çıktı alınırsa belgede iz kalsın -->
+  <div class="taslak-serit">TASLAK — dil denetimi geçilmedi, veliye verilmemelidir</div>
+  <?php endif; ?>
   <div class="rapor-baslik">
     <svg class="marka-logo" viewBox="0 0 64 64" aria-hidden="true">
       <defs><linearGradient id="vgov" x1="0" y1="0" x2="0" y2="1">
@@ -161,7 +185,18 @@ require APP_DIR . '/includes/view/header.php';
 
 <style>
   .dil-sorunlu { background: var(--kirmizi-acik); border-radius: 6px; padding: .1rem .3rem; }
-  @media print { .dil-sorunlu { background: transparent; padding: 0; } }
+  /*
+   * O14 — İŞARET YAZDIRMADA GİZLENMEZ.
+   * Eskiden @media print işareti şeffaf yapıyordu: uyarıyı görmezden gelen
+   * eğitmen, hiçbir iz taşımayan temiz görünümlü bir raporu veliye verebiliyordu
+   * — yani koruma tam işe yarayacağı anda kendini kapatıyordu.
+   */
+  @media print { .dil-sorunlu { background: transparent; outline: 1.5px dashed #b91c1c; padding: .1rem .3rem; } }
+  .taslak-serit {
+    background: var(--kirmizi-acik); border: 2px solid var(--kirmizi); color: var(--kirmizi);
+    border-radius: 10px; padding: .6rem .9rem; margin-bottom: .8rem; font-weight: 700; text-align: center;
+  }
+  @media print { .taslak-serit { display: block !important; } }
 </style>
 <script src="<?= e(asset('js/belge-duzenle.js')) ?>" defer></script>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

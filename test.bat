@@ -23,6 +23,8 @@ echo.
 if errorlevel 1 goto :son
 "%PHP%" "%~dp0test\olcum.test.php"
 if errorlevel 1 goto :son
+"%PHP%" "%~dp0test\kilitli-dil.test.php"
+if errorlevel 1 goto :son
 "%PHP%" "%~dp0test\smoke.php"
 :son
 echo.

@@ -24,7 +24,9 @@ function seed_techniques(): void
         ['Metronoma eşlik', 'Metronoma eşlik', 'Davul / pad', 1, 10,
          'Sabit tempoda metronomla birlikte vuruş. Tempo oturunca kademeli olarak değiştirilir (bir seferde 4–6 BPM). Acele değil, doğruluk önceliklidir.',
          'Senkronizasyon, zamanlama', 'guclu',
-         'Ölçülen şey doğrudan senkronizasyon becerisinin kendisi. Puyjarinet et al. 2017 (Sci. Reports); Shaffer et al. 2001 (AJOT)',
+         'Ölçülen şey doğrudan senkronizasyon becerisinin kendisi; transfer iddiası YOK. Puyjarinet et al. 2017 (Sci. Reports) '
+         . 'becerinin ölçülebilirliğini gösterir (kesitsel; antrenman çalışması değildir). Shaffer et al. 2001 tarihsel bir örnektir, '
+         . 'randomize değildir, dayanak sayılmaz.',
          'Metronom, el davulu veya pad'],
 
         ['Nabzı Bul', 'Metronoma eşlik', 'Davul / pad', 1, 8,
@@ -47,8 +49,9 @@ function seed_techniques(): void
 
         ['Hedef Tını', 'Dur–devam', 'Davul + zil', 2, 8,
          'Yalnız hedef tını duyulunca tek vuruş yapılır; hedef olmayan tınıya tepki verilmez. Temel performans oturunca düşük düzey görsel çeldirici eklenir. Kaçırma ve yanlış alarm ayrı gözlenir.',
-         'Seçici dikkat, tepki tutma', 'orta',
-         'RitimOdak kılavuzu Etkinlik 4',
+         'Seçici dikkat, tepki tutma', 'zayif',
+         'RitimOdak kılavuzu Etkinlik 4. Dış künye yok; tek yakın kaynak Erarslan 2026 ve orada '
+         . 'yürütücü işlev ölçümü null (p=0,122). Seçici dikkat transferine doğrudan kanıt bulunamadı.',
          'İki farklı tını (ör. davul + zil), çeldirici kartı'],
 
         ['Hata Sonrası Dönüş', 'Dur–devam', 'Davul / pad', 2, 8,
@@ -59,32 +62,37 @@ function seed_techniques(): void
 
         ['Çağrı–cevap', 'Çağrı–cevap', 'Davul / pad', 1, 10,
          'Eğitmen 2–4 vuruşluk bir kalıp çalar, grup aynen tekrarlar. Kalıplar kademeli uzar ve aksan yerleri değişir.',
-         'İşitsel bellek, sıralama', 'orta',
-         'Frischen et al. 2019 (Front. Integr. Neurosci.)',
+         'İşitsel bellek, sıralama', 'zayif',
+         'Tek dayanak Frischen et al. 2019; orada bellek ölçümleri NULL (Matrix Span p=0,11; Corsi p=0,14) ve '
+         . 'ölçülen şey görsel-uzamsal, işitsel değil.',
          'Davul/pad'],
 
         ['Ritmik dizi tekrarı', 'Ritmik dizi tekrarı', 'Davul / pad', 2, 10,
          'Uzayan kalıpların ezberden tekrarı: 2 vuruşla başlanır, her turda uzatılır. Diziyi uzatmadan önce en az iki başarılı tekrar beklenir.',
-         'Çalışma belleği', 'orta',
-         'Bentley et al. 2023 (Dev. Science)',
+         'Çalışma belleği', 'zayif',
+         'Bentley et al. 2023 çalışma belleği çıktısı RAPORLAMADI (anlamlı çıktılar öz-düzenleme/inhibisyon/okula hazırlık); '
+         . 'Frischen 2019 bellek ölçümlerinde null.',
          'Davul/pad'],
 
         ['Ritim Hafıza Zinciri', 'Ritmik dizi tekrarı', 'Davul / pad', 2, 12,
          'Eğitmen iki birimli bir dizi çalar; katılımcı kopyalar ve bir birim ekler; dizi grup içinde dolaşır. Hata olduğunda suçlama yerine son doğru noktaya dönülür. İlerletme: uzunluk, aksan veya ters sıradan yalnız biri değiştirilir.',
-         'Çalışma belleği, sıralama', 'orta',
-         'RitimOdak kılavuzu Etkinlik 3',
+         'Çalışma belleği, sıralama', 'zayif',
+         'RitimOdak kılavuzu Etkinlik 3. Dış akademik künye yok; bağlı çalışmalarda ilgili çıktı null. '
+         . 'Grup-halkası formatı hiçbir yayında sınanmadı.',
          'Davul/pad, sembol kartları'],
 
         ['Tempo değişimi takibi', 'Tempo değişimi takibi', 'Davul / pad', 2, 8,
          'Hızlanma/yavaşlama ve ani tempo geçişleri metronom veya eğitmen önderliğinde takip edilir. Bir seferde yalnız küçük bir değişiklik yapılır.',
-         'Esneklik, uyum', 'orta',
-         'Zhu 2026 (Front. Public Health) — ritmik oyun temelli, umut verici',
+         'Esneklik, uyum', 'zayif',
+         'Tek dayanak Zhu 2026; orada kontrol grubu pasif ve ~12 kat doz farkı var. '
+         . 'Frischen 2019 set-shifting ölçümünde null (p=0,47).',
          'Metronom, davul/pad'],
 
         ['Kural Değiştir', 'Tempo değişimi takibi', 'İki vurma yüzeyi', 3, 10,
          'Mavi kartta sağ el, yeşil kartta sol el kuralı uygulanır; eğitmen işaretle kuralı tersine çevirir. Katılımcı hatada durur, kuralı söyler ve ilk vuruşta yeniden girer. İlerletme: geçiş sıklığı veya üçüncü kural — önce yalnız biri.',
-         'Bilişsel esneklik, geçiş', 'orta',
-         'RitimOdak kılavuzu Etkinlik 5',
+         'Bilişsel esneklik, geçiş', 'zayif',
+         'RitimOdak kılavuzu Etkinlik 5. Dış künye yok. Bilişsel esneklik, ritim literatüründe kanıtı en zayıf '
+         . 'yürütücü işlev bileşeni; Frischen 2019 set-shifting p=0,47 null.',
          'Renk/şekil kartları, iki vurma yüzeyi'],
 
         ['Katmanlı grup ritmi', 'Katmanlı grup ritmi', 'Grup davulları', 3, 12,
@@ -108,7 +116,8 @@ function seed_techniques(): void
         ['Vücut perküsyonu', 'Vücut perküsyonu', 'Beden', 1, 8,
          'El–ayak–göğüs kombinasyonları; tek elden çapraz beden düzenlerine kademeli geçiş. Ağrı veya aşırı efor olmadan çalışılır.',
          'Motor koordinasyon', 'orta',
-         'Bentley et al. 2023 (Dev. Science); pedagojik gelenek',
+         'Yakın-alan kazanımı: çalışılan şey koordinasyonun kendisidir. Pedagojik gelenek. '
+         . 'Genel motor yetiye kalıcı transfer iddia edilmez.',
          'Malzeme gerekmez'],
 
         ['Serbest doğaçlama', 'Serbest doğaçlama', 'Davul / pad', 1, 10,
@@ -276,7 +285,8 @@ function seed_studies(): void
         'shaffer2001' => ['Effect of Interactive Metronome training on children with ADHD',
             'Shaffer, Jacokes, Cassily et al.', 2001, 'American Journal of Occupational Therapy',
             '10.5014/ajot.55.2.155', 'deneysel',
-            'Etkileşimli metronom antrenmanı alan çocuklarda bazı motor ve dikkat ölçümlerinde kontrol koşullarına göre iyileşme raporlandı; örneklem ve tasarım sınırlılıkları nedeniyle kanıt gücü sınırlıdır.'],
+            'Etkileşimli metronom antrenmanı alan çocuklarda bazı motor ve dikkat ölçümlerinde kontrol koşullarına göre gelişme '
+            . 'raporlandı; randomize değil, yalnız erkek örneklem (n=19) — kanıt gücü sınırlıdır.'],
         'shin2023' => ['Rhythm-based assessment and training for children with ADHD: a feasibility study protocol',
             'Shin, Lee, Kang, Kim & Jeong', 2023, 'Frontiers in Human Neuroscience',
             '10.3389/fnhum.2023.1190736', 'protokol',
@@ -291,28 +301,35 @@ function seed_studies(): void
             'Müzik eğitiminin çocuklarda ket vurma (inhibisyon) görevlerine etkisini toplayan meta-analiz; küçük-orta düzeyde, göreve göre değişken katkı bulundu.'],
         'frischen2019' => ['Comparing the effects of rhythm-based music training and pitch-based music training on executive functions in preschoolers',
             'Frischen, Schwarzer & Degé', 2019, 'Frontiers in Integrative Neuroscience',
-            '10.3389/fnint.2019.00041', 'deneysel',
-            'Okul öncesinde ritim temelli eğitim, ezgi temelli eğitime göre yürütücü işlev (özellikle inhibisyon) görevlerinde daha belirgin gelişim gösterdi; küçük örneklemli deneysel çalışma.'],
+            '10.3389/fnint.2019.00041', 'rct',
+            'Okul öncesinde ritim temelli eğitim alan grup inhibisyon görevinde spor kontrol grubuna göre anlamlı fark gösterdi (F(1,42)=7,14; p=0,011). '
+            . 'Ritim ile ezgi grupları arasında anlamlı fark BULUNMADI. Set-shifting (p=0,47) ve görsel-uzamsal çalışma belleği '
+            . '(p=0,11 / p=0,14) ölçümlerinde etki bulunmadı. Üç kollu randomize, n=76.'],
         'bentley2023' => ['A translational application of music for preschool cognitive development: RCT evidence for improved executive function, self-regulation, and school readiness',
             'Bentley, Eager, Savage et al.', 2023, 'Developmental Science',
             '10.1111/desc.13358', 'rct',
             'Randomize kontrollü denemede müzik programına katılan okul öncesi çocuklarda yürütücü işlev, öz-düzenleme ve okul hazırlığı ölçümlerinde gelişme raporlandı.'],
         'rickson2006' => ['Instructional and improvisational models of music therapy with adolescents who have ADHD: effects on motor impulsivity',
-            'Rickson', 2006, 'Journal of Music Therapy',
+            'Rickson, D. J.', 2006, 'Journal of Music Therapy',
             '10.1093/jmt/43.1.39', 'deneysel',
-            'Ergenlerde yapılandırılmış (öğretimsel) model, doğaçlama modele göre motor dürtüsellik ölçümünde daha olumlu sonuç verdi; doğaçlamanın üstünlüğü gösterilemedi.'],
+            'Öğretimsel ve doğaçlama modeller arasında eşzamanlı vuruş görevinde istatistiksel fark BULUNMADI; her iki grup da vuruş '
+            . 'doğruluğunda gelişti. Yazarlar bu artışı özellikle motor dürtüsellikle değil genel gelişim alanlarıyla ilişkilendiriyor. n=13.'],
         'erarslan2026' => ['Effects of music-based occupational therapy activities on attention executive functions in children',
             'Erarslan, Budak & Tarakci', 2026, 'PLOS ONE',
-            '10.1371/journal.pone.0349284', 'deneysel',
-            'Müzik temelli ergoterapi etkinliklerine katılan çocuklarda dikkatle ilişkili yürütücü işlev ölçümlerinde gelişme raporlandı; küçük örneklem.'],
+            '10.1371/journal.pone.0349284', 'rct',
+            'Dikkat ölçümünde HER İKİ grupta da gelişme raporlandı (F(1,37)=9,675; p=0,004); yürütücü işlev (BRIEF; p=0,122) ve '
+            . 'bakım veren yükü (p=0,967) ölçümlerinde anlamlı değişim BULUNMADI. n=39, aktif karşılaştırma kollu randomize.'],
         'zhu2026' => ['Influence of rhythmic music game intervention on executive function and sensorimotor ability of children',
-            'Zhu', 2026, 'Frontiers in Public Health',
-            '10.3389/fpubh.2026.1808386', 'deneysel',
-            'Ritmik müzik oyunu müdahalesi alan çocuklarda yürütücü işlev ve duyu-motor ölçümlerinde gelişme bildirildi.'],
+            'Zhu, Honghui', 2026, 'Frontiers in Public Health',
+            '10.3389/fpubh.2026.1808386', 'rct',
+            'Ritmik müzik oyunu müdahalesi alan çocuklarda yürütücü işlev ve duyu-motor ölçümlerinde gelişme bildirildi (n=64 randomize). '
+            . 'ÖNEMLİ SINIRLILIK: kontrol grubu pasif (8 haftada ~80 dk) iken müdahale grubu ~960 dk çalıştı — yaklaşık 12 kat temas farkı. '
+            . 'Gözlenen fark ritmik içeriğe özgü değil, ek etkinliğe de bağlı olabilir. Tek merkez, tek yazar, körleme bildirilmemiş.'],
         'haigh2024' => ['Rhythmic attention and ADHD: a narrative and systematic review',
             'Haigh & Buckby', 2024, 'Applied Psychophysiology and Biofeedback',
             '10.1007/s10484-023-09618-x', 'derleme',
-            'Ritmik dikkat literatürünü tarayan derleme; ritim temelli yaklaşımları umut verici fakat yöntemsel olarak heterojen ve küçük örneklemli buldu.'],
+            'Dikkatin ritmik salınımlarını ve elektrofizyolojik (EEG) güç farklarını tarayan derleme (15 çalışma). '
+            . 'Bildirilen örüntü: daha yüksek delta/teta, daha düşük alfa gücü. Ritim temelli EĞİTİM veya müdahale değerlendirmez.'],
         'goes2025' => ['Outcomes of music therapy on children and adolescents with ADHD: a systematic review and meta-analysis',
             'Goes, Nardi & Quagliato', 2025, 'Trends in Psychiatry and Psychotherapy',
             '10.47626/2237-6089-2024-1020', 'meta',
@@ -324,7 +341,9 @@ function seed_studies(): void
         'puyjarinet2020' => ['Psychomotor therapy and ADHD: evaluation of a rhythm-based therapeutic program',
             'Puyjarinet, Jeannin-Fuzier, Blain, Fournier & Metivier', 2020, "Neuropsychiatrie de l'Enfance et de l'Adolescence",
             '10.1016/j.neurenf.2019.11.003', 'pilot',
-            'Ritim temelli psikomotor programın pilot değerlendirmesi; küçük örneklemde olumlu gözlemler raporlandı.'],
+            'Ritim temelli psikomotor programın pilot değerlendirmesi; inhibisyon ve bilişsel dürtüsellikte gelişme, buna karşılık '
+            . 'sürdürülen işitsel dikkat, seçici görsel dikkat ve gecikmeye tahammülsüzlükte DEĞİŞİM YOK. Tek gruplu ön-son test (n=21); '
+            . 'kontrol grubu ve randomizasyon olmadığı için gelişme test-tekrar etkisiyle de açıklanabilir.'],
         'abikoff1996' => ['The effects of auditory stimulation on the arithmetic performance of children with ADHD and nondisabled children',
             'Abikoff, Courtney, Szeibel & Koplewicz', 1996, 'Journal of Learning Disabilities',
             '10.1177/002221949602900302', 'deneysel',
@@ -374,7 +393,7 @@ function seed_studies(): void
         ],
         'Bekle–Dinle–Vur' => [
             ['jamey2024', 'Gecikmeli/no-go cevap inhibisyon ailesinde.'],
-            ['rickson2006', 'Yapılandırılmış model motor dürtüsellikte daha olumluydu.'],
+            ['rickson2006', 'Öğretimsel ve doğaçlama modeller arasında fark bulunmadı; yapılandırılmış tasarım pedagojik bir tercihtir.'],
         ],
         'Hedef Tını' => [
             ['erarslan2026', 'Müzik temelli dikkat etkinlikleriyle aynı ailede.'],
@@ -393,12 +412,10 @@ function seed_studies(): void
             ['bentley2023', 'Sıralama/bellek oyunlarıyla paralel.'],
         ],
         'Tempo değişimi takibi' => [
-            ['zhu2026', 'Tempo/kural geçişleri esneklik ölçümleriyle ilişkilendirildi.'],
-            ['haigh2024', 'Ritmik dikkat derlemesinin kapsamındaki görev ailesi.'],
+            ['zhu2026', 'Müdahale ritim senkronizasyonuydu; esneklik yalnız TMT-B ile ÖLÇÜLDÜ, çalışılmadı.'],
         ],
         'Kural Değiştir' => [
-            ['zhu2026', 'Kural geçişi bilişsel esneklik bileşeni.'],
-            ['haigh2024', 'Derlemede tartışılan geçiş görevleri ailesi.'],
+            ['zhu2026', 'Kural geçişi çalışmanın müdahale içeriğinde yok; yalnız ölçüm düzeyinde.'],
         ],
         'Katmanlı grup ritmi' => [
             ['goes2025', 'Grup müzik müdahaleleri geneli; bulgular karma ve düşük kesinlikli.'],
@@ -508,6 +525,120 @@ function seed_group_workshop_studies(): void
     }
 }
 
+/**
+ * TEK SEFERLİK BİLİMSEL DÜZELTME (Ağustos 2026).
+ *
+ * NEDEN AYRI BİR FONKSİYON: seed_techniques() ve seed_studies() yalnız tablo
+ * BOŞKEN çalışır (silinen kayıt dirilmesin diye). Dolayısıyla yukarıdaki
+ * düzeltmeler mevcut kurulumlara KENDİLİĞİNDEN ULAŞMAZ — bu fonksiyon onları
+ * canlı veritabanına taşır.
+ *
+ * Düzeltmelerin dayanağı: kayıtların Crossref künyeleri doğru çıktı (uydurma
+ * DOI veya geri çekilmiş makale YOK), ama bazı ÖZETLER kaynakların bulgusunu
+ * yanlış aktarıyordu — null çıkan sonuçlar "gelişme" diye özetlenmiş,
+ * bulunmayan grup farkları iddia edilmiş, bir derlemenin konusu yanlış
+ * yazılmıştı. Bu, CLAUDE.md §5'in "kanıt düzeyleri gerçekçi girilecek"
+ * kuralının doğrudan ihlaliydi.
+ *
+ * SINIR: yalnız kanit_duzeyi, kaynak, ozet ve tur alanlarını günceller.
+ * Eğitmenin KENDİ eklediği teknikler ve çalışmalar (seed anahtarında olmayan)
+ * hiç dokunulmadan kalır.
+ */
+function seed_scientific_corrections_2026(): void
+{
+    if (site_text('sistem_bilimsel_duzeltme_2026') === '1') { return; }
+    $pdo = db();
+
+    /* [DOI => [tur, ozet]] — künye doğru, yalnız tür ve özet düzeltiliyor */
+    $calismaDuzelt = [
+        '10.3389/fnint.2019.00041' => ['rct',
+            'Okul öncesinde ritim temelli eğitim alan grup inhibisyon görevinde spor kontrol grubuna göre anlamlı fark gösterdi '
+            . '(F(1,42)=7,14; p=0,011). Ritim ile ezgi grupları arasında anlamlı fark BULUNMADI. Set-shifting (p=0,47) ve '
+            . 'görsel-uzamsal çalışma belleği (p=0,11 / p=0,14) ölçümlerinde etki bulunmadı. Üç kollu randomize, n=76.'],
+        '10.1093/jmt/43.1.39' => ['deneysel',
+            'Öğretimsel ve doğaçlama modeller arasında eşzamanlı vuruş görevinde istatistiksel fark BULUNMADI; her iki grup da '
+            . 'vuruş doğruluğunda gelişti. Yazarlar bu artışı özellikle motor dürtüsellikle değil genel gelişim alanlarıyla '
+            . 'ilişkilendiriyor. n=13.'],
+        '10.1371/journal.pone.0349284' => ['rct',
+            'Dikkat ölçümünde HER İKİ grupta da gelişme raporlandı (F(1,37)=9,675; p=0,004); yürütücü işlev (BRIEF; p=0,122) ve '
+            . 'bakım veren yükü (p=0,967) ölçümlerinde anlamlı değişim BULUNMADI. n=39, aktif karşılaştırma kollu randomize.'],
+        '10.3389/fpubh.2026.1808386' => ['rct',
+            'Ritmik müzik oyunu müdahalesi alan çocuklarda yürütücü işlev ve duyu-motor ölçümlerinde gelişme bildirildi (n=64 randomize). '
+            . 'ÖNEMLİ SINIRLILIK: kontrol grubu pasif (8 haftada ~80 dk) iken müdahale grubu ~960 dk çalıştı — yaklaşık 12 kat temas '
+            . 'farkı. Gözlenen fark ritmik içeriğe özgü değil, ek etkinliğe de bağlı olabilir. Tek merkez, tek yazar, körleme bildirilmemiş.'],
+        '10.1007/s10484-023-09618-x' => ['derleme',
+            'Dikkatin ritmik salınımlarını ve elektrofizyolojik (EEG) güç farklarını tarayan derleme (15 çalışma). '
+            . 'Bildirilen örüntü: daha yüksek delta/teta, daha düşük alfa gücü. Ritim temelli EĞİTİM veya müdahale değerlendirmez.'],
+        '10.5014/ajot.55.2.155' => ['deneysel',
+            'Etkileşimli metronom antrenmanı alan çocuklarda bazı motor ve dikkat ölçümlerinde kontrol koşullarına göre gelişme '
+            . 'raporlandı; randomize değil, yalnız erkek örneklem (n=19) — kanıt gücü sınırlıdır.'],
+        '10.1016/j.neurenf.2019.11.003' => ['pilot',
+            'Ritim temelli psikomotor programın pilot değerlendirmesi; inhibisyon ve bilişsel dürtüsellikte gelişme, buna karşılık '
+            . 'sürdürülen işitsel dikkat, seçici görsel dikkat ve gecikmeye tahammülsüzlükte DEĞİŞİM YOK. Tek gruplu ön-son test '
+            . '(n=21); kontrol grubu ve randomizasyon olmadığı için gelişme test-tekrar etkisiyle de açıklanabilir.'],
+    ];
+
+    /* [teknik adı => [yeni kanit_duzeyi, yeni kaynak]] */
+    $teknikDuzelt = [
+        'Çağrı–cevap' => ['zayif',
+            'Tek dayanak Frischen et al. 2019; orada bellek ölçümleri NULL (Matrix Span p=0,11; Corsi p=0,14) ve '
+            . 'ölçülen şey görsel-uzamsal, işitsel değil.'],
+        'Ritmik dizi tekrarı' => ['zayif',
+            'Bentley et al. 2023 çalışma belleği çıktısı RAPORLAMADI (anlamlı çıktılar öz-düzenleme/inhibisyon/okula hazırlık); '
+            . 'Frischen 2019 bellek ölçümlerinde null.'],
+        'Ritim Hafıza Zinciri' => ['zayif',
+            'RitimOdak kılavuzu Etkinlik 3. Dış akademik künye yok; bağlı çalışmalarda ilgili çıktı null. '
+            . 'Grup-halkası formatı hiçbir yayında sınanmadı.'],
+        'Tempo değişimi takibi' => ['zayif',
+            'Tek dayanak Zhu 2026; orada kontrol grubu pasif ve ~12 kat doz farkı var. '
+            . 'Frischen 2019 set-shifting ölçümünde null (p=0,47).'],
+        'Kural Değiştir' => ['zayif',
+            'RitimOdak kılavuzu Etkinlik 5. Dış künye yok. Bilişsel esneklik, ritim literatüründe kanıtı en zayıf '
+            . 'yürütücü işlev bileşeni; Frischen 2019 set-shifting p=0,47 null.'],
+        'Hedef Tını' => ['zayif',
+            'RitimOdak kılavuzu Etkinlik 4. Dış künye yok; tek yakın kaynak Erarslan 2026 ve orada '
+            . 'yürütücü işlev ölçümü null (p=0,122). Seçici dikkat transferine doğrudan kanıt bulunamadı.'],
+        'Metronoma eşlik' => ['guclu',
+            'Ölçülen şey doğrudan senkronizasyon becerisinin kendisi; transfer iddiası YOK. Puyjarinet et al. 2017 (Sci. Reports) '
+            . 'becerinin ölçülebilirliğini gösterir (kesitsel; antrenman çalışması değildir). Shaffer et al. 2001 tarihsel bir '
+            . 'örnektir, randomize değildir, dayanak sayılmaz.'],
+        'Vücut perküsyonu' => ['orta',
+            'Yakın-alan kazanımı: çalışılan şey koordinasyonun kendisidir. Pedagojik gelenek. '
+            . 'Genel motor yetiye kalıcı transfer iddia edilmez.'],
+    ];
+
+    $pdo->exec('BEGIN');
+    try {
+        $cs = $pdo->prepare('UPDATE akademik_calismalar SET tur = ?, ozet = ? WHERE lower(doi) = lower(?)');
+        foreach ($calismaDuzelt as $doi => [$tur, $ozet]) { $cs->execute([$tur, $ozet, $doi]); }
+
+        $ts = $pdo->prepare('UPDATE teknikler SET kanit_duzeyi = ?, kaynak = ? WHERE ad = ?');
+        foreach ($teknikDuzelt as $ad => [$duzey, $kaynak]) { $ts->execute([$duzey, $kaynak, $ad]); }
+
+        /* Yanlış bağ notları ve artık dayanaksız kalan bağlar */
+        $pdo->prepare("UPDATE teknik_calismalari SET iliski_notu = ?
+                        WHERE iliski_notu LIKE '%motor dürtüsellikte daha olumlu%'")
+            ->execute(['Öğretimsel ve doğaçlama modeller arasında fark bulunmadı; yapılandırılmış tasarım pedagojik bir tercihtir.']);
+        $pdo->prepare("UPDATE teknik_calismalari SET iliski_notu = ?
+                        WHERE iliski_notu LIKE '%Tempo/kural geçişleri esneklik%'")
+            ->execute(['Müdahale ritim senkronizasyonuydu; esneklik yalnız TMT-B ile ÖLÇÜLDÜ, çalışılmadı.']);
+        $pdo->prepare("UPDATE teknik_calismalari SET iliski_notu = ?
+                        WHERE iliski_notu LIKE '%Kural geçişi bilişsel esneklik bileşeni%'")
+            ->execute(['Kural geçişi çalışmanın müdahale içeriğinde yok; yalnız ölçüm düzeyinde.']);
+        /* Haigh 2024 bir EEG derlemesi — bu görev ailelerini hiç ele almıyor */
+        $pdo->exec("DELETE FROM teknik_calismalari
+                     WHERE calisma_id IN (SELECT id FROM akademik_calismalar
+                                           WHERE lower(doi) = lower('10.1007/s10484-023-09618-x'))
+                       AND (iliski_notu LIKE '%görev ailesi%' OR iliski_notu LIKE '%geçiş görevleri%')");
+
+        site_text_set('sistem_bilimsel_duzeltme_2026', '1');
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+}
+
 /** MOXO bölümü metin varsayılanları (yalnız yoksa eklenir; düzenlemeler ezilmez). */
 /** Deney + nabız bölümlerinin metinleri (mevcut kuruluma da INSERT OR IGNORE ile gelir). */
 function seed_deney_texts(): void
@@ -580,7 +711,7 @@ function seed_home_exercises(): void
          '4 vuruş dinle, 8 vuruş metronomla birlikte vur, 8 vuruş metronom susunca içinden sayarak devam et. Skorun kaydedilir.',
          'Haftada 2–3 kez yeterli; skor bir yarış değil, kişisel izleme.',
          'Zamanlama, içsel tempo',
-         'Atölyedeki protokolün kısa ev sürümü; oyunlaştırılmış ev ritim eğitimi uygulanabilirliği gösterildi (Jamey et al. 2024).'],
+         'Atölyedeki protokolün kısa ev sürümü; oyunlaştırılmış ev ritim eğitimi uygulanabilirliği gösterildi (Jamey et al. 2025).'],
         ['Ritim Okuma — sayarak vur', 'ritim_okuma', 'hepsi', 3, 3, 60, 1,
          'Ekranda 2 ölçülük ritim görünür ("1 ve 2 ve", üçlemede "1-le-me"). Metronomla sayarak tam yerinde vur. Göz–el eşgüdümü ve nota okumaya ilk adım.',
          'Yüksek ses gerekmez; masa/diz vuruşu yeterli.',

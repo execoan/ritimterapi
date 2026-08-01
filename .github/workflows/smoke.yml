@@ -37,4 +37,5 @@ jobs:
         run: |
           php test/migration-v13.php
           php test/olcum.test.php
+          php test/kilitli-dil.test.php
           php test/smoke.php

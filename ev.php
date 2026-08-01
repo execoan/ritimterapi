@@ -98,7 +98,7 @@ $flashlar = flash_get();
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ev Çalışmalarım | RitimTerapi</title>
+<title>Ev Çalışmalarım | <?= e(REPORT_BRAND) ?></title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0c0a09">
 <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
@@ -353,16 +353,21 @@ $flashlar = flash_get();
   <?php if ($paket): ?>
   <div class="ev-kart">
     <h2>🎫 Ders paketim</h2>
-    <p class="aciklama"><?= e($paket['ad']) ?><?= mb_stripos((string)$paket['notlar'], 'moxo') !== false ? ' · 🧠 MOXO ölçümlü' : '' ?>
-       — <?= (int)$paket['kullanilan'] ?>/<?= (int)$paket['toplam_seans'] ?> seans kullanıldı</p>
+    <!-- MOXO rozeti BİLEREK yok: klinik bir test markasını çocuğun kendi
+         sayfasında, hiçbir çerçeve olmadan göstermek CLAUDE.md §2'nin klinik
+         etiket yasağına giriyor. Bilgi eğitmen panelinde (ogrenci.php) duruyor. -->
+    <p class="aciklama"><?= e($paket['ad']) ?>
+       — <?= (int)$paket['kullanilan'] ?>/<?= (int)$paket['toplam_seans'] ?> oturum kullanıldı</p>
     <div class="ev-paket-cubuk">
       <div class="ev-paket-dolu" style="width:<?= min(100, (int)round(100 * $paket['kullanilan'] / max(1, (int)$paket['toplam_seans']))) ?>%"></div>
     </div>
-    <p class="aciklama"><?= (int)$paket['kalan'] ?> seans kaldı<?= (int)$paket['kalan'] <= 2 ? ' — yenileme zamanı yaklaşıyor' : '' ?>.</p>
+    <!-- Yenileme hatırlatması BİLEREK yok: ticari bir uyarıyı çocuk üzerinden
+         kurmak doğru değil; eğitmen panelinde zaten "Yenileme yaklaşıyor" rozeti var. -->
+    <p class="aciklama"><?= (int)$paket['kalan'] ?> oturum kaldı.</p>
   </div>
   <?php endif; ?>
 
-  <p class="ev-alt-not">Skorlar kişisel gelişim izlemesi içindir; yarışma değildir.
+  <p class="ev-alt-not">Skorlar yalnız kendi kaydın içindir; yarışma değildir; yarışma değildir.
      Kısa ve düzenli çalışmak, uzun tek seferden daha değerlidir. 🥁</p>
 </div>
 <?php endif; ?>
