@@ -21,6 +21,8 @@ if errorlevel 1 goto :son
 node "%~dp0test\tini.test.js"
 if errorlevel 1 goto :son
 echo.
+"%PHP%" "%~dp0test\statik.php"
+if errorlevel 1 goto :son
 "%PHP%" "%~dp0test\migration-v13.php"
 if errorlevel 1 goto :son
 "%PHP%" "%~dp0test\olcum.test.php"

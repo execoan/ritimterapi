@@ -36,6 +36,7 @@ jobs:
 
       - name: Duman testini çalıştır
         run: |
+          php test/statik.php
           php test/migration-v13.php
           php test/olcum.test.php
           php test/kilitli-dil.test.php

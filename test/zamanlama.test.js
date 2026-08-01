@@ -164,4 +164,32 @@ test('500 rastgele senaryoda sıra ve bire birlik değişmez', () => {
   }
 });
 
+test('aşırı girdide DP tablosu ayrılmaz, durum açıkça bildirilir', () => {
+  /* Bellek O(n·m): n=2500'de 92 MB ölçüldü. Takılı bir tuş binlerce olay
+     üretirse sekme çökerdi; sınır aşılınca sessiz kırpma değil açık bayrak. */
+  const n = 2100;
+  const hedefler = [], taplar = [];
+  for (let i = 0; i < n; i++) { hedefler.push(i * 0.1); taplar.push(i * 0.1 + 0.02); }
+  const t0 = Date.now();
+  const r = Z.eslestir(taplar, hedefler, { esikSn: 0.15 });
+  assert.equal(r.asiriGirdi, true);
+  assert.equal(r.asiriGirdiBilgi.sinir, 2000);
+  assert.ok(Date.now() - t0 < 200, 'sınır aşılınca hesap yapılmamalı');
+  /* Biçim normal dönüşle aynı: çağıran alan eksikliğinden patlamamalı */
+  assert.ok(Array.isArray(r.eslesenler));
+  assert.ok(Array.isArray(r.fazlaTaplar));
+  assert.equal(r.kacirilanHedefler.length, n);
+  assert.deepEqual(r.hedefKullanildi, {});
+  assert.deepEqual(r.tapKullanildi, {});
+});
+
+test('sınırın hemen altında normal çalışır', () => {
+  const n = 300;
+  const hedefler = [], taplar = [];
+  for (let i = 0; i < n; i++) { hedefler.push(i * 0.5); taplar.push(i * 0.5 + 0.02); }
+  const r = Z.eslestir(taplar, hedefler, { esikSn: 0.15 });
+  assert.ok(!r.asiriGirdi);
+  assert.equal(r.eslesenler.length, n);
+});
+
 console.log('\nGeçen: ' + gecen + ' · Kalan: 0');

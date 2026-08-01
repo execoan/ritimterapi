@@ -1789,14 +1789,6 @@ function packages_expiring(int $esik = 2): array
     return $sonuc;
 }
 
-/** Grubun bugünden itibaren ilk planlı oturumu. */
-function next_session_for_group(int $grupId): ?array
-{
-    $st = db()->prepare('SELECT * FROM oturumlar WHERE grup_id = ? AND tarih >= ? ORDER BY tarih LIMIT 1');
-    $st->execute([$grupId, today()]);
-    return $st->fetch() ?: null;
-}
-
 /**
  * Katılımcı portalında gösterilecek güvenli ders programı.
  * Yalnızca grup planı ve üyelerin takma adları döner; kişisel not/değerlendirme alanları yoktur.

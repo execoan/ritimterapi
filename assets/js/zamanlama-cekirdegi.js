@@ -241,6 +241,36 @@
     var esikBul = typeof secenekler.esikSn === 'function'
       ? secenekler.esikSn
       : function () { return varsayilanEsik; };
+    /*
+     * DP tablosu hedef × tap boyutunda, yani bellek O(n·m). Node'da ölçüldü
+     * (eşik 1 sn, en kötü durum — her tap birçok hedefe uyuyor):
+     *     n=600  →  14 ms,   5,6 MB
+     *     n=1000 →  42 ms,  26,1 MB
+     *     n=2500 → 178 ms,  92,6 MB
+     * Gerçekçi en büyük girdi çok daha küçük: 60 sn'lik alıştırma 240 BPM'de
+     * ~240 vuruş üretir. Ama vuruş sayısını KULLANICI belirliyor — takılı bir
+     * tuş ya da otomatik tıklayıcı binlerce olay üretebilir ve o zaman tablo
+     * yüzlerce MB ister, sekme çöker. Onun için üst sınır var: aşıldığında
+     * sessizce kırpmak yerine AÇIKÇA bildirilir, çünkü kırpılmış veriden
+     * hesaplanan skor yanlış olur ve yanlış olduğu da anlaşılmaz.
+     */
+    var SINIR = 2000;
+    if (hedefListe.length > SINIR || duzeltilmis.length > SINIR) {
+      /* Biçim normal dönüşle AYNI olmalı; eksik alan bırakmak çağıran
+         tarafta sessiz bir TypeError'a döner. */
+      return {
+        eslesenler: [],
+        kacirilanHedefler: hedefListe.map(function (h) {
+          return { hedef: h.hedef, hedefIdx: h.asilIdx };
+        }),
+        fazlaTaplar: [],
+        hedefKullanildi: {},
+        tapKullanildi: {},
+        asiriGirdi: true,
+        asiriGirdiBilgi: { hedef: hedefListe.length, tap: duzeltilmis.length, sinir: SINIR }
+      };
+    }
+
     var satir = hedefListe.length + 1;
     var sutun = duzeltilmis.length + 1;
     var dp = Array.from({ length: satir }, function () { return Array(sutun); });
