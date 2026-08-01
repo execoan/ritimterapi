@@ -123,6 +123,15 @@ require APP_DIR . '/includes/view/header.php';
     aşağıdan bağlayabilirsiniz.
   </div>
   <?php else: ?>
+    <?php if (in_array((string)$teknik['kanit_duzeyi'], ['zayif', 'yok'], true)): ?>
+    <!-- Bağ sayısının artması SESSİZ BİR YÜKSELTME gibi okunmasın diye kalıcı uyarı -->
+    <div class="uyari-kutu">
+      <strong>Bu çalışmalar tekniğin denendiği çalışmalar değildir.</strong>
+      Aşağıdakiler tekniğin arka planını ve komşu alandaki bulguları belgeliyor;
+      bir kısmı bilinçli olarak <em>karşıt</em> bulgudur. Bağlı çalışma sayısının
+      artması kanıt düzeyini yükseltmez — etiket ayrı bir karardır.
+    </div>
+    <?php endif; ?>
     <?php foreach ($bagliCalismalar as $c): ?>
     <div style="border:1px solid var(--cizgi);border-radius:12px;padding:.9rem 1rem;margin-bottom:.7rem">
       <div style="display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap">

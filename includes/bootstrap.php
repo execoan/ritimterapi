@@ -138,6 +138,7 @@ seed_home_exercises();
 seed_template_home_tasks();
 seed_studies();
 seed_group_workshop_studies();
-seed_scientific_corrections_2026();   // tek seferlik; mevcut kurulumlara da ulaşsın
+seed_scientific_corrections_2026();       // tek seferlik; mevcut kurulumlara da ulaşsın
+seed_unsupported_technique_studies();     // arka plan kaynakları; kanıt düzeyine DOKUNMAZ
 ensure_student_codes();
 auto_backup_daily();

@@ -375,8 +375,11 @@ function seed_studies(): void
         $calismaId[$anahtar] = (int)$pdo->lastInsertId();
     }
 
-    // Teknik → çalışma eşlemeleri. Bilinçli boş bırakılanlar (Hata Sonrası Dönüş,
-    // Çift Hat, Ritim Planla–Uygula–Onar, Ritimden Sessiz Göreve) "yok" görünür.
+    // Teknik → çalışma eşlemeleri. Hata Sonrası Dönüş, Çift Hat ve Ritimden
+    // Sessiz Göreve burada BOŞ bırakılır; onlara sonradan yalnız olgu/komşu alan
+    // kaynakları bağlanır (seed_unsupported_technique_studies). Bu bağlar
+    // tekniğin ETKİSİNİN kanıtı değildir ve kanıt düzeyini YÜKSELTMEZ.
+    // Ritim Planla–Uygula–Onar hiç bağlanmaz: 'yok' etiketi bilinçlidir.
     $baglar = [
         'Metronoma eşlik' => [
             ['puyjarinet2017', 'Ölçülen beceri doğrudan bu: vuruşa eşzamanlanma.'],
@@ -518,6 +521,147 @@ function seed_group_workshop_studies(): void
             }
         }
         site_text_set('sistem_grup_atolyesi_kaynak_seed', '1');
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+}
+
+/**
+ * DAYANAKSIZ TEKNİKLER İÇİN ARKA PLAN KAYNAKLARI (Ağustos 2026).
+ *
+ * NE DEĞİLDİR: Bu kaynakların HİÇBİRİ bu tekniklerin etkililiğini ölçmüş bir
+ * deneme değildir. Hiçbiri kanıt düzeyini yükseltmez — bu fonksiyon zaten
+ * kanit_duzeyi alanına DOKUNMAZ. Amaç, tekniğin varsaydığı sürecin komşu
+ * alanda ölçülmüş olduğunu belgelemek; "bu teknik işe yarıyor" demek değil.
+ *
+ * İkisi bilinçli olarak KARŞIT bulgudur (Cocchini 2017, Infantes-Paniagua 2021):
+ * kayıt defteri yalnız destekleyici kaynak toplayan bir vitrin olmamalı.
+ *
+ * Tüm DOI'ler Crossref'ten tek tek doğrulandı (11/11, HTTP 200, geri çekilme
+ * kaydı yok). Yıl alanları basılı sayı yılıdır — Moradzadeh çevrimiçi 2014 /
+ * basılı 2015 (Cogn Sci 39:5), Cocchini çevrimiçi 2016 / basılı 2017 (Memory 25:5).
+ */
+function seed_unsupported_technique_studies(): void
+{
+    if (site_text('sistem_dayanaksiz_teknik_kaynak_seed') === '1') { return; }
+    $pdo = db();
+
+    /* [anahtar, başlık, yazarlar, yıl, dergi, doi, tür, nötr özet] */
+    $calismalar = [
+        ['hata_maidhof',
+         'Nobody is perfect: ERP effects prior to performance errors in musicians indicate fast monitoring processes',
+         'Maidhof, Rieger, Prinz & Koelsch', 2009, 'PLOS ONE',
+         '10.1371/journal.pone.0005032', 'deneysel',
+         'Müzisyenlerde hatalı tuş vuruşundan ÖNCE ortaya çıkan beyin yanıtları ölçüldü; hata izleme sürecinin hızlı işlediğine işaret eder. '
+         . 'Laboratuvarda piyano görevi; küçük örneklem. Bir atölye tekniğinin denendiği çalışma değildir.'],
+        ['hata_danielmeier',
+         'Post-error adjustments',
+         'Danielmeier & Ullsperger', 2011, 'Frontiers in Psychology',
+         '10.3389/fpsyg.2011.00233', 'derleme',
+         'Hatadan sonraki davranış ayarlamalarını (yavaşlama, dikkat kayması) tarayan derleme. Bu ayarlamaların ÖĞRETİLEBİLİR olup '
+         . 'olmadığı ayrı bir sorudur ve derleme buna yanıt vermez.'],
+
+        ['cift_moradzadeh',
+         'Musical training, bilingualism, and executive function: a closer look at task switching and dual-task performance',
+         'Moradzadeh, Blumenthal & Wiseheart', 2015, 'Cognitive Science',
+         '10.1111/cogs.12183', 'deneysel',
+         'Müzik eğitimi almış yetişkinlerde görev değiştirme ve çift görev performansı karşılaştırıldı. Kesitsel tasarım: gruplar '
+         . 'zaten farklı olabilir, nedensellik kurulamaz.'],
+        ['cift_cocchini',
+         'Musical expertise has minimal impact on dual task performance',
+         'Cocchini, Filardi, Crhonkova & Halpern', 2017, 'Memory',
+         '10.1080/09658211.2016.1205628', 'deneysel',
+         'KARŞIT BULGU: müzik uzmanlığının çift görev performansına etkisi en fazla çok küçük bulundu. '
+         . 'Kayıt defterine bilinçli olarak eklendi — alandaki bulgular tek yönlü değildir.'],
+        ['cift_keller',
+         'Rhythm in joint action: psychological and neurophysiological mechanisms for real-time interpersonal coordination',
+         'Keller, Novembre & Hove', 2014, 'Philosophical Transactions of the Royal Society B',
+         '10.1098/rstb.2013.0394', 'derleme',
+         'Birlikte çalarken kişilerarası eşgüdümün psikolojik ve sinirsel düzeneklerini tarayan derleme; kuramsal çerçeve sunar, '
+         . 'müdahale etkisi ölçmez.'],
+
+        ['sessiz_mahar',
+         'Effects of a classroom-based program on physical activity and on-task behavior',
+         'Mahar, Murphy, Rowe, Golden, Shields & Raedeke', 2006, 'Medicine & Science in Sports & Exercise',
+         '10.1249/01.mss.0000235359.16685.a3', 'deneysel',
+         'Sınıf içi kısa hareket aralarının ardından göreve yönelik davranışta artış gözlendi. Randomize değil; '
+         . 'ölçüm gözlemciye dayalı ve etkinlik ritmik değil genel bedensel harekettir.'],
+        ['sessiz_masini',
+         'Evaluation of school-based interventions of active breaks in primary schools: a systematic review and meta-analysis',
+         'Masini, Marini, Gori, Leoni, Rochira & Dallolio', 2020, 'Journal of Science and Medicine in Sport',
+         '10.1016/j.jsams.2019.10.008', 'meta',
+         'İlkokullarda aktif ara uygulamalarını birleştiren meta-analiz; çalışmalar yöntemsel olarak heterojen, '
+         . 'etki büyüklükleri değişken.'],
+        ['sessiz_infantes',
+         'Active school breaks and students attention: a systematic review with meta-analysis',
+         'Infantes-Paniagua, Silva, Ramirez-Campillo et al.', 2021, 'Brain Sciences',
+         '10.3390/brainsci11060675', 'meta',
+         'DİKKAT: bu meta-analizde aktif ara uygulamalarının dikkat ölçümleri üzerindeki etkilerinin ÇOĞU anlamlı bulunmadı. '
+         . 'Kayıt defterine sınırı göstermek için eklendi.'],
+
+        ['aksak_hannon',
+         'Familiarity overrides complexity in rhythm perception: a cross-cultural comparison of American and Turkish listeners',
+         'Hannon, Soley & Ullal', 2012, 'Journal of Experimental Psychology: Human Perception and Performance',
+         '10.1037/a0027225', 'deneysel',
+         'Türk ve Amerikalı dinleyicilerin karşılaştırıldığı çalışma: aksak ölçüleri algılamada belirleyici olan şey ölçünün '
+         . 'karmaşıklığı değil, dinleyicinin ona AŞİNALIĞI. Kültürel maruziyetin rolünü gösterir.'],
+        ['aksak_moelants',
+         'Perception and performance of aksak metre',
+         'Moelants', 2006, 'Musicae Scientiae',
+         '10.1177/102986490601000201', 'deneysel',
+         'Aksak ölçülerin algılanması ve icrası üzerine ölçüm çalışması; uzun/kısa birim oranlarının uygulamada ideal '
+         . '2:1 oranından saptığını bildirir.'],
+        ['aksak_komurcu',
+         'Effects of regular and irregular rhythms on time perception: the role of aksak and non-metric rhythms',
+         'Kömürcü', 2025, 'Online Journal of Music Sciences',
+         '10.31811/ojomus.1647605', 'deneysel',
+         'Düzenli ve düzensiz ritimlerin zaman algısına etkisini inceleyen Türkçe kaynak; aksak ve ölçüsüz ritimleri karşılaştırır.'],
+    ];
+
+    /*
+     * Bağ notları BİLİNÇLİ olarak iddiasız: her biri "teknik denenmedi" der.
+     * Aksak kaynakları hiçbir tekniğe bağlanmaz — malzeme arka planıdır,
+     * bir etkinliğin dayanağı değil.
+     */
+    $baglar = [
+        ['Hata Sonrası Dönüş', 'hata_maidhof',   'Tekniğin varsaydığı hızlı hata fark etme süreci ölçülmüştür; teknik denenmemiştir.'],
+        ['Hata Sonrası Dönüş', 'hata_danielmeier', 'Hata sonrası ayarlama olgusunun derlemesi; bu ayarlamanın öğretilebilirliği gösterilmemiştir.'],
+        ['Çift Hat', 'cift_moradzadeh', 'Komşu alan bulgusu (müzik eğitimi ve çift görev); kesitsel, nedensellik yok.'],
+        ['Çift Hat', 'cift_cocchini',   'KARŞIT bulgu: uzmanlık çift görev düşüşünü azaltmadı. Zayıf etiketi bilinçlidir.'],
+        ['Çift Hat', 'cift_keller',     'Birlikte çalmada eşgüdüm düzeneklerinin kuramsal çerçevesi; müdahale çalışması değil.'],
+        ['Ritimden Sessiz Göreve', 'sessiz_mahar',    'Hareket arasından göreve dönüş olgusu; etkinlik ritmik değil, randomize değil.'],
+        ['Ritimden Sessiz Göreve', 'sessiz_masini',   'Aktif ara literatürünün meta-analizi; heterojen ve ritme özgü değil.'],
+        ['Ritimden Sessiz Göreve', 'sessiz_infantes', 'Sınırı gösteren meta-analiz: dikkat ölçümlerinin çoğunda anlamlı etki yok.'],
+    ];
+
+    $sec  = $pdo->prepare('SELECT id FROM akademik_calismalar WHERE lower(doi) = lower(?) LIMIT 1');
+    $ins  = $pdo->prepare('INSERT INTO akademik_calismalar (baslik, yazarlar, yil, dergi, doi, tur, ozet, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    $bagla = $pdo->prepare('INSERT OR IGNORE INTO teknik_calismalari (teknik_id, calisma_id, iliski_notu)
+                            VALUES (?, ?, ?)');
+
+    $pdo->exec('BEGIN');
+    try {
+        $id = [];
+        foreach ($calismalar as [$anahtar, $baslik, $yazar, $yil, $dergi, $doi, $tur, $ozet]) {
+            $sec->execute([$doi]);
+            $mevcut = $sec->fetchColumn();
+            if ($mevcut) { $id[$anahtar] = (int)$mevcut; continue; }  // eğitmenin kaydı korunur
+            $ins->execute([$baslik, $yazar, $yil, $dergi, $doi, $tur, $ozet, now_str()]);
+            $id[$anahtar] = (int)$pdo->lastInsertId();
+        }
+
+        $teknikId = [];
+        foreach ($pdo->query('SELECT id, ad FROM teknikler') as $t) { $teknikId[$t['ad']] = (int)$t['id']; }
+        foreach ($baglar as [$teknik, $anahtar, $not]) {
+            if (isset($teknikId[$teknik], $id[$anahtar])) {
+                $bagla->execute([$teknikId[$teknik], $id[$anahtar], $not]);
+            }
+        }
+
+        site_text_set('sistem_dayanaksiz_teknik_kaynak_seed', '1');
         $pdo->exec('COMMIT');
     } catch (Throwable $ex) {
         $pdo->exec('ROLLBACK');
