@@ -231,6 +231,20 @@ $y = git_('giris.php', $jar);
 dogrula($y['durum'] === 200 && str_contains($y['govde'], 'csrf_token'), 'giris.php açılıyor ve CSRF alanı var');
 dogrula(str_contains($y['basliklar'], 'Content-Security-Policy')
      && str_contains($y['basliklar'], 'X-Content-Type-Options'), 'güvenlik başlıkları gönderiliyor (CSP + nosniff)');
+
+/* CSP'nin asıl işi XSS'i durdurmak; script-src'de 'unsafe-inline' varsa
+   enjekte edilen betik zaten çalışır ve başlık süs olur. Gerileme testi: */
+preg_match('/script-src([^;]*)/i', $y['basliklar'], $mS);
+$scriptSrc = $mS[1] ?? '';
+dogrula($scriptSrc !== '' && !str_contains($scriptSrc, 'unsafe-inline'),
+    "CSP script-src'de 'unsafe-inline' YOK");
+dogrula(str_contains($scriptSrc, "'nonce-"), 'CSP script-src nonce taşıyor');
+/* Nonce her istekte değişmeli; sabit olsaydı saldırgan bir kez okuyup kullanırdı. */
+preg_match("/'nonce-([^']+)'/", $y['basliklar'], $m1);
+$y2 = git_('giris.php', $jar);
+preg_match("/'nonce-([^']+)'/", $y2['basliklar'], $m2);
+dogrula(!empty($m1[1]) && !empty($m2[1]) && $m1[1] !== $m2[1], 'CSP nonce her istekte değişiyor');
+
 $y = git_('index.php', $jar);
 dogrula($y['durum'] === 200 && !str_contains($y['govde'], 'Fatal error'), 'tanıtım sayfası hatasız açılıyor');
 dogrula(git_('manifest.json', $jar)['durum'] === 200, 'manifest.json sunuluyor');
@@ -800,6 +814,29 @@ dogrula(str_contains($og, '83') && str_contains($og, "\u{1F4CF}"), 'protokol son
  * bölümünde bozulmadan durduğu denetleniyor.
  */
 bolum('HTML bütünlüğü (açık yorum / bozuk ayrıştırma)');
+/* Nonce'a geçince gömülü blokların gerçekten nonce alması gerekir; almazsa
+   sayfa sessizce ölür (CSP bloklar, sunucu yine 200 döner). */
+$nonceli = 0; $noncesiz = [];
+foreach (['metronom.php', 'plan.php'] as $sf) {
+    $g = git_($sf, $jar)['govde'];
+    foreach (['/<script(?![^>]*src=)[^>]*>/i'] as $rx) {
+        preg_match_all($rx, $g, $mm);
+        foreach ($mm[0] as $etiket) {
+            if (str_contains($etiket, 'nonce=')) { $nonceli++; } else { $noncesiz[] = "{$sf}: {$etiket}"; }
+        }
+    }
+}
+dogrula($nonceli > 0 && !$noncesiz, 'gömülü <script> blokları nonce taşıyor'
+    . ($noncesiz ? ' — eksik: ' . implode(', ', $noncesiz) : ''));
+
+/* Satır içi on* öznitelikleri nonce ile ÇALIŞMAZ; delegasyona taşındıklarını
+   doğrula, yoksa silme onayları sessizce kaybolur. */
+$olayli = [];
+foreach (['on-kayitlar.php', 'poliritim.php', 'ritim-okuma.php', 'site.php'] as $sf) {
+    if (preg_match('/\son(click|submit|change|input)=/i', git_($sf, $jar)['govde'])) { $olayli[] = $sf; }
+}
+dogrula(!$olayli, 'satır içi on* olay özniteliği kalmadı' . ($olayli ? ' — ' . implode(', ', $olayli) : ''));
+
 $htmlSayfalar = ['panel.php', 'metronom.php', 'poliritim.php', 'ritim-okuma.php',
                  'tini-kartlari.php', 'motor-studyo.php', 'grup-atolyesi.php',
                  'oturumlar.php', 'teknikler.php', 'raporlar.php', 'index.php', 'giris.php'];

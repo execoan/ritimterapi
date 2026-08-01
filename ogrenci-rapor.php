@@ -375,7 +375,7 @@ function sd_grafigi_svg(array $seri): string
 </style>
 
 <script src="<?= e(asset('js/belge-duzenle.js')) ?>" defer></script>
-<script>
+<script <?= csp_nonce_attr() ?>>
 /* Hazır cümle havuzu: düzenleme modu açıkken tıklanan cümle değerlendirme
    bölümüne paragraf olarak eklenir (yalnız ekran/PDF — kayıtlı veri değişmez). */
 document.addEventListener('DOMContentLoaded', function () {

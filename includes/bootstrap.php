@@ -77,6 +77,29 @@ function guvenli_baglanti_mi(): bool
     return false;
 }
 
+/**
+ * CSP nonce — istek başına bir kez üretilir.
+ *
+ * script-src'den 'unsafe-inline' kaldırıldı: o bayrak açıkken saklı bir XSS
+ * yükü sayfaya girer girmez ÇALIŞIR ve CSP hiçbir şey engellemez. Nonce ile
+ * yalnız sunucunun kendi bastığı <script nonce="…"> blokları çalışır;
+ * saldırganın enjekte ettiği blok doğru nonce'u bilemez (her istekte değişir).
+ *
+ * Sayfalarda kullanımı: <script <?= csp_nonce_attr() ?>> … </script>
+ */
+function csp_nonce(): string
+{
+    static $nonce = null;
+    if ($nonce === null) { $nonce = base64_encode(random_bytes(16)); }
+    return $nonce;
+}
+
+/** Gömülü <script> için hazır öznitelik. */
+function csp_nonce_attr(): string
+{
+    return 'nonce="' . htmlspecialchars(csp_nonce(), ENT_QUOTES, 'UTF-8') . '"';
+}
+
 error_reporting(E_ALL);
 // Hatalar ekrana YALNIZ yerelde basılır; ağdan gelen istekte yalnız günlüğe.
 @ini_set('display_errors', yerel_istek_mi() ? '1' : '0');
@@ -90,7 +113,13 @@ if (!headers_sent()) {
        çünkü eski tarayıcılar yalnız başlığı anlar. */
     header('X-Frame-Options: SAMEORIGIN');
     header('Permissions-Policy: geolocation=(), camera=(), payment=(), usb=(), interest-cohort=()');
-    header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; "
+    /* script-src: 'unsafe-inline' YOK — gömülü bloklar nonce ile çalışır,
+       satır içi on* öznitelikleri app.js'te delegasyona taşındı.
+       style-src'de 'unsafe-inline' KALIYOR: sayfalarda ~140 satır içi style
+       özniteliği var ve stil enjeksiyonu betik çalıştıramaz; asıl tehlike olan
+       kod yürütmesi kapatıldı. Bunu da kapatmak stil taşıma işi ister. */
+    header("Content-Security-Policy: default-src 'self'; "
+        . "script-src 'self' 'nonce-" . csp_nonce() . "'; "
         . "style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; "
         . "base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
     /* HSTS yalnız gerçekten HTTPS'teyken: HTTP üzerinden yollamak anlamsız,

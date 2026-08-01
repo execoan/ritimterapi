@@ -141,7 +141,7 @@ require APP_DIR . '/includes/view/header.php';
           <td class="sayi"><?= $k['sd_ms'] !== null && $k['sd_ms'] !== '' ? (int)$k['sd_ms'] . ' ms' : '—' ?></td>
           <td><?= e(mb_strimwidth((string)$k['notlar'], 0, 40, '…')) ?></td>
           <td class="sag">
-            <form method="post" action="<?= e(url('ritim-okuma.php')) ?>" onsubmit="return confirm('Kayıt silinsin mi?')">
+            <form method="post" action="<?= e(url('ritim-okuma.php')) ?>" data-onay="Kayıt silinsin mi?">
               <?= csrf_field() ?>
               <input type="hidden" name="islem" value="sonuc_sil">
               <input type="hidden" name="id" value="<?= (int)$k['id'] ?>">

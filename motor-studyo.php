@@ -242,7 +242,7 @@ require APP_DIR . '/includes/view/header.php';
   </form>
 </dialog>
 
-<script>
+<script <?= csp_nonce_attr() ?>>
 window.MOTOR_STUDYO_VERI = <?= json_encode([
     'api' => url('motor-api.php'),
     'csrfToken' => csrf_token(),

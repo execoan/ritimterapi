@@ -7,7 +7,7 @@
    Not: CACHE_ADI değişince aktivasyonda eski cache silinir.
    ======================================================= */
 
-var CACHE_ADI   = 'ritim-v34';
+var CACHE_ADI   = 'ritim-v35';
 /* Çevrimdışı sayfası SW'nin kendi konumuna göre çözülür (alt dizin kurulumunda da doğru). */
 var OFFLINE_URL = new URL('offline.html', self.location).pathname;
 

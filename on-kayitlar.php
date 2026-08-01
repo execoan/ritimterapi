@@ -77,7 +77,7 @@ require APP_DIR . '/includes/view/header.php';
               <input type="hidden" name="islem" value="durum">
               <input type="hidden" name="id" value="<?= (int)$k['id'] ?>">
               <input type="hidden" name="filtre" value="<?= e($filtre) ?>">
-              <select name="durum" class="secim secim-dar" onchange="this.form.submit()">
+              <select name="durum" class="secim secim-dar" data-oto-gonder>
                 <?php foreach (ON_KAYIT_DURUM_LABELS as $kod => $etiket): ?>
                 <option value="<?= e($kod) ?>" <?= $k['durum'] === $kod ? 'selected' : '' ?>><?= e($etiket) ?></option>
                 <?php endforeach; ?>

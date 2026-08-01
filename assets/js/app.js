@@ -43,12 +43,31 @@
     });
   }
 
+  /*
+   * Onay ve otomatik gonderim — DELEGASYONLA.
+   * Satir ici on* oznitelikleri (onclick/onsubmit/onchange) CSP'de
+   * script-src 'unsafe-inline' gerektirir; o bayrak acikken saklı XSS
+   * dogrudan calisabilir. Bes satir ici isleyici buraya tasindi ve
+   * 'unsafe-inline' CSP'den KALDIRILDI (bkz. includes/bootstrap.php).
+   */
   /* Onaylı formlar: <form data-onay="Emin misiniz?"> */
   document.addEventListener('submit', function (ev) {
     var f = ev.target;
     if (f && f.dataset && f.dataset.onay) {
       if (!window.confirm(f.dataset.onay)) { ev.preventDefault(); }
     }
+  });
+
+  /* Onaylı düğme: <button data-onay-btn="Silinsin mi?"> */
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest && ev.target.closest('[data-onay-btn]');
+    if (b && !window.confirm(b.dataset.onayBtn)) { ev.preventDefault(); }
+  });
+
+  /* Seçim değişince formu gönder: <select data-oto-gonder> */
+  document.addEventListener('change', function (ev) {
+    var s = ev.target;
+    if (s && s.dataset && s.dataset.otoGonder !== undefined && s.form) { s.form.submit(); }
   });
 
   /* ---------- Ders planı ekranı ---------- */

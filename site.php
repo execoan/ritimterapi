@@ -229,7 +229,7 @@ require APP_DIR . '/includes/view/header.php';
             <input type="checkbox" name="makale_gorunur[<?= $mid ?>]" value="1" <?= (int)$mk['gorunur'] === 1 ? 'checked' : '' ?>> Görünür
           </label>
           <button type="submit" name="makale_sil" value="<?= $mid ?>" class="btn btn-kucuk btn-tehlike"
-                  onclick="return confirm('Bu makale kartı silinsin mi?')">Sil</button>
+                  data-onay-btn="Bu makale kartı silinsin mi?">Sil</button>
         </div>
       </li>
       <?php endforeach; ?>
@@ -287,7 +287,7 @@ require APP_DIR . '/includes/view/header.php';
             <input type="checkbox" name="galeri_gorunur[<?= $fid ?>]" value="1" <?= (int)$foto['gorunur'] === 1 ? 'checked' : '' ?>> Görünür
           </label>
           <button type="submit" name="galeri_sil" value="<?= $fid ?>" class="btn btn-kucuk btn-tehlike"
-                  onclick="return confirm('Bu görsel silinsin mi?')">Sil</button>
+                  data-onay-btn="Bu görsel silinsin mi?">Sil</button>
         </div>
       </li>
       <?php endforeach; ?>

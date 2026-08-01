@@ -203,7 +203,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 </form>
 
-<script>
+<script <?= csp_nonce_attr() ?>>
 // Grup seçilince tarih alanını grubun bir sonraki ders gününe getir (yalnız yeni planda)
 (function () {
   var grupSec = document.getElementById('grupSec');

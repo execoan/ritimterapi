@@ -887,7 +887,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php endif; ?>
 </div>
 
-<script>
+<script <?= csp_nonce_attr() ?>>
 /*
  * GÜVENLİK: buraya gömülen her JSON'da JSON_HEX_TAG|JSON_HEX_AMP ZORUNLU.
  * Bunlar olmadan koruma yalnız PHP'nin varsayılan slash kaçırmasına kalıyordu;

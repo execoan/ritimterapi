@@ -18,7 +18,7 @@ node "%~dp0test\grup-atolyesi.test.js"
 if errorlevel 1 goto :son
 node "%~dp0test\poliritim.test.js"
 if errorlevel 1 goto :son
-node "%~dp0test	ini.test.js"
+node "%~dp0test\tini.test.js"
 if errorlevel 1 goto :son
 echo.
 "%PHP%" "%~dp0test\migration-v13.php"
