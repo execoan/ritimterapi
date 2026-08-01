@@ -10,16 +10,15 @@ if (!defined('RITIM')) { http_response_code(403); exit; }
  * senkronizasyon becerisinin kendisi. Diğerlerinde iddia edilen transfer
  * etkisi literatürde umut verici ama kesin değil. "yok" etiketi de meşru.
  */
-function seed_techniques(): void
+/**
+ * Teknik kütüphanesinin TEK KAYNAĞI.
+ * Hem seed_techniques() hem de sonradan eklenen göçler buradan okur — kayıt
+ * iki yere kopyalanırsa biri güncellenip öteki unutulur.
+ * @return array<int, array{0:string,1:string,2:string,3:int,4:int,5:string,6:string,7:string,8:string,9:string}>
+ */
+function seed_technique_rows(): array
 {
-    $pdo = db();
-    // Yalnız kütüphane TAMAMEN boşken çalışır: eğitmenin sildiği/düzenlediği
-    // kayıtlar asla geri getirilmez, uygulama hiçbir zaman boş kurulmaz.
-    if ((int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn() > 0) {
-        return;
-    }
-
-    $satirlar = [
+    return [
         // [ad, kategori, enstruman, seviye, sure_dk, aciklama, hedef_beceri, kanit, kaynak, malzeme]
         ['Metronoma eşlik', 'Metronoma eşlik', 'Davul / pad', 1, 10,
          'Sabit tempoda metronomla birlikte vuruş. Tempo oturunca kademeli olarak değiştirilir (bir seferde 4–6 BPM). Acele değil, doğruluk önceliklidir.',
@@ -120,6 +119,30 @@ function seed_techniques(): void
          . 'Genel motor yetiye kalıcı transfer iddia edilmez.',
          'Malzeme gerekmez'],
 
+        /*
+         * ADLANDIRMA KARARI — neden "Bas–Tiz" değil "Kalın–İnce":
+         * Türkçe perdeyi KALINLIK metaforuyla kodlar (kalın/ince); İngilizce ve
+         * Felemenkçe DİKEYLİK kullanır (low/high). Shayan, Öztürk & Sicoli (2011)
+         * bunu doğrudan Türkçe üzerinde belgeledi; Dolscheid ve ark. (2020) iki
+         * metafor çatıştığında Türkçe konuşanların kalınlık yorumunu seçtiğini
+         * gösterdi. Yani Türkçe konuşan çocuk için doğal çıpa "kalın/ince";
+         * "bas/tiz" öğretilmesi gereken teknik bir etikettir.
+         */
+        ['Kalın–İnce Tını', 'Çağrı–cevap', 'Çevredeki cisimler', 1, 20,
+         'Katılımcılar çevredeki cisimlere (masa, kitap, sandalye) vurarak kalın ve ince tınıları ayırt eder; '
+         . 'aynı cisme farklı noktadan vurunca tınının değiştiğini keşfeder. Grup ikiye ayrılır: bir yan kalın, '
+         . 'öteki ince tınılı cisimler. Eğitmen iki simgeli kısa bir kalıp çalar (dikdörtgen = kalın, daire = ince), '
+         . 'gruplar kendi cisimleriyle tekrarlar. İlerletme: kalıp 2 olaydan 3 olaya uzar; sonra yalnız ellerle '
+         . 'yapılır (yumruk = kalın, açık el = ince). Gruplar yer değiştirip tekrarlar.',
+         'Tını ayrımı, işitsel sınıflama', 'zayif',
+         'Pedagojik gelenek (bulunan-nesne / ses keşfi). Tını ayrımı okul öncesinde ölçülebilir ve erken gelişen '
+         . 'bir beceridir (Creel 2015; 2023); cisme vurarak malzeme tanıma gerçek bir işitsel yetenektir '
+         . '(Giordano & McAdams 2006). ANCAK bu ETKİNLİĞİN o beceriyi geliştirdiğini ölçen çalışma YOK. '
+         . 'TEKNİK UYARI: aynı cisme farklı noktadan vurmak temel frekansı değil spektral parlaklığı değiştirir — '
+         . 'burada çalışılan şey çoğunlukla perde değil TINI PARLAKLIĞIdır (Allen & Oxenham 2014). '
+         . 'Transfer iddiası yok: işitsel ayırt etme eğitimi eğitilen uyaranın ötesine genellenmiyor (Halliday ve ark. 2012).',
+         'Çevredeki cisimler (masa, kitap, sandalye), bir ritim enstrümanı; ellerle yapılan sürümde malzeme gerekmez'],
+
         ['Serbest doğaçlama', 'Serbest doğaçlama', 'Davul / pad', 1, 10,
          'Sıra ile solo: her katılımcı kısa bir bölümde serbest çalar, grup nabzı korur. Zorunlu solo yoktur; liderlik seçeneklidir.',
          'Kendini ifade, grup dinamiği', 'yok',
@@ -138,6 +161,17 @@ function seed_techniques(): void
          'RitimOdak kılavuzu Etkinlik 10; transfer kanıtı sınırlı',
          'Davul/pad, yaşa uygun sessiz görev, kronometre'],
     ];
+}
+
+function seed_techniques(): void
+{
+    $pdo = db();
+    // Yalnız kütüphane TAMAMEN boşken çalışır: eğitmenin sildiği/düzenlediği
+    // kayıtlar asla geri getirilmez, uygulama hiçbir zaman boş kurulmaz.
+    if ((int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn() > 0) {
+        return;
+    }
+    $satirlar = seed_technique_rows();
 
     $st = $pdo->prepare(
         'INSERT OR IGNORE INTO teknikler
@@ -521,6 +555,128 @@ function seed_group_workshop_studies(): void
             }
         }
         site_text_set('sistem_grup_atolyesi_kaynak_seed', '1');
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+}
+
+/**
+ * "KALIN–İNCE TINI" TEKNİĞİ + KAYNAKLARI (Ağustos 2026).
+ *
+ * Kaynak: eğitmenin "Ritim ile Tını / BAS–TİZ" etkinlik belgesi.
+ * Belge markalıdır ve "terapi" dili taşır; buraya YALNIZ ETKİNLİĞİN YAPISI
+ * alınmıştır, çerçevesi ve dili alınmamıştır (CLAUDE.md §2).
+ *
+ * KAZANIM ALINMADI: belgede "fiziksel kaba motor becerilerini geliştirir" ve
+ * gelişim alanı olarak "Zihinsel" yazıyor. İkisi de sonuç vaadidir ve bu
+ * etkinlik için dayanağı yoktur — hedefBeceri alanına yalnız fiilen çalışılan
+ * şey yazıldı: tını ayrımı ve işitsel sınıflama.
+ *
+ * Bağlanan yedi kaynağın hepsi Crossref'ten doğrulandı. Üçü bilinçli olarak
+ * SINIR gösterir (Allen & Oxenham: burada çalışılan şey perde değil parlaklık;
+ * Halliday: işitsel eğitim genellenmiyor; Tsang & Conrad: tınıda fark ÇIKMADI).
+ * Kayıt defteri yalnız destekleyici kaynak toplayan bir vitrin olmamalı.
+ */
+function seed_timbre_technique_2026(): void
+{
+    if (site_text('sistem_kalin_ince_tini_seed') === '1') { return; }
+    $pdo = db();
+
+    $calismalar = [
+        ['tini_creel2015',
+         'Ups and downs in auditory development: preschoolers sensitivity to pitch contour and timbre',
+         'Creel', 2015, 'Cognitive Science',
+         '10.1111/cogs.12237', 'deneysel',
+         'Okul öncesi çocuklar tını değişimini melodi kontur değişiminden daha iyi ayırt etti. Kesitsel algı '
+         . 'çalışmasıdır; bir etkinliğin etkisini ölçmez, dolayısıyla "bu çalışma tını ayrımını geliştirir" diye okunamaz.'],
+        ['tini_giordano2006',
+         'Material identification of real impact sounds: effects of size variation in steel, glass, wood, and plexiglass plates',
+         'Giordano & McAdams', 2006, 'The Journal of the Acoustical Society of America',
+         '10.1121/1.2149839', 'deneysel',
+         'Dinleyiciler cisme vurma sesinden malzemeyi tanıyabildi; ancak ayrım kaba kategorilerin (metal–cam / ahşap–plastik) '
+         . 'ötesinde hızla bozuldu. Yetişkin laboratuvar çalışmasıdır.'],
+        ['tini_shayan2011',
+         'The thickness of pitch: crossmodal metaphors in Farsi, Turkish, and Zapotec',
+         'Shayan, Öztürk & Sicoli', 2011, 'The Senses and Society',
+         '10.2752/174589311X12893982233911', 'deneysel',
+         'Türkçe, Farsça ve Zapotek dilinde perdenin KALINLIK metaforuyla kodlandığını belgeledi (kalın/ince), '
+         . 'İngilizce ve Felemenkçedeki dikeylik (low/high) metaforunun evrensel olmadığını gösterdi.'],
+        ['tini_dolscheid2020',
+         'Space-pitch associations differ in their susceptibility to language',
+         'Dolscheid, Çelik, Erkan, Küntay & Majid', 2020, 'Cognition',
+         '10.1016/j.cognition.2019.104073', 'deneysel',
+         'İki metafor çatıştırıldığında Türkçe konuşanlar kalınlık yorumunu seçti. Kalınlık–perde ilişkisi dile daha az, '
+         . 'yükseklik–perde ilişkisi dile daha duyarlı bulundu. Etkinliğin Türkçe adlandırmasının dayanağı budur.'],
+        ['tini_allen2014',
+         'Symmetric interactions and interference between pitch and timbre',
+         'Allen & Oxenham', 2014, 'The Journal of the Acoustical Society of America',
+         '10.1121/1.4863269', 'deneysel',
+         'SINIR GÖSTEREN KAYNAK: perde ve tını parlaklığı algıda karşılıklı olarak birbirine karışır. Aynı cisme farklı '
+         . 'noktadan vurmak temel frekansı değil parlaklığı değiştirdiği için, bu etkinlikte çalışılan şey perde değildir.'],
+        ['tini_halliday2012',
+         'Lack of generalization of auditory learning in typically developing children',
+         'Halliday, Taylor, Millward & Moore', 2012, 'Journal of Speech, Language, and Hearing Research',
+         '10.1044/1092-4388(2011/09-0213)', 'rct',
+         'SINIR GÖSTEREN KAYNAK: 8–10 yaş 86 çocukta randomize tasarım. Frekans ve fonetik ayrım eğitimi eğitilen uyaranda '
+         . 'öğrenme üretti ama uyaranlar, görevler, modaliteler ve üst düzey dil ölçümleri arasında GENELLENMEDİ.'],
+        ['tini_tsang2011',
+         'Music training and reading readiness',
+         'Tsang & Conrad', 2011, 'Music Perception',
+         '10.1525/mp.2011.29.2.157', 'deneysel',
+         'KARŞIT BULGU: müzik eğitimli ve eğitimsiz çocuklar perde ve ritim ayrımında ve fonolojik becerilerde ayrışırken '
+         . 'TINI AYRIMINDA ayrışmadı. "Tını çalışması okumayı destekler" iddiasının dayanağı yoktur.'],
+    ];
+
+    $baglar = [
+        ['tini_creel2015',   'Tını ayrımının okul öncesinde ölçülebilir olduğunu gösterir; etkinlik denenmemiştir.'],
+        ['tini_giordano2006','Cisme vurarak malzeme/tını tanımanın gerçek bir işitsel yetenek olduğunu gösterir.'],
+        ['tini_shayan2011',  'Etkinliğin Türkçe adlandırması (kalın/ince) bu bulguya dayanır.'],
+        ['tini_dolscheid2020','Türkçe konuşanda kalınlık ekseninin baskın olduğunu gösterir.'],
+        ['tini_allen2014',   'SINIR: burada çalışılan şey perde değil tını parlaklığıdır.'],
+        ['tini_halliday2012','SINIR: işitsel ayırt etme eğitimi eğitilen uyaranın ötesine genellenmiyor.'],
+        ['tini_tsang2011',   'KARŞIT bulgu: tını ayrımında gruplar ayrışmadı. Zayıf etiketi bilinçlidir.'],
+    ];
+
+    $sec   = $pdo->prepare('SELECT id FROM akademik_calismalar WHERE lower(doi) = lower(?) LIMIT 1');
+    $ins   = $pdo->prepare('INSERT INTO akademik_calismalar (baslik, yazarlar, yil, dergi, doi, tur, ozet, created_at)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    $bagla = $pdo->prepare('INSERT OR IGNORE INTO teknik_calismalari (teknik_id, calisma_id, iliski_notu) VALUES (?, ?, ?)');
+
+    $pdo->exec('BEGIN');
+    try {
+        /* Teknik yoksa ekle (seed_techniques yalnız tablo boşken çalışır) */
+        $tid = $pdo->prepare('SELECT id FROM teknikler WHERE ad = ? LIMIT 1');
+        $tid->execute(['Kalın–İnce Tını']);
+        $teknikId = (int)($tid->fetchColumn() ?: 0);
+        if (!$teknikId) {
+            foreach (seed_technique_rows() as $satir) {
+                if ($satir[0] !== 'Kalın–İnce Tını') { continue; }
+                $pdo->prepare('INSERT INTO teknikler
+                        (ad, kategori, enstruman, seviye, sure_dk, aciklama, hedef_beceri, kanit_duzeyi, kaynak, malzeme, aktif, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)')
+                     ->execute([...$satir, now_str()]);
+                $teknikId = (int)$pdo->lastInsertId();
+                break;
+            }
+        }
+
+        $id = [];
+        foreach ($calismalar as [$anahtar, $baslik, $yazar, $yil, $dergi, $doi, $tur, $ozet]) {
+            $sec->execute([$doi]);
+            $mevcut = $sec->fetchColumn();
+            if ($mevcut) { $id[$anahtar] = (int)$mevcut; continue; }
+            $ins->execute([$baslik, $yazar, $yil, $dergi, $doi, $tur, $ozet, now_str()]);
+            $id[$anahtar] = (int)$pdo->lastInsertId();
+        }
+        if ($teknikId) {
+            foreach ($baglar as [$anahtar, $not]) {
+                if (isset($id[$anahtar])) { $bagla->execute([$teknikId, $id[$anahtar], $not]); }
+            }
+        }
+
+        site_text_set('sistem_kalin_ince_tini_seed', '1');
         $pdo->exec('COMMIT');
     } catch (Throwable $ex) {
         $pdo->exec('ROLLBACK');

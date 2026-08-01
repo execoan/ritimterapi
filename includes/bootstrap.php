@@ -140,5 +140,6 @@ seed_studies();
 seed_group_workshop_studies();
 seed_scientific_corrections_2026();       // tek seferlik; mevcut kurulumlara da ulaşsın
 seed_unsupported_technique_studies();     // arka plan kaynakları; kanıt düzeyine DOKUNMAZ
+seed_timbre_technique_2026();             // "Kalın–İnce Tını" tekniği + 7 doğrulanmış kaynak
 ensure_student_codes();
 auto_backup_daily();
