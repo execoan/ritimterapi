@@ -316,8 +316,11 @@ $flashlar = flash_get();
     <div class="ev-hafta" title="Bu hafta: <?= $buHafta ?>/<?= (int)$odev['hedef_gun'] ?> gün">
       <?php for ($g = 0; $g < 7; $g++):
           $t = (new DateTime($pzt))->modify('+' . $g . ' days')->format('Y-m-d'); ?>
-      <span class="ev-gun<?= isset($harita[$oid][$t]) ? ' yapildi' : '' ?><?= $t === $bugun ? ' bugun' : '' ?>">
-        <?= e(GUNLER_KISA[$g + 1]) ?>
+      <?php $yapildiMi = isset($harita[$oid][$t]); ?>
+      <!-- Durum yalniz renkle verilmez (WCAG 1.4.1): gorsel gizli metin + isaret -->
+      <span class="ev-gun<?= $yapildiMi ? ' yapildi' : '' ?><?= $t === $bugun ? ' bugun' : '' ?>">
+        <?= e(GUNLER_KISA[$g + 1]) ?><?= $yapildiMi ? '<span aria-hidden="true"> ✓</span>' : '' ?>
+        <span class="gorsel-gizli"><?= $yapildiMi ? ' — yapıldı' : ' — yapılmadı' ?><?= $t === $bugun ? ', bugün' : '' ?></span>
       </span>
       <?php endfor; ?>
       <span style="color:var(--t-soluk);font-size:.82rem"><?= $buHafta ?>/<?= (int)$odev['hedef_gun'] ?></span>

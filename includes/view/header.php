@@ -115,7 +115,8 @@ $navAktifMi = function (array $kategori) use ($aktifNav, $navAnahtar): bool {
 
       <?php foreach ($navYapisi as $kategori): ?>
         <?php if ($kategori['tur'] === 'tek'): ?>
-        <a class="nav-link<?= $aktifNav === $kategori['dosya'] ? ' nav-aktif' : '' ?>"
+        <?php $buAktif = $aktifNav === $kategori['dosya']; ?>
+        <a class="nav-link<?= $buAktif ? ' nav-aktif' : '' ?>"<?= $buAktif ? ' aria-current="page"' : '' ?>
            href="<?= e(url($kategori['dosya'])) ?>">
           <span class="nav-ikon" aria-hidden="true"><?= $kategori['ikon'] ?></span><?= e($kategori['etiket']) ?>
         </a>
@@ -138,7 +139,8 @@ $navAktifMi = function (array $kategori) use ($aktifNav, $navAnahtar): bool {
                 </button>
               </form>
               <?php else: ?>
-              <a class="nav-menu-oge<?= $navAnahtar($oge) === $aktifNav ? ' nav-aktif' : '' ?>"
+              <?php $ogeAktif = $navAnahtar($oge) === $aktifNav; ?>
+              <a class="nav-menu-oge<?= $ogeAktif ? ' nav-aktif' : '' ?>"<?= $ogeAktif ? ' aria-current="page"' : '' ?>
                  href="<?= e(url($oge['dosya'])) ?>">
                 <span class="oge-ikon" aria-hidden="true"><?= $oge['ikon'] ?></span>
                 <span class="oge-metin"><strong><?= e($oge['etiket']) ?></strong><small><?= e($oge['not']) ?></small></span>

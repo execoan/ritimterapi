@@ -142,7 +142,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <h1>Eğitmen Girişi</h1>
     <p class="alt-yazi">Atölye yönetim paneline hoş geldiniz.</p>
     <?php if ($hataVar): ?>
-    <div class="giris-hata"><?= e($hataMesaji) ?></div>
+    <div class="giris-hata" role="alert"><?= e($hataMesaji) ?></div>
     <?php endif; ?>
 
     <?php if (HIZLI_GIRIS && yerel_istek_mi()): ?>

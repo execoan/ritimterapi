@@ -315,3 +315,19 @@ textarea.girdi { resize: vertical; min-height: 64px; }
   .tablo tbody tr:hover { background: transparent; }
   a { color: inherit; text-decoration: none; }
 }
+
+/* Ekranda gizli, ekran okuyucuda okunur (WCAG 1.4.1 renk dışı gösterge için) */
+.gorsel-gizli {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
+
+/* Ders planı: sürükle-bırak dışında klavye ile sıralama */
+.plan-sira-arac { display: flex; flex-direction: column; gap: 2px; flex: 0 0 auto; }
+.plan-tasi {
+  width: 26px; height: 20px; padding: 0; line-height: 1; cursor: pointer;
+  border: 1px solid var(--girdi-cizgi); border-radius: 5px;
+  background: #fff; color: var(--metin); font-size: .78rem;
+}
+.plan-tasi:hover { background: var(--amber-acik); border-color: var(--amber-koyu); }
+.plan-tasi:focus-visible { outline: 3px solid var(--amber-koyu); outline-offset: 1px; }

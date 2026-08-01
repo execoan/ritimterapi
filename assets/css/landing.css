@@ -1108,3 +1108,17 @@ body.tanitim::after {
   .t-olcek-sabit { position: static; height: auto; padding: 3rem 0; }
   .t-alan-tuval { display: none; }
 }
+
+/* Galeri: resim odaklanabilir bir düğmenin içinde (klavyeyle büyütme) */
+.t-galeri-btn {
+  display: block; width: 100%; padding: 0; border: 0; background: none;
+  cursor: zoom-in; border-radius: inherit; overflow: hidden;
+}
+.t-galeri-btn:focus-visible { outline: 3px solid var(--t-amber); outline-offset: 3px; }
+.t-lightbox-kapat {
+  position: absolute; top: 1rem; right: 1rem; z-index: 2;
+  width: 2.6rem; height: 2.6rem; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .35); background: rgba(12, 10, 9, .8);
+  color: #fff; font-size: 1.1rem; cursor: pointer; line-height: 1;
+}
+.t-lightbox-kapat:focus-visible { outline: 3px solid var(--t-amber); outline-offset: 2px; }

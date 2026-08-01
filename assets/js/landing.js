@@ -67,31 +67,65 @@
   }, { threshold: 0.4 });
   document.querySelectorAll('.t-sayi').forEach(function (el) { sayacGozlemci.observe(el); });
 
-  /* Galeri lightbox */
+  /*
+   * Galeri lightbox — klavye erisimi.
+   * Onceden dinleyici odaklanamayan <img> uzerindeydi ve acilan katmanda ne rol
+   * ne odak yonetimi vardi: klavye kullanicisi ne acabiliyor ne kapatabiliyordu.
+   * Artik resim bir <button> icinde; katman dialog rolunde, odak icine alinir,
+   * kapaninca ACAN dugmeye geri doner (WCAG 2.4.3).
+   */
+  var lightboxAcan = null;
+  function lightboxKapat() {
+    var acik = document.querySelector('.t-lightbox');
+    if (!acik) { return; }
+    acik.remove();
+    if (lightboxAcan && document.contains(lightboxAcan)) { lightboxAcan.focus(); }
+    lightboxAcan = null;
+  }
   document.addEventListener('click', function (ev) {
-    var resim = ev.target.closest('.t-galeri-resim');
-    if (resim) {
-      var kutu = document.createElement('div');
-      kutu.className = 't-lightbox';
-      var buyuk = document.createElement('img');
-      buyuk.src = resim.src;
-      buyuk.alt = resim.alt || '';
-      kutu.appendChild(buyuk);
-      if (resim.dataset.baslik) {
-        var altYazi = document.createElement('figcaption');
-        altYazi.textContent = resim.dataset.baslik;
-        kutu.appendChild(altYazi);
-      }
-      kutu.addEventListener('click', function () { kutu.remove(); });
-      document.body.appendChild(kutu);
-      return;
+    var dugme = ev.target.closest('.t-galeri-btn');
+    if (!dugme) { return; }
+    var resim = dugme.querySelector('.t-galeri-resim');
+    if (!resim) { return; }
+    lightboxAcan = dugme;
+
+    var kutu = document.createElement('div');
+    kutu.className = 't-lightbox';
+    kutu.setAttribute('role', 'dialog');
+    kutu.setAttribute('aria-modal', 'true');
+    kutu.setAttribute('aria-label', resim.alt || 'Büyütülmüş görsel');
+    kutu.tabIndex = -1;
+
+    var buyuk = document.createElement('img');
+    buyuk.src = resim.src;
+    buyuk.alt = resim.alt || '';
+    kutu.appendChild(buyuk);
+    if (resim.dataset.baslik) {
+      var altYazi = document.createElement('figcaption');
+      altYazi.textContent = resim.dataset.baslik;
+      kutu.appendChild(altYazi);
     }
+    var kapat = document.createElement('button');
+    kapat.type = 'button';
+    kapat.className = 't-lightbox-kapat';
+    kapat.textContent = '✕';
+    kapat.setAttribute('aria-label', 'Kapat');
+    kapat.addEventListener('click', lightboxKapat);
+    kutu.appendChild(kapat);
+
+    kutu.addEventListener('click', function (e) {
+      if (e.target === kutu || e.target === buyuk) { lightboxKapat(); }
+    });
+    /* Odak tuzagi: Tab katmanin disina cikmasin */
+    kutu.addEventListener('keydown', function (e) {
+      if (e.key === 'Tab') { e.preventDefault(); kapat.focus(); }
+    });
+    document.body.appendChild(kutu);
+    kapat.focus();
   });
   document.addEventListener('keydown', function (ev) {
-    if (ev.key === 'Escape') {
-      var acik = document.querySelector('.t-lightbox');
-      if (acik) { acik.remove(); }
-    }
+    /* Escape ile kapatirken de odak ACAN dugmeye donmeli */
+    if (ev.key === 'Escape' && document.querySelector('.t-lightbox')) { lightboxKapat(); }
   });
 
   /* ================================================================

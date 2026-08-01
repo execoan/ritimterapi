@@ -133,6 +133,35 @@
     planListe.addEventListener('dragend', function () {
       if (suruklenen) { suruklenen.classList.remove('suruklenen'); suruklenen = null; }
     });
+    /*
+     * KLAVYE SIRALAMA — surukle-birak tek yol olamaz (WCAG 2.1.1).
+     * Odak tasinan ogenin butonunda KALIR ki kullanici arka arkaya basabilsin;
+     * her tasimadan sonra konum sesli duyurulur.
+     */
+    planListe.addEventListener('click', function (ev) {
+      var dugme = ev.target.closest('.plan-tasi');
+      if (!dugme) { return; }
+      var li = dugme.closest('li');
+      var yon = parseInt(dugme.dataset.yon, 10);
+      if (!li || !yon) { return; }
+      if (yon < 0 && li.previousElementSibling) {
+        planListe.insertBefore(li, li.previousElementSibling);
+      } else if (yon > 0 && li.nextElementSibling) {
+        planListe.insertBefore(li.nextElementSibling, li);
+      } else {
+        return;                                   // uçtaysa bir şey yapma
+      }
+      dugme.focus();                              // odak kaybolmasın
+      topla();
+      var siralar = Array.prototype.indexOf.call(planListe.children, li) + 1;
+      var duyuru = document.getElementById('planSiraDuyuru');
+      if (duyuru) {
+        var ad = li.querySelector('.plan-ad');
+        duyuru.textContent = (ad ? ad.textContent : 'Teknik') + ' — '
+          + siralar + '. sıraya taşındı (' + planListe.children.length + ' teknik)';
+      }
+    });
+
     planListe.addEventListener('dragover', function (ev) {
       if (!suruklenen) { return; }
       ev.preventDefault();

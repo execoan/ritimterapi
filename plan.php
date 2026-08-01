@@ -134,18 +134,25 @@ require APP_DIR . '/includes/view/header.php';
     </div>
 
     <div class="sure-ozet">
-      <span class="sure-metin" id="sureToplam">0 dk</span>
+      <span class="sure-metin" id="sureToplam" role="status" aria-live="polite">0 dk</span>
       <div class="sure-cubuk"><div class="sure-cubuk-dolu" id="sureCubukDolu" style="width:0"></div></div>
     </div>
-    <div class="uyari-kutu" id="sureUyari" style="display:none">
+    <div class="uyari-kutu" id="sureUyari" role="alert" style="display:none">
       Planlanan toplam süre hedefi aşıyor. Bir tekniği çıkarmayı veya süreleri kısaltmayı düşünün.
     </div>
 
     <div class="bos-durum" id="planBosMesaj">Plan boş — yukarıdan teknik ekleyin.</div>
+    <div class="gorsel-gizli" id="planSiraDuyuru" role="status" aria-live="polite"></div>
     <ul class="plan-liste" id="planListe">
       <?php foreach ($planli as $p): ?>
       <li draggable="true">
-        <span class="plan-tutamac" title="Sürükleyerek sırala">☰</span>
+        <!-- Klavye alternatifi: siralama yalniz surukle-birak ile yapilabiliyordu,
+             yani klavye ve surukleyemeyen isaretci kullanicisina yol yoktu. -->
+        <span class="plan-sira-arac">
+          <button type="button" class="plan-tasi" data-yon="-1" aria-label="Yukarı taşı">↑</button>
+          <button type="button" class="plan-tasi" data-yon="1" aria-label="Aşağı taşı">↓</button>
+        </span>
+        <span class="plan-tutamac" title="Sürükleyerek sırala" aria-hidden="true">☰</span>
         <input type="hidden" name="teknik_id[]" value="<?= (int)$p['teknik_id'] ?>">
         <div class="plan-bilgi">
           <span class="ad plan-ad"><?= e($p['ad']) ?></span>
@@ -164,7 +171,13 @@ require APP_DIR . '/includes/view/header.php';
 
     <template id="planSablon">
       <li draggable="true">
-        <span class="plan-tutamac" title="Sürükleyerek sırala">☰</span>
+        <!-- Klavye alternatifi: siralama yalniz surukle-birak ile yapilabiliyordu,
+             yani klavye ve surukleyemeyen isaretci kullanicisina yol yoktu. -->
+        <span class="plan-sira-arac">
+          <button type="button" class="plan-tasi" data-yon="-1" aria-label="Yukarı taşı">↑</button>
+          <button type="button" class="plan-tasi" data-yon="1" aria-label="Aşağı taşı">↓</button>
+        </span>
+        <span class="plan-tutamac" title="Sürükleyerek sırala" aria-hidden="true">☰</span>
         <input type="hidden" name="teknik_id[]" value="">
         <div class="plan-bilgi">
           <span class="ad plan-ad"></span>

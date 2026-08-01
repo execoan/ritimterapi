@@ -184,7 +184,9 @@ require APP_DIR . '/includes/view/header.php';
   .sertifika-olcumler th, .sertifika-olcumler td { padding: .3rem .5rem; border-bottom: 1px solid #ecd9b8; text-align: center; }
   .sertifika-olcumler .sol { text-align: left; }
   .olcum-tarih { color: #a8a29e; font-size: .78rem; }
-  .sertifika-dipnot { font-size: .73rem; color: #a8a29e; margin-top: .45rem; }
+  /* Kontrast: #a8a29e beyaz uzerinde ~2,5:1 idi. Bu dipnot CLAUDE.md §2'nin
+     cekince ibaresini tasiyor — okunamayan bir cekince, cekince degildir. */
+  .sertifika-dipnot { font-size: .8rem; color: #57534e; margin-top: .45rem; }
   .sertifika-alt {
     display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem;
     flex-wrap: wrap; margin-top: 1.5rem; padding: 0 .5rem;

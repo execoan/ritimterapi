@@ -1318,6 +1318,8 @@ window.RitimOkuma = (function () {
     kalibreBtn.addEventListener('click', kalibrasyonBaslat);
     kalDurdurBtn.addEventListener('click', function () { durdur('Kalibrasyon durduruldu.'); });
     kalPad.addEventListener('pointerdown', function (ev) { ev.preventDefault(); kalibrasyonTap(ev); });
+    /* Klavye kaynakli click (detail 0): pad bir <button>, pointerdown gelmez */
+    kalPad.addEventListener('click', function (ev) { if (ev.detail === 0) { kalibrasyonTap(ev); } });
 
     dinleBtn.addEventListener('click', dinle);
     baslatBtn.addEventListener('click', uygulamaBaslat);
@@ -1329,6 +1331,8 @@ window.RitimOkuma = (function () {
     }
     iptalBtn.addEventListener('click', function () { durdur('Çalışma durduruldu.'); });
     pad.addEventListener('pointerdown', function (ev) { ev.preventDefault(); tap(ev); });
+    /* Klavye kaynakli click (detail 0): pad bir <button>, pointerdown gelmez */
+    pad.addEventListener('click', function (ev) { if (ev.detail === 0) { tap(ev); } });
     oncekiBtn.addEventListener('click', function () { ornekDegistir(-1); });
     sonrakiBtn.addEventListener('click', function () { ornekDegistir(1); });
     akilliToggleBtn.addEventListener('click', function () {

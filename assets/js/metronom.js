@@ -433,10 +433,27 @@
       : 'Swing yalnız sekizlik ve onaltılık alt bölünmede uygulanır';
   }
 
+  /*
+   * Durum cubugu bir CANLI BOLGE (role=status). Her vuruste ve BPM surgusunun
+   * her adiminda yazilinca ekran okuyucunun polite kuyrugu doluyor ve kullanici
+   * baska hicbir sey duyamiyordu. Cozum: gorsel metin ANINDA guncellenir
+   * (goz icin), duyuru ise ayri bir gizli bolgeye GECIKMELI ve yalniz metin
+   * GERCEKTEN degistiginde yazilir.
+   */
+  var duyuruZamani = null;
+  var sonDuyurulan = '';
   function durumGuncelle(metin, calisiyor) {
     if (!m.el.durumMetin) { return; }
     m.el.durumMetin.textContent = metin;
     m.el.durum.classList.toggle('calisiyor', !!calisiyor);
+    var duyuru = byId('mDurumDuyuru');
+    if (!duyuru) { return; }
+    clearTimeout(duyuruZamani);
+    duyuruZamani = setTimeout(function () {
+      if (metin === sonDuyurulan) { return; }
+      sonDuyurulan = metin;
+      duyuru.textContent = metin;
+    }, 600);
   }
 
   var AYAR_ANAHTAR = 'ritim_metronom_ayar_v1';
@@ -1809,7 +1826,14 @@
   byId('vtBaslat').addEventListener('click', vtBaslat);
   byId('vtIptal').addEventListener('click', vtIptalEt);
   byId('vtTekrar').addEventListener('click', function () { byId('vtSonuc').hidden = true; vtBaslat(); });
+    /*
+   * Pad'ler <button>: klavyeden Enter/Space basilinca native 'click' gelir
+   * ama 'pointerdown' GELMEZ — yani pad yalniz fareyle calisiyordu.
+   * olay.detail === 0 = klavye kaynakli click (fare tiklamasinda >0).
+   * poliritim-studyo.js'te kurulan desen buraya kopyalandi.
+   */
   byId('vtPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); vtTap(ev); });
+  byId('vtPad').addEventListener('click', function (ev) { if (ev.detail === 0) { vtTap(ev); } });
   kaydetFormuBagla('vt', 'vtOgrenci');
 
   /* ================================================================
@@ -1913,6 +1937,7 @@
   byId('bfIptal').addEventListener('click', bfIptalEt);
   byId('bfTekrar').addEventListener('click', function () { byId('bfSonuc').hidden = true; bfBaslatOyun(); });
   byId('bfPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); bfTap(ev); });
+  byId('bfPad').addEventListener('click', function (ev) { if (ev.detail === 0) { bfTap(ev); } });
   kaydetFormuBagla('bf', 'bfOgrenci');
 
   /* ================================================================
@@ -2001,6 +2026,7 @@
   byId('stIptal').addEventListener('click', stIptalEt);
   byId('stTekrar').addEventListener('click', function () { byId('stSonuc').hidden = true; stBaslat(); });
   byId('stPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); stTap(ev); });
+  byId('stPad').addEventListener('click', function (ev) { if (ev.detail === 0) { stTap(ev); } });
   kaydetFormuBagla('st', 'stOgrenci');
 
   /* ================================================================
@@ -2339,6 +2365,7 @@
   byId('irIptal').addEventListener('click', irIptalEt);
   byId('irTekrar').addEventListener('click', function () { byId('irSonuc').hidden = true; irBaslat(); });
   byId('irPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); irTap(ev); });
+  byId('irPad').addEventListener('click', function (ev) { if (ev.detail === 0) { irTap(ev); } });
   kaydetFormuBagla('ir', 'irOgrenci');
 
   /* Bir test başlarken (veya sekme değişince) diğerlerini iptal et.
@@ -2536,6 +2563,7 @@
     byId('oyunTekrar').addEventListener('click', function () { byId('oyunSonuc').hidden = true; oyunBaslat(); });
     byId('oyunTahmin').addEventListener('click', oyunTurBitir);
     byId('oyunPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); oyunTap(ev); });
+  byId('oyunPad').addEventListener('click', function (ev) { if (ev.detail === 0) { oyunTap(ev); } });
     byId('oyunMod').addEventListener('change', oyunRekorYaz);
     oyunRekorYaz();
   }
@@ -2691,6 +2719,19 @@
   /* ================================================================
      Klavye kısayolları
      ================================================================ */
+  var KISAYOL_ANAHTARI = 'ritim_metronom_kisayol_v1';
+  function kisayollarAcik() {
+    try { return localStorage.getItem(KISAYOL_ANAHTARI) !== '0'; } catch (e) { return true; }
+  }
+  (function () {
+    var kutu = byId('mKisayolAcik');
+    if (!kutu) { return; }
+    kutu.checked = kisayollarAcik();
+    kutu.addEventListener('change', function () {
+      try { localStorage.setItem(KISAYOL_ANAHTARI, kutu.checked ? '1' : '0'); } catch (e) {}
+    });
+  })();
+
   document.addEventListener('keydown', function (ev) {
     /* Tus basili tutulunca isletim sistemi saniyede ~25 keydown uretir; bunlar
        olcume gercek vurus diye giriyordu. Diger modullerde bu denetim zaten var. */
@@ -2728,6 +2769,14 @@
         else { metronomBaslat(); }
       }
     } else if (ev.key === 't' || ev.key === 'T') {
+      /*
+       * WCAG 2.1.4 — tek karakterli kisayol KAPATILABILIR olmali.
+       * 't' her an BPM'i degistiriyordu; sesli giris veya yanlis tus kullanan
+       * biri metronomun tempoyu neden degistirdigini anlayamiyordu.
+       * Degistirici tus EKLENMEDI: 't' olculen bir motor eylemi (tap tempo) ve
+       * Ctrl basili tutmak vurus zamanlamasini uzatir.
+       */
+      if (!kisayollarAcik()) { return; }
       tapTempo();
     } else if (ev.key === 'ArrowUp') {
       ev.preventDefault(); bpmAyarla(m.bpm + (ev.shiftKey ? 5 : 1));

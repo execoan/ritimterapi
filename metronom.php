@@ -114,7 +114,10 @@ require APP_DIR . '/includes/view/header.php';
 <!-- ==================== METRONOM ==================== -->
 <div class="kart m-sahne" id="mSahne">
   <div class="m-flas" id="mFlas" aria-hidden="true"></div>
-  <div class="m-durum" id="mDurum" role="status" aria-live="polite">
+  <!-- Duyuru ayri bir gizli bolgede (metronom.js durumGuncelle): gorsel metin
+       her vuruste degisiyor, ekran okuyucuya gecikmeli ve tekrarsiz gider. -->
+  <div class="gorsel-gizli" id="mDurumDuyuru" role="status" aria-live="polite"></div>
+  <div class="m-durum" id="mDurum">
     <span class="m-durum-nokta" aria-hidden="true"></span>
     <span id="mDurumMetin">Hazır · ayarlar bu cihazda hatırlanır</span>
   </div>
@@ -285,6 +288,8 @@ require APP_DIR . '/includes/view/header.php';
           </select>
         </label>
         <label class="m-ayar-onay"><input type="checkbox" id="mTitresim"> 📳 Titreşim</label>
+        <!-- WCAG 2.1.4: tek karakterli kısayol (t = tap tempo) kapatılabilir olmalı -->
+        <label class="m-ayar-onay"><input type="checkbox" id="mKisayolAcik" checked> ⌨ “t” kısayolu (tap tempo)</label>
         <button type="button" class="m-mini-btn" id="mTamEkran" title="Sahneyi tam ekran yap">⛶ Tam ekran</button>
       </div>
 

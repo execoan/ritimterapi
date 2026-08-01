@@ -619,8 +619,16 @@
     });
   });
 
+    /*
+   * Pad'ler <button>: klavyeden Enter/Space basilinca native 'click' gelir
+   * ama 'pointerdown' GELMEZ — yani pad yalniz fareyle calisiyordu.
+   * olay.detail === 0 = klavye kaynakli click (fare tiklamasinda >0).
+   * poliritim-studyo.js'te kurulan desen buraya kopyalandi.
+   */
   byId('motorSolPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); tapKaydet('L', ev, 0); });
+  byId('motorSolPad').addEventListener('click', function (ev) { if (ev.detail === 0) { tapKaydet('L', ev, 0); } });
   byId('motorSagPad').addEventListener('pointerdown', function (ev) { ev.preventDefault(); tapKaydet('R', ev, 0); });
+  byId('motorSagPad').addEventListener('click', function (ev) { if (ev.detail === 0) { tapKaydet('R', ev, 0); } });
   document.addEventListener('keydown', function (ev) {
     if (!calisma.aktif || ev.repeat) { return; }
     var etiket = String(ev.target.tagName || '').toLowerCase();

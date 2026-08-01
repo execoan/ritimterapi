@@ -277,7 +277,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
       foreach ($nabizlar as $i => $n): ?>
       <button type="button" class="t-nabiz" data-bpm="<?= (int)$n['bpm'] ?>"
               style="--sure:<?= round(60 / $n['bpm'], 3) ?>s;--gecikme:<?= $i * 0.1 ?>s"
-              aria-label="<?= e($n['ad']) ?> temposunu dinle">
+              aria-pressed="false"
+              aria-label="<?= (int)$n['bpm'] ?> BPM — <?= e($n['ad']) ?> temposunu dinle">
         <span class="t-nabiz-halka" aria-hidden="true"></span>
         <span class="t-nabiz-ikon" aria-hidden="true"><?= $n['ikon'] ?></span>
         <span class="t-nabiz-bpm"><?= (int)$n['bpm'] ?><small>BPM</small></span>
@@ -579,10 +580,15 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <div class="t-galeri kayarak">
       <?php foreach ($galeriFotolar as $foto): ?>
       <figure class="t-galeri-kart">
-        <img class="t-galeri-resim" loading="lazy"
-             src="<?= e(asset('img/galeri/' . basename($foto['dosya']))) ?>"
-             alt="<?= e($foto['baslik'] ?: 'Atölyeden kare') ?>"
-             data-baslik="<?= e($foto['baslik']) ?>">
+        <!-- Buyutme klavyeyle de acilabilmeli: dinleyici odaklanamayan <img>
+             uzerindeydi, yani yalniz fareyle calisiyordu (WCAG 2.1.1). -->
+        <button type="button" class="t-galeri-btn"
+                aria-label="<?= e($foto['baslik'] ?: 'Atölyeden kare') ?> — büyüt">
+          <img class="t-galeri-resim" loading="lazy"
+               src="<?= e(asset('img/galeri/' . basename($foto['dosya']))) ?>"
+               alt="<?= e($foto['baslik'] ?: 'Atölyeden kare') ?>"
+               data-baslik="<?= e($foto['baslik']) ?>">
+        </button>
         <?php if (trim((string)$foto['baslik']) !== ''): ?>
         <figcaption><?= e($foto['baslik']) ?></figcaption>
         <?php endif; ?>
@@ -680,7 +686,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </div>
 
       <?php foreach ($kayitFlash as $f): ?>
-      <div class="t-form-flash <?= $f['type'] === 'basari' ? 'basari' : 'hata' ?>">
+      <!-- role=alert/status: form sonucu ekran okuyucuda duyulsun (WCAG 4.1.3) -->
+      <div class="t-form-flash <?= $f['type'] === 'basari' ? 'basari' : 'hata' ?>"
+           role="<?= $f['type'] === 'basari' ? 'status' : 'alert' ?>">
         <?= $f['type'] === 'basari' ? '✓' : '⚠' ?> <?= e($f['msg']) ?>
       </div>
       <?php endforeach; ?>
