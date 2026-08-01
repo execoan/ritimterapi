@@ -2692,19 +2692,41 @@
      Klavye kısayolları
      ================================================================ */
   document.addEventListener('keydown', function (ev) {
+    /* Tus basili tutulunca isletim sistemi saniyede ~25 keydown uretir; bunlar
+       olcume gercek vurus diye giriyordu. Diger modullerde bu denetim zaten var. */
+    if (ev.repeat) { return; }
     var etiket = (ev.target.tagName || '').toLowerCase();
     if (etiket === 'input' || etiket === 'select' || etiket === 'textarea') { return; }
     if (ev.code === 'Space') {
-      ev.preventDefault();
-      if (zkKalibrator) { zkKalibrator.tap(ev); }
-      else if (vt.aktif) { vtTap(ev); }
-      else if (bf.aktif) { bfTap(ev); }
-      else if (st.aktif) { stTap(ev); }
-      else if (ir.aktif) { irTap(ev); }
-      else if (oyun.aktif && oyun.faz === 'tahmin') { oyunTap(ev); }
-      else if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
-      else if (m.calisiyor) { metronomDurdur(); }
-      else { metronomBaslat(); }
+      /*
+       * ERİŞİLEBİLİRLİK — Space KOŞULSUZ yakalanmaz.
+       * Önceden hemen preventDefault çağrılıyordu; odak "Ölçümü Başlat" veya
+       * "Sonucu Kaydet" üzerindeyken Space butonu DEĞİL metronomu tetikliyordu,
+       * yani sayfanın tamamı klavyeyle kullanılamaz hâldeydi (WCAG 2.1.1).
+       * Kural: bir ölçüm/oyun etkinken Space ona aittir; boştayken tarayıcıya
+       * bırakılır ve odaktaki buton normal çalışır.
+       */
+      var odakEtkilesimli = ev.target && typeof ev.target.closest === 'function'
+        && !!ev.target.closest('button, a[href], [role="button"], summary');
+      var olcumEtkin = !!zkKalibrator || vt.aktif || bf.aktif || st.aktif || ir.aktif
+        || (oyun.aktif && oyun.faz === 'tahmin');
+
+      if (olcumEtkin) {
+        ev.preventDefault();
+        if (zkKalibrator) { zkKalibrator.tap(ev); }
+        else if (vt.aktif) { vtTap(ev); }
+        else if (bf.aktif) { bfTap(ev); }
+        else if (st.aktif) { stTap(ev); }
+        else if (ir.aktif) { irTap(ev); }
+        else { oyunTap(ev); }
+      } else if (odakEtkilesimli) {
+        return;                       // odaktaki düğme kendi işini yapsın
+      } else {
+        ev.preventDefault();
+        if (setAkis && setAkis.aktif) { setlistDuraklatDevam(); }
+        else if (m.calisiyor) { metronomDurdur(); }
+        else { metronomBaslat(); }
+      }
     } else if (ev.key === 't' || ev.key === 'T') {
       tapTempo();
     } else if (ev.key === 'ArrowUp') {

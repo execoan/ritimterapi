@@ -16,26 +16,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
     if ($islem === 'giris') {
         /*
-         * Deneme kilidi — giris.php'deki eğitmen kapısıyla aynı desen.
-         * Erişim kodu 29 harfli alfabede 6 hane (≈594 milyon) olduğu için
-         * kaba kuvvet zaten pratik değil; bu kilit günlük şişirmeyi ve
-         * otomatik deneme gürültüsünü kesmek için.
+         * Deneme kilidi SUNUCU TARAFLI (IP başına), çerez silinerek atlatılamaz.
+         * Saldırgan belirli bir öğrenciyi değil HERHANGİ birini aradığı için
+         * arama uzayı öğrenci sayısına bölünür — asıl kaldıraç hız sınırıdır.
+         * Pencere: 5 dakikada 15 deneme.
          */
-        $deneme = $_SESSION['ev_giris_deneme'] ?? ['adet' => 0, 'son' => 0];
-        if (time() - (int)$deneme['son'] >= 60) { $deneme = ['adet' => 0, 'son' => 0]; }
-        if ($deneme['adet'] >= 8) {
-            flash_set('hata', 'Çok fazla deneme oldu. Bir dakika bekleyip tekrar dene.');
+        $hs = hiz_siniri_dene('evkod', 15, 300);
+        if (!$hs['izin']) {
+            flash_set('hata', 'Çok fazla deneme oldu. Biraz bekleyip tekrar dene.');
             redirect('ev.php');
         }
         $ogrenci = student_by_code((string)($_POST['kod'] ?? ''));
         if ($ogrenci) {
-            unset($_SESSION['ev_giris_deneme']);
+            hiz_siniri_sifirla('evkod');
             session_regenerate_id(true);
             $_SESSION['ev_ogrenci_id'] = (int)$ogrenci['id'];
             flash_set('basari', 'Hoş geldin ' . $ogrenci['kod'] . '! 🥁');
         } else {
-            usleep(400000);
-            $_SESSION['ev_giris_deneme'] = ['adet' => (int)$deneme['adet'] + 1, 'son' => time()];
             flash_set('hata', 'Kod bulunamadı. Eğitmeninden aldığın 6 haneli kodu kontrol et.');
         }
         redirect('ev.php');
@@ -46,6 +43,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     }
 
     $evOgrenciId = (int)($_SESSION['ev_ogrenci_id'] ?? 0);
+    /*
+     * Öğrenci pasifleştirilmişse açık oturum YAZMAYA DEVAM ETMEMELİ.
+     * Önceden 'aktif' denetimi yalnız görüntüleme dalındaydı; kod iptal edilse
+     * bile mevcut oturum 12 saat boyunca kayıt üretebiliyordu.
+     */
+    if ($evOgrenciId > 0) {
+        $ogr = student_get($evOgrenciId);
+        if (!$ogr || (int)$ogr['aktif'] !== 1) {
+            unset($_SESSION['ev_ogrenci_id']);
+            flash_set('hata', 'Erişimin kapatılmış. Eğitmeninle görüş.');
+            redirect('ev.php');
+        }
+    }
     if ($evOgrenciId > 0) {
         if ($islem === 'isaretle') {
             $odev = assignment_get((int)($_POST['odev_id'] ?? 0));
@@ -125,14 +135,18 @@ $flashlar = flash_get();
     </svg>
     <h1 style="font-size:1.3rem;margin:.6rem 0 .2rem">Ev Çalışmalarım</h1>
     <p style="color:var(--t-soluk);font-size:.9rem;margin:0 0 1.2rem">Eğitmeninden aldığın 6 haneli kodu gir.</p>
-    <?php foreach ($flashlar as $f): ?>
-    <div class="ev-flash ev-flash-<?= e($f['type']) ?>"><?= e($f['msg']) ?></div>
+    <?php $hataVarMi = false; foreach ($flashlar as $f): $hataVarMi = $hataVarMi || $f['type'] === 'hata'; ?>
+    <!-- role="alert": hata sesli okunsun. autofocus koddaydı, bu yüzden mesaj hiç duyulmuyordu. -->
+    <div class="ev-flash ev-flash-<?= e($f['type']) ?>"<?= $f['type'] === 'hata' ? ' role="alert" tabindex="-1" id="evFlashHata"' : ' role="status"' ?>><?= e($f['msg']) ?></div>
     <?php endforeach; ?>
     <form method="post" action="<?= e(url('ev.php')) ?>">
       <?= csrf_field() ?>
       <input type="hidden" name="islem" value="giris">
-      <input type="text" name="kod" class="ev-kod-girdi" maxlength="8" required autofocus
-             autocomplete="off" placeholder="ABC123">
+      <!-- Etiket ŞART: placeholder erişilebilir ad sayılmaz ve yazmaya başlayınca kaybolur -->
+      <label for="evKod" class="ev-kod-etiket">Erişim kodun</label>
+      <input type="text" name="kod" id="evKod" class="ev-kod-girdi" maxlength="8" required
+             <?= $hataVarMi ? 'aria-invalid="true" aria-describedby="evFlashHata"' : 'autofocus' ?>
+             autocomplete="off" inputmode="text" spellcheck="false" placeholder="ABC123">
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk" style="width:100%;margin-top:1rem">Giriş</button>
     </form>
     <a href="<?= e(url('index.php')) ?>" style="display:block;margin-top:1rem;color:var(--t-soluk);font-size:.85rem">← Ana sayfa</a>

@@ -884,13 +884,19 @@ require APP_DIR . '/includes/view/header.php';
 
 <script>
 /*
- * GÜVENLİK: <script> içine gömülen her JSON'da JSON_HEX_TAG|JSON_HEX_AMP
- * ZORUNLU. Bunlar olmadan koruma yalnız PHP'nin varsayılan '/' kaçırmasına
- * kalıyordu; ölçtüm: </script> kaçışı engelleniyor AMA teknik adına yazılan
- * bir "<!--<script>" dizisi HTML ayrıştırıcısını çift-kaçış durumuna sokup
- * SONRAKİ script bloklarını yutuyordu (sayfanın JS'i sessizce kırılıyor).
- * Ayrıca aşağıdaki üçüncü ifade JSON_UNESCAPED_SLASHES kullanıyor — o bayrak
- * buraya da kopyalansa örtük koruma düşer ve doğrudan saklı XSS olurdu.
+ * GÜVENLİK: buraya gömülen her JSON'da JSON_HEX_TAG|JSON_HEX_AMP ZORUNLU.
+ * Bunlar olmadan koruma yalnız PHP'nin varsayılan slash kaçırmasına kalıyordu;
+ * ölçüldü: kapatma etiketi kaçışı engelleniyor AMA teknik adına yazılan bir
+ * "açan yorum + betik" dizisi HTML ayrıştırıcısını çift-kaçış durumuna sokup
+ * sonraki betik bloklarını yutuyor (sayfanın JS'i sessizce kırılıyor).
+ * Aşağıdaki üçüncü ifade JSON_UNESCAPED_SLASHES kullanıyor — o bayrak buraya
+ * da kopyalansa örtük koruma düşer ve doğrudan saklı XSS olurdu.
+ *
+ * NOT: o tehlikeli diziyi bu yoruma DÜZ METİN olarak yazmayın. Bir kez yazıldı
+ * ve tarif ettiği hatanın aynısını bu sayfada tetikledi: betik etiketi içinde
+ * geçen o dizi, ayrıştırıcıyı sayfanın kalanını yorum sayacak duruma soktu ve
+ * metronom.js dahil altı betik hiç yüklenmedi. Sunucu 200 döndüğü için duman
+ * testi de görmedi.
  */
 /* Uyarlanan zorluk için: her öğrencinin protokol başına SON skoru */
 window.SON_SKORLAR = <?= json_encode($sonSkorlar, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) ?>;

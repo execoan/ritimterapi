@@ -238,6 +238,78 @@ function panel_sifre_dogrula(string $kullanici, string $sifre): bool
     return password_verify($sifre, (string)$ozet);
 }
 
+/**
+ * İstemcinin IP adresi.
+ *
+ * Ters vekil arkasında REMOTE_ADDR her istekte vekilin adresidir; gerçek
+ * istemci X-Forwarded-For'un SON atlamasındadır. Ama bu başlık istemci
+ * tarafından uydurulabilir — o yüzden yalnız GÜVENİLİR VEKİL listesindeki
+ * bir kaynaktan geldiğinde dikkate alınır. Liste storage/gizli.php'de
+ * GUVENILIR_VEKILLER ile tanımlanır; tanımlı değilse başlığa hiç bakılmaz.
+ */
+function istemci_ip(): string
+{
+    $uzak = (string)($_SERVER['REMOTE_ADDR'] ?? '');
+    $guvenilir = defined('GUVENILIR_VEKILLER') ? (array)GUVENILIR_VEKILLER : [];
+    if ($uzak !== '' && in_array($uzak, $guvenilir, true)) {
+        $xff = (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '');
+        if ($xff !== '') {
+            $parcalar = array_map('trim', explode(',', $xff));
+            /* Son atlama = güvenilir vekilin gördüğü adres; öncekiler uydurulmuş olabilir */
+            $aday = (string)end($parcalar);
+            if (filter_var($aday, FILTER_VALIDATE_IP)) { return $aday; }
+        }
+    }
+    return $uzak !== '' ? $uzak : 'bilinmiyor';
+}
+
+/**
+ * SUNUCU TARAFLI HIZ SINIRI — istemci çerez silerek atlatamaz.
+ *
+ * @param string $ad     'giris' | 'evkod' gibi kapı adı
+ * @param int    $sinir  pencere içinde izin verilen deneme
+ * @param int    $pencereSn pencere boyu (saniye)
+ * @return array{izin:bool, kalan:int, bekleSn:int}
+ */
+function hiz_siniri_dene(string $ad, int $sinir, int $pencereSn): array
+{
+    $simdi = time();
+    $pencere = intdiv($simdi, max(1, $pencereSn));
+    $anahtar = $ad . ':' . istemci_ip();
+    try {
+        $pdo = db();
+        $pdo->prepare('INSERT INTO hiz_siniri (anahtar, pencere, adet, son_deneme)
+                       VALUES (?, ?, 1, ?)
+                       ON CONFLICT(anahtar, pencere)
+                       DO UPDATE SET adet = adet + 1, son_deneme = excluded.son_deneme')
+            ->execute([$anahtar, $pencere, $simdi]);
+        $st = $pdo->prepare('SELECT adet FROM hiz_siniri WHERE anahtar = ? AND pencere = ?');
+        $st->execute([$anahtar, $pencere]);
+        $adet = (int)$st->fetchColumn();
+        /* Eski pencereleri ara sıra temizle (ayrı bir görev kurmaya değmez) */
+        if (random_int(1, 50) === 1) {
+            $pdo->prepare('DELETE FROM hiz_siniri WHERE son_deneme < ?')->execute([$simdi - 86400]);
+        }
+    } catch (Throwable $e) {
+        /* Veritabanı erişilemezse kapıyı KİLİTLEME — hizmeti durdurmak da bir zarar */
+        error_log('RitimTerapi hız sınırı hatası: ' . $e->getMessage());
+        return ['izin' => true, 'kalan' => $sinir, 'bekleSn' => 0];
+    }
+    return [
+        'izin'    => $adet <= $sinir,
+        'kalan'   => max(0, $sinir - $adet),
+        'bekleSn' => ($pencere + 1) * $pencereSn - $simdi,
+    ];
+}
+
+/** Başarılı girişten sonra sayacı sıfırlar. */
+function hiz_siniri_sifirla(string $ad): void
+{
+    try {
+        db()->prepare('DELETE FROM hiz_siniri WHERE anahtar = ?')->execute([$ad . ':' . istemci_ip()]);
+    } catch (Throwable $e) { /* önemsiz */ }
+}
+
 function educator_logged_in(): bool
 {
     return !empty($_SESSION['egitmen']);

@@ -541,3 +541,9 @@
   color: var(--metin-soluk); font-size: .82rem; line-height: 1.45;
   visibility: visible;
 }
+
+/* Erişim kodu alanı etiketi — placeholder erişilebilir ad sayılmaz (WCAG 3.3.2) */
+.ev-kod-etiket {
+  display: block; margin-bottom: .35rem; font-size: .85rem; font-weight: 700;
+  color: var(--t-metin, #f5f5f4); text-align: left;
+}

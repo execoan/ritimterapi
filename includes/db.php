@@ -496,6 +496,23 @@ function run_migrations(): void
         16 => "
             ALTER TABLE protokol_sonuclari ADD COLUMN varyant TEXT NOT NULL DEFAULT '';
         ",
+
+        // v17 — SUNUCU TARAFLI HIZ SINIRI.
+        //   Deneme sayacı $_SESSION'daydı; çerez göndermeyen bir istemci HER
+        //   istekte sıfır sayaçla başlıyordu, yani panel şifresine sınırsız kaba
+        //   kuvvet mümkündü. İnternete açılan kurulumda bu doğrudan bir açık.
+        //   Sayaç artık istemcinin silemeyeceği bir yerde: veritabanında.
+        //   anahtar = 'giris:<ip>' | 'evkod:<ip>' gibi; pencere bazlı sayım.
+        17 => "
+            CREATE TABLE hiz_siniri (
+                anahtar     TEXT    NOT NULL,
+                pencere     INTEGER NOT NULL,   -- unix zaman / pencere boyu
+                adet        INTEGER NOT NULL DEFAULT 0,
+                son_deneme  INTEGER NOT NULL,
+                PRIMARY KEY (anahtar, pencere)
+            );
+            CREATE INDEX ix_hiz_siniri_temizlik ON hiz_siniri(son_deneme);
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {

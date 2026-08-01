@@ -14,13 +14,18 @@ $hataMesaji = 'Kullanıcı adı veya şifre doğru değil.';
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     csrf_check('giris.php');
 
-    // Deneme kilidi: 5 başarısız denemeden sonra 30 saniye beklenir
-    $deneme = $_SESSION['giris_deneme'] ?? ['adet' => 0, 'son' => 0];
-    if ($deneme['adet'] >= 5 && time() - (int)$deneme['son'] < 30) {
+    /*
+     * Deneme kilidi SUNUCU TARAFLI (veritabanı, IP başına).
+     * Önceden $_SESSION'daydı: çerez göndermeyen bir istemci her istekte sıfır
+     * sayaçla başlıyordu, yani şifreye sınırsız kaba kuvvet mümkündü.
+     * Pencere: 5 dakikada 10 deneme.
+     */
+    $hs = hiz_siniri_dene('giris', 10, 300);
+    if (!$hs['izin']) {
         $hataVar = true;
-        $hataMesaji = 'Çok fazla başarısız deneme — 30 saniye bekleyip yeniden deneyin.';
+        $hataMesaji = 'Çok fazla başarısız deneme — '
+            . max(1, (int)ceil($hs['bekleSn'] / 60)) . ' dakika sonra yeniden deneyin.';
     } else {
-        if (time() - (int)$deneme['son'] >= 30) { $deneme = ['adet' => 0, 'son' => 0]; }
 
         /*
          * Tek tıkla hızlı giriş — YALNIZ eğitmenin kendi makinesinden.
@@ -32,7 +37,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
          */
         $hizli = (string)($_POST['hizli'] ?? '');
         if (HIZLI_GIRIS && yerel_istek_mi() && $hizli !== '' && array_key_exists($hizli, PANEL_HESAPLAR)) {
-            unset($_SESSION['giris_deneme']);
+            hiz_siniri_sifirla('giris');
             session_regenerate_id(true);
             $_SESSION['egitmen'] = 1;
             $_SESSION['rol'] = $hizli;
@@ -44,14 +49,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         /* Şifreler artık password_hash ile saklanıyor; doğrulama sabit sürelidir
            ve kullanıcı adının var olup olmadığını zamanlamayla sızdırmaz. */
         if ($sifre !== '' && panel_sifre_dogrula($kullanici, $sifre)) {
-            unset($_SESSION['giris_deneme']);
+            hiz_siniri_sifirla('giris');
             session_regenerate_id(true);
             $_SESSION['egitmen'] = 1;
             $_SESSION['rol'] = $kullanici;
             redirect($hedef);
         }
-        usleep(400000); // kaba deneme yavaşlatma
-        $_SESSION['giris_deneme'] = ['adet' => (int)$deneme['adet'] + 1, 'son' => time()];
+        /* usleep KALDIRILDI: her basarisiz denemede PHP iscisini 0,4 sn bloke
+           ediyordu — PHP-FPM'de ~25 es zamanli sahte istek siteyi kapatabilir.
+           password_verify zaten sabit sureli; yavaslatmayi hiz siniri yapar. */
         $hataVar = true;
     }
 }

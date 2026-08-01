@@ -362,15 +362,39 @@ $y = gonder('giris.php', ['csrf_token' => $t, 'kullanici' => 'admin', 'sifre' =>
 dogrula($y['durum'] >= 300 && !str_contains($y['yer'], 'giris.php'),
     'özete çevrildikten sonra ESKİ şifreyle giriş hâlâ çalışıyor (kurulum kırılmadı)');
 
-// Deneme kilidi: ayrı oturumda 5 başarısız → 6. denemede kilit; kilitliyken doğru şifre bile geçmez
-$kilitJar = [];
-for ($i = 0; $i < 5; $i++) {
-    $t = csrf_al('giris.php', $kilitJar);
-    gonder('giris.php', ['csrf_token' => $t, 'kullanici' => 'admin', 'sifre' => 'yanlis' . $i], $kilitJar);
+/*
+ * HIZ SINIRI — ÇEREZ SİLİNEREK ATLATILAMAMALI.
+ * Sayaç önceden $_SESSION'daydı: her istekte yeni çerez kavanozu kullanan bir
+ * istemci sıfır sayaçla başlıyordu, yani panel şifresine sınırsız kaba kuvvet
+ * mümkündü. Sayaç artık veritabanında ve IP başına. Bu test tam da bypass'ı
+ * dener: HER DENEMEDE YENİ KAVANOZ kullanır.
+ */
+for ($i = 0; $i < 11; $i++) {
+    $temizJar = [];                                   // her denemede çerezleri at
+    $t = csrf_al('giris.php', $temizJar);
+    $y = gonder('giris.php', ['csrf_token' => $t, 'kullanici' => 'admin', 'sifre' => 'yanlis' . $i], $temizJar);
 }
+dogrula(str_contains($y['govde'], 'Çok fazla başarısız deneme'),
+    'hız sınırı ÇEREZ SİLİNEREK atlatılamıyor (sunucu tarafı sayaç)',
+    'son yanıtta kilit mesajı yok');
+
+// Kilitliyken doğru şifre bile geçmemeli
+$kilitJar = [];
 $t = csrf_al('giris.php', $kilitJar);
 $y = gonder('giris.php', ['csrf_token' => $t, 'kullanici' => 'admin', 'sifre' => $SIFRE], $kilitJar);
-dogrula(str_contains($y['govde'], 'Çok fazla başarısız deneme'), '5 hatadan sonra deneme kilidi devrede (doğru şifre bile bekletiliyor)');
+dogrula(str_contains($y['govde'], 'Çok fazla başarısız deneme'),
+    'kilitliyken doğru şifre de reddediliyor');
+
+/* Sayaç gerçekten veritabanında mı? (oturumda kalmadığının kanıtı) */
+$pdoHiz = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$hizSatir = (int)$pdoHiz->query("SELECT COALESCE(MAX(adet),0) FROM hiz_siniri WHERE anahtar LIKE 'giris:%'")->fetchColumn();
+$pdoHiz = null;
+dogrula($hizSatir >= 11, 'deneme sayacı veritabanında tutuluyor', 'bulunan: ' . $hizSatir);
+
+/* Kilidi kaldır ki sonraki denetimler giriş yapabilsin */
+$pdoHiz = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+$pdoHiz->exec('DELETE FROM hiz_siniri');
+$pdoHiz = null;
 
 // Doğru giriş (ana oturum)
 $t = csrf_al('giris.php', $jar);
@@ -419,7 +443,7 @@ try {
     $teknikAdet = (int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn();
     $pdo = null;
 } catch (Throwable $e) { $surum = -1; $teknikAdet = -1; }
-dogrula($surum === 16, 'göçler uygulanmış (user_version=16)', 'bulunan: ' . $surum);
+dogrula($surum === 17, 'göçler uygulanmış (user_version=17)', 'bulunan: ' . $surum);
 dogrula($teknikAdet >= 18, 'teknik kütüphanesi seed edilmiş', 'adet: ' . $teknikAdet);
 dogrula(str_contains(git_('teknikler.php', $jar)['govde'], 'Metronoma eşlik'), 'seed içeriği sayfada görünüyor');
 $grupAtolyesi = git_('grup-atolyesi.php', $jar)['govde'];
@@ -764,6 +788,42 @@ foreach ([[52, 1], [83, 1]] as [$skor, $std]) {
 }
 $og = git_('ogrenci.php?id=' . $ogrenciId, $jar)['govde'];
 dogrula(str_contains($og, '83') && str_contains($og, "\u{1F4CF}"), 'protokol sonuçları öğrenci sayfasında (📏 işaretli)');
+
+/*
+ * HTML BÜTÜNLÜĞÜ — açık kalan yorum sayfanın betiklerini öldürür.
+ *
+ * Gerçek olay: metronom.php'deki bir JS yorumuna, HTML yorumu AÇAN bir dizi
+ * düz metin olarak yazılmıştı. Tarayıcı sayfanın kalanını yorum sandı ve
+ * metronom.js dahil ALTI betik hiç yüklenmedi — ama sunucu 200 döndüğü,
+ * beklenen dizeler de gövdede geçtiği için duman testi bunu göremiyordu.
+ * Artık her sayfada yorum dengesi ve betik etiketlerinin sayfanın SON
+ * bölümünde bozulmadan durduğu denetleniyor.
+ */
+bolum('HTML bütünlüğü (açık yorum / bozuk ayrıştırma)');
+$htmlSayfalar = ['panel.php', 'metronom.php', 'poliritim.php', 'ritim-okuma.php',
+                 'tini-kartlari.php', 'motor-studyo.php', 'grup-atolyesi.php',
+                 'oturumlar.php', 'teknikler.php', 'raporlar.php', 'index.php', 'giris.php'];
+$bozuk = [];
+$betiksiz = [];
+foreach ($htmlSayfalar as $sayfa) {
+    $govde = git_($sayfa, $jar)['govde'];
+    if ($govde === '') { continue; }
+    $ac = substr_count($govde, '<!--');
+    $kapa = substr_count($govde, '-->');
+    if ($ac !== $kapa) { $bozuk[] = "{$sayfa} (açılan {$ac}, kapanan {$kapa})"; }
+    /* Sayfanın kapanışından SONRA içerik olmamalı: açık yorum bunu üretir */
+    $son = strrpos($govde, '</html>');
+    if ($son !== false && trim(substr($govde, $son + 7)) !== '') {
+        $bozuk[] = "{$sayfa} (</html> sonrası artık içerik)";
+    }
+    /* app.js her panel sayfasında yüklenir; yoksa ayrıştırma bozulmuş demektir */
+    if ($sayfa !== 'index.php' && $sayfa !== 'giris.php'
+        && !str_contains($govde, 'assets/js/app.js')) {
+        $betiksiz[] = $sayfa;
+    }
+}
+dogrula(!$bozuk, 'hiçbir sayfada açık kalan HTML yorumu yok', implode(' · ', $bozuk));
+dogrula(!$betiksiz, 'panel sayfalarında betik etiketleri yerinde', implode(', ', $betiksiz));
 
 bolum('Poliritim stüdyosu ve ölçüm varyantı (db v16)');
 $t = csrf_al('poliritim.php', $jar);
