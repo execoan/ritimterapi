@@ -17,8 +17,8 @@ if (!defined('RITIM')) { http_response_code(403); exit; }
 $belgeEtiket = isset($BELGE_ETIKET) && $BELGE_ETIKET !== '' ? (string)$BELGE_ETIKET : 'Belgeyi';
 ?>
 <div class="belge-arac-cubugu yazdirmada-gizle">
-  <button type="button" class="btn btn-birincil" data-belge-yazdir>🖨 Yazdır / PDF Kaydet</button>
-  <button type="button" class="btn btn-golge" data-belge-duzenle>✏️ <?= e($belgeEtiket) ?> Düzenle</button>
+  <button type="button" class="btn btn-birincil" data-belge-yazdir><span class="emoji-sus" aria-hidden="true">🖨</span> Yazdır / PDF Kaydet</button>
+  <button type="button" class="btn btn-golge" data-belge-duzenle><span class="emoji-sus" aria-hidden="true">✏️</span> <?= e($belgeEtiket) ?> Düzenle</button>
   <button type="button" class="btn btn-golge gizli" data-belge-orijinal>Orijinale Dön</button>
 </div>
 <div class="bilgi-kutu gizli yazdirmada-gizle" data-belge-not>

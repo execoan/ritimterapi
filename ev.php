@@ -149,7 +149,7 @@ $flashlar = flash_get();
              autocomplete="off" inputmode="text" spellcheck="false" placeholder="ABC123">
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk" style="width:100%;margin-top:1rem">Giriş</button>
     </form>
-    <a href="<?= e(url('index.php')) ?>" style="display:block;margin-top:1rem;color:var(--t-soluk);font-size:.85rem">← Ana sayfa</a>
+    <a href="<?= e(url('index.php')) ?>" style="display:block;margin-top:1rem;color:var(--t-soluk);font-size:.85rem"><span class="emoji-sus" aria-hidden="true">←</span> Ana sayfa</a>
   </div>
 </div>
 
@@ -196,14 +196,14 @@ $flashlar = flash_get();
   <?php endforeach; ?>
 
   <?php if ($seri > 0): ?>
-  <p><span class="ev-seri">🔥 Üst üste <?= $seri ?> gün çalıştın</span></p>
+  <p><span class="ev-seri"><span class="emoji-sus" aria-hidden="true">🔥</span> Üst üste <?= $seri ?> gün çalıştın</span></p>
   <?php endif; ?>
 
   <?php if ($grupProgramlari): ?>
   <section class="ev-kart ev-program-karti">
     <div class="ev-program-baslik">
       <div>
-        <h2>📅 Derslerim ve grup programım</h2>
+        <h2><span class="emoji-sus" aria-hidden="true">📅</span> Derslerim ve grup programım</h2>
         <p class="aciklama">Ders saatlerini, yaklaşan çalışmaları ve grup arkadaşlarının takma adlarını burada görebilirsin.</p>
       </div>
       <span class="ev-program-sayi"><?= count($grupProgramlari) ?> ders</span>
@@ -228,7 +228,7 @@ $flashlar = flash_get();
         </div>
         <?php if (!empty($ders['duyurular'])): ?>
           <div class="ev-duyurular" aria-label="Grup duyuruları">
-            <small>📣 Duyurular</small>
+            <small><span class="emoji-sus" aria-hidden="true">📣</span> Duyurular</small>
             <?php foreach ($ders['duyurular'] as $duyuru): ?>
               <aside class="ev-duyuru">
                 <strong><?= e($duyuru['baslik']) ?></strong>
@@ -255,7 +255,7 @@ $flashlar = flash_get();
       </article>
     <?php endforeach; ?>
     </div>
-    <p class="ev-mahremiyet">🔒 Grup arkadaşların yalnızca takma adını görür. Kişisel notların, yaş bilgin, gözlemlerin ve skorların paylaşılmaz.</p>
+    <p class="ev-mahremiyet"><span class="emoji-sus" aria-hidden="true">🔒</span> Grup arkadaşların yalnızca takma adını görür. Kişisel notların, yaş bilgin, gözlemlerin ve skorların paylaşılmaz.</p>
   </section>
   <?php endif; ?>
 
@@ -263,14 +263,14 @@ $flashlar = flash_get();
   <section class="ev-kart ev-zaman-kalite" id="evZamanKalite">
     <div class="ev-zaman-ust">
       <div>
-        <h2>⏱ Cihaz zamanlama ayarı</h2>
+        <h2><span class="emoji-sus" aria-hidden="true">⏱</span> Cihaz zamanlama ayarı</h2>
         <p class="aciklama">Bu ayar bütün vuruş çalışmalarının aynı ve adil ölçülmesini sağlar.</p>
       </div>
       <span class="ev-zaman-rozet" id="evZkRozet">Kontrol ediliyor</span>
     </div>
     <p class="ev-zaman-ozet" id="evZkOzet">Kalibrasyon bilgisi okunuyor…</p>
     <div class="ev-buton-satir">
-      <button type="button" class="t-btn t-btn-dolu" id="evZkKalibre">🎧 Kalibre et</button>
+      <button type="button" class="t-btn t-btn-dolu" id="evZkKalibre"><span class="emoji-sus" aria-hidden="true">🎧</span> Kalibre et</button>
       <button type="button" class="t-btn t-btn-cerceve" id="evZkSifirla">Sıfırla</button>
     </div>
     <div class="ev-zaman-sahne" id="evZkSahne" hidden>
@@ -301,16 +301,16 @@ $flashlar = flash_get();
        data-seviye="<?= (int)$odev['seviye'] ?>" <?= $bugunYapildi ? 'data-bugun-yapildi="1"' : '' ?>>
     <h2><?= e($odev['ad']) ?></h2>
     <div class="ev-etiketler">
-      <span>⏱ <?= (int)$odev['sure_dk'] ?> dk</span>
-      <span>🎯 haftada <?= (int)$odev['hedef_gun'] ?> gün</span>
+      <span><span class="emoji-sus" aria-hidden="true">⏱</span> <?= (int)$odev['sure_dk'] ?> dk</span>
+      <span><span class="emoji-sus" aria-hidden="true">🎯</span> haftada <?= (int)$odev['hedef_gun'] ?> gün</span>
       <?php if ($odev['hedef_beceri']): ?><span><?= e($odev['hedef_beceri']) ?></span><?php endif; ?>
     </div>
     <p class="aciklama"><?= e($odev['aciklama']) ?></p>
     <?php if (trim((string)$odev['notlar']) !== ''): ?>
-    <p class="aciklama">📝 Eğitmen notu: <?= e($odev['notlar']) ?></p>
+    <p class="aciklama"><span class="emoji-sus" aria-hidden="true">📝</span> Eğitmen notu: <?= e($odev['notlar']) ?></p>
     <?php endif; ?>
     <?php if (trim((string)$odev['veli_yonerge']) !== ''): ?>
-    <p class="veli">👨‍👩‍👧 Veliye: <?= e($odev['veli_yonerge']) ?></p>
+    <p class="veli"><span class="emoji-sus" aria-hidden="true">👨‍👩‍👧</span> Veliye: <?= e($odev['veli_yonerge']) ?></p>
     <?php endif; ?>
 
     <div class="ev-hafta" title="Bu hafta: <?= $buHafta ?>/<?= (int)$odev['hedef_gun'] ?> gün">
@@ -319,7 +319,7 @@ $flashlar = flash_get();
       <?php $yapildiMi = isset($harita[$oid][$t]); ?>
       <!-- Durum yalniz renkle verilmez (WCAG 1.4.1): gorsel gizli metin + isaret -->
       <span class="ev-gun<?= $yapildiMi ? ' yapildi' : '' ?><?= $t === $bugun ? ' bugun' : '' ?>">
-        <?= e(GUNLER_KISA[$g + 1]) ?><?= $yapildiMi ? '<span aria-hidden="true"> ✓</span>' : '' ?>
+        <?= e(GUNLER_KISA[$g + 1]) ?><?= $yapildiMi ? '<span class="emoji-sus" aria-hidden="true"> ✓</span>' : '' ?>
         <span class="gorsel-gizli"><?= $yapildiMi ? ' — yapıldı' : ' — yapılmadı' ?><?= $t === $bugun ? ', bugün' : '' ?></span>
       </span>
       <?php endfor; ?>
@@ -328,12 +328,12 @@ $flashlar = flash_get();
 
     <?php if ($odev['tur'] === 'metronom'): ?>
     <div class="ev-buton-satir">
-      <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat">▶ Başlat</button>
+      <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat"><span class="emoji-sus" aria-hidden="true">▶</span> Başlat</button>
       <span class="ev-sayac"></span>
     </div>
     <?php elseif ($odev['tur'] === 'vurus_tutturma' || $odev['tur'] === 'icsel_ritim'): ?>
     <div class="ev-buton-satir">
-      <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat">▶ Teste Başla</button>
+      <button type="button" class="t-btn t-btn-dolu ev-gorev-baslat"><span class="emoji-sus" aria-hidden="true">▶</span> Teste Başla</button>
       <button type="button" class="m-pad ro-pad" hidden>VUR<small>boşluk / dokun</small></button>
       <span class="ev-sayac"></span>
     </div>
@@ -369,7 +369,7 @@ $flashlar = flash_get();
 
   <?php if ($paket): ?>
   <div class="ev-kart">
-    <h2>🎫 Ders paketim</h2>
+    <h2><span class="emoji-sus" aria-hidden="true">🎫</span> Ders paketim</h2>
     <!-- MOXO rozeti BİLEREK yok: klinik bir test markasını çocuğun kendi
          sayfasında, hiçbir çerçeve olmadan göstermek CLAUDE.md §2'nin klinik
          etiket yasağına giriyor. Bilgi eğitmen panelinde (ogrenci.php) duruyor. -->

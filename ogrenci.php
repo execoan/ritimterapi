@@ -141,7 +141,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar" style="margin-top:1rem">
     <table class="tablo">
-      <thead><tr><th>Ders / grup</th><th>Tür</th><th>Program</th><th>Üyelik başlangıcı</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Ders / grup</th><th scope="col">Tür</th><th scope="col">Program</th><th scope="col">Üyelik başlangıcı</th><th scope="col"></th></tr></thead>
       <tbody>
       <?php foreach ($uyelikler as $g): ?>
         <tr>
@@ -195,9 +195,9 @@ require APP_DIR . '/includes/view/header.php';
 <div class="kart">
   <div class="kart-baslik">
     <h2>Ev programı ve erişim</h2>
-    <?php if ($evSeri > 0): ?><span class="rozet rozet-tamam">🔥 <?= $evSeri ?> gün seri</span><?php endif; ?>
+    <?php if ($evSeri > 0): ?><span class="rozet rozet-tamam"><span class="emoji-sus" aria-hidden="true">🔥</span> <?= $evSeri ?> gün seri</span><?php endif; ?>
     <div class="sag">
-      <a class="btn btn-kucuk btn-golge" href="<?= e(url('ev.php?onizle=' . $id)) ?>" target="_blank" rel="noopener">👁 Ev sayfasını gör</a>
+      <a class="btn btn-kucuk btn-golge" href="<?= e(url('ev.php?onizle=' . $id)) ?>" target="_blank" rel="noopener"><span class="emoji-sus" aria-hidden="true">👁</span> Ev sayfasını gör</a>
       <a class="btn btn-kucuk btn-golge" href="<?= e(url('ev-programi.php')) ?>">Ödev ata →</a>
     </div>
   </div>
@@ -209,7 +209,7 @@ require APP_DIR . '/includes/view/header.php';
               data-onay="Kod yenilenirse eski kod geçersiz olur. Devam edilsin mi?">
           <?= csrf_field() ?>
           <input type="hidden" name="islem" value="kod_yenile">
-          <button type="submit" class="btn btn-kucuk btn-golge">↻ Yenile</button>
+          <button type="submit" class="btn btn-kucuk btn-golge"><span class="emoji-sus" aria-hidden="true">↻</span> Yenile</button>
         </form>
       </div>
       <span class="alan-ipucu">Öğrenci <?= e(url('ev.php')) ?> adresine bu kodla girer.</span>
@@ -237,12 +237,12 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <?php if ($aktifPaket): ?>
     <p><strong><?= e($aktifPaket['ad']) ?></strong>
-       <?= mb_stripos((string)$aktifPaket['notlar'], 'moxo') !== false ? '<span class="rozet rozet-acik">🧠 MOXO\'lu</span>' : '' ?> ·
+       <?= mb_stripos((string)$aktifPaket['notlar'], 'moxo') !== false ? '<span class="rozet rozet-acik"><span class="emoji-sus" aria-hidden="true">🧠</span> MOXO\'lu</span>' : '' ?> ·
        <?= (int)$aktifPaket['kullanilan'] ?>/<?= (int)$aktifPaket['toplam_seans'] ?> seans kullanıldı ·
        <strong><?= (int)$aktifPaket['kalan'] ?> kaldı</strong>
        <span class="alan-ipucu">(başlangıç: <?= e(format_date_tr($aktifPaket['baslangic'], false)) ?>)</span></p>
     <?php if (trim((string)$aktifPaket['notlar']) !== ''): ?>
-    <p class="alan-ipucu">📝 <?= e($aktifPaket['notlar']) ?></p>
+    <p class="alan-ipucu"><span class="emoji-sus" aria-hidden="true">📝</span> <?= e($aktifPaket['notlar']) ?></p>
     <?php endif; ?>
     <div class="sure-cubuk" style="max-width:420px;margin:.4rem 0 .8rem">
       <div class="sure-cubuk-dolu" style="width:<?= min(100, (int)round(100 * $aktifPaket['kullanilan'] / max(1, (int)$aktifPaket['toplam_seans']))) ?>%"></div>
@@ -291,7 +291,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php if (count($tumPaketler) > ($aktifPaket ? 1 : 0)): ?>
   <div class="tablo-sar" style="margin-top:.8rem">
     <table class="tablo">
-      <thead><tr><th>Paket</th><th>Başlangıç</th><th class="sayi">Seans</th><th>Durum</th></tr></thead>
+      <thead><tr><th scope="col">Paket</th><th scope="col">Başlangıç</th><th scope="col" class="sayi">Seans</th><th scope="col">Durum</th></tr></thead>
       <tbody>
         <?php foreach ($tumPaketler as $p): ?>
         <tr>
@@ -338,7 +338,7 @@ require APP_DIR . '/includes/view/header.php';
     <?php endforeach; ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Protokol</th><th class="sayi">BPM</th><th class="sayi">Skor</th><th>Not</th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Protokol</th><th scope="col" class="sayi">BPM</th><th scope="col" class="sayi">Skor</th><th scope="col">Not</th></tr></thead>
       <tbody>
         <?php foreach ($protokolSonuclari as $r): ?>
         <tr>

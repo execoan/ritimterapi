@@ -131,7 +131,7 @@ require APP_DIR . '/includes/view/header.php';
       <span class="alan-ipucu">Cümleyi ritmiyle söyleyin; heceler vuruşlara oturur.
         Renk hangi elin vuracağını gösterir.</span>
     </div>
-    <button type="button" class="btn btn-kucuk btn-golge" id="prMnemonikCal">🔊 Cümleyi dinlet</button>
+    <button type="button" class="btn btn-kucuk btn-golge" id="prMnemonikCal"><span class="emoji-sus" aria-hidden="true">🔊</span> Cümleyi dinlet</button>
   </div>
   <div class="pr-mnemonik" id="prMnemonik" aria-live="polite"></div>
 </section>
@@ -178,9 +178,9 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 
   <div class="form-butonlar">
-    <button type="button" class="btn btn-birincil" id="prBaslat">▶ Başlat</button>
-    <button type="button" class="btn btn-golge" id="prDurdur" hidden>■ Durdur</button>
-    <button type="button" class="btn btn-golge" id="prDinlet">🔊 Önce dinlet</button>
+    <button type="button" class="btn btn-birincil" id="prBaslat"><span class="emoji-sus" aria-hidden="true">▶</span> Başlat</button>
+    <button type="button" class="btn btn-golge" id="prDurdur" hidden><span class="emoji-sus" aria-hidden="true">■</span> Durdur</button>
+    <button type="button" class="btn btn-golge" id="prDinlet"><span class="emoji-sus" aria-hidden="true">🔊</span> Önce dinlet</button>
   </div>
 </section>
 
@@ -249,8 +249,8 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Katılımcı</th><th>Oran</th><th class="sayi">BPM</th>
-        <th class="sayi">Skor</th><th class="sayi">SD</th><th>Not</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Katılımcı</th><th scope="col">Oran</th><th scope="col" class="sayi">BPM</th>
+        <th scope="col" class="sayi">Skor</th><th scope="col" class="sayi">SD</th><th scope="col">Not</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($sonKayitlar as $k): ?>
         <tr>

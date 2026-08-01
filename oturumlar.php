@@ -45,7 +45,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Grup</th><th>Hafta</th><th class="sayi">Teknik</th><th class="sayi">Plan</th><th>Durum</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Grup</th><th scope="col">Hafta</th><th scope="col" class="sayi">Teknik</th><th scope="col" class="sayi">Plan</th><th scope="col">Durum</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($oturumlar as $s): ?>
         <tr>

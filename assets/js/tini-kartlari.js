@@ -132,7 +132,12 @@
 
     byId('tkKademeEtiket').textContent = d.kademe;
     byId('tkKalipBaslik').textContent = (d.indeks + 1) + ' / ' + d.kaliplar.length;
-    byId('tkOkunur').textContent = cekirdek.okunurMetin(kalip);
+    /* Tek duyuru; görsel bölgelerin taşıdığı bilgi (kaçıncı kalıp, hangi
+       grup kaç vuruş) buraya de yazılır ki ekran okuyucu eksik kalmasın. */
+    var g0 = cekirdek.grupDagilimi(kalip);
+    byId('tkOkunur').textContent =
+      (d.indeks + 1) + '. kalıp: ' + cekirdek.okunurMetin(kalip) +
+      ' · kalın grubu ' + g0.kalinAdet + ' vuruş, ince grubu ' + g0.inceAdet + ' vuruş.';
 
     /* Grup şeridi — hangi grup çalıyor, hangisi susuyor */
     var g = cekirdek.grupDagilimi(kalip);

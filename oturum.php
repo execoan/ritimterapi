@@ -65,11 +65,11 @@ require APP_DIR . '/includes/view/header.php';
       ? '<span class="rozet rozet-tamam">Yoklama kaydedildi</span>'
       : ($oturum['tarih'] <= today() ? '<span class="rozet rozet-bekliyor">Yoklama bekliyor</span>' : '<span class="rozet rozet-gri">Planlandı</span>') ?>
   <?php if (!empty($oturum['protokol']) && isset(PROTOKOL_LABELS[$oturum['protokol']])): ?>
-  <span class="rozet rozet-acik">🧭 <?= e(PROTOKOL_LABELS[$oturum['protokol']]) ?></span>
+  <span class="rozet rozet-acik"><span class="emoji-sus" aria-hidden="true">🧭</span> <?= e(PROTOKOL_LABELS[$oturum['protokol']]) ?></span>
   <?php endif; ?>
   <div class="sag">
     <a class="btn btn-birincil" href="<?= e(url('metronom.php?akis=' . $id)) ?>"
-       title="Plandaki teknikleri sırayla, süre sayacı ve zille çalıştır">🧭 Ders Akışını Stüdyoda Başlat</a>
+       title="Plandaki teknikleri sırayla, süre sayacı ve zille çalıştır"><span class="emoji-sus" aria-hidden="true">🧭</span> Ders Akışını Stüdyoda Başlat</a>
     <?php if (!empty($oturum['protokol']) && isset(PROTOKOL_LABELS[$oturum['protokol']])): ?>
     <a class="btn btn-golge" href="<?= e(url('metronom.php?protokol=' . $oturum['protokol'])) ?>">
       🎛 Protokolü Stüdyoda Aç</a>
@@ -92,7 +92,7 @@ require APP_DIR . '/includes/view/header.php';
     <?php else: ?>
     <div class="tablo-sar">
       <table class="tablo">
-        <thead><tr><th style="width:70px">İşlendi</th><th>Teknik</th><th class="sayi" style="width:70px">Süre</th><th>Uygulama notu</th></tr></thead>
+        <thead><tr><th scope="col" style="width:70px">İşlendi</th><th scope="col">Teknik</th><th scope="col" class="sayi" style="width:70px">Süre</th><th scope="col">Uygulama notu</th></tr></thead>
         <tbody>
           <?php foreach ($planTeknikleri as $p):
               $tid = (int)$p['teknik_id'];
@@ -133,7 +133,7 @@ require APP_DIR . '/includes/view/header.php';
     <?php else: ?>
     <div class="tablo-sar">
       <table class="tablo">
-        <thead><tr><th>Öğrenci</th><th>Durum</th><th>Gözlem notu</th></tr></thead>
+        <thead><tr><th scope="col">Öğrenci</th><th scope="col">Durum</th><th scope="col">Gözlem notu</th></tr></thead>
         <tbody>
           <?php foreach ($gosterilen as $oid => $o):
               $mevcut = $mevcutYoklama[$oid]['durum'] ?? 'katildi'; ?>

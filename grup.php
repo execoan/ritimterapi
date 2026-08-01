@@ -91,7 +91,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php if ($duyurular): ?>
   <div class="tablo-sar" style="margin-top:1rem">
     <table class="tablo">
-      <thead><tr><th>Duyuru</th><th>Görünürlük</th><th>Durum</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Duyuru</th><th scope="col">Görünürlük</th><th scope="col">Durum</th><th scope="col"></th></tr></thead>
       <tbody>
       <?php foreach ($duyurular as $d):
           $gelecek = $d['yayin_tarihi'] > today();
@@ -209,7 +209,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Kod</th><th>Doğum yılı</th><th>Kayıt tarihi</th><th>Durum</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Kod</th><th scope="col">Doğum yılı</th><th scope="col">Kayıt tarihi</th><th scope="col">Durum</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($ogrenciler as $o): ?>
         <tr>
@@ -245,7 +245,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Hafta</th><th class="sayi">Teknik</th><th class="sayi">Plan süresi</th><th>Yoklama</th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Hafta</th><th scope="col" class="sayi">Teknik</th><th scope="col" class="sayi">Plan süresi</th><th scope="col">Yoklama</th></tr></thead>
       <tbody>
         <?php foreach ($oturumlar as $s): ?>
         <tr>

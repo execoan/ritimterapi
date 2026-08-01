@@ -50,7 +50,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik yazdirmada-gizle">
   <h1>Veli Raporu</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('ogrenci.php?id=' . $ogrenciId)) ?>">← Öğrenciye dön</a>
+    <a class="btn btn-golge" href="<?= e(url('ogrenci.php?id=' . $ogrenciId)) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Öğrenciye dön</a>
   </div>
 </div>
 
@@ -129,7 +129,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Teknik</th><th>Kategori</th><th class="sayi">Kaç oturumda çalışıldı</th></tr></thead>
+      <thead><tr><th scope="col">Teknik</th><th scope="col">Kategori</th><th scope="col" class="sayi">Kaç oturumda çalışıldı</th></tr></thead>
       <tbody>
         <?php foreach ($rapor['teknikler'] as $t): ?>
         <tr>
@@ -148,7 +148,7 @@ require APP_DIR . '/includes/view/header.php';
   <p>Dönem içinde eve verilen kısa çalışmalar ve öğrencinin "yaptım" olarak işaretlediği gün sayıları:</p>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Çalışma</th><th class="sayi">İşaretlenen gün</th></tr></thead>
+      <thead><tr><th scope="col">Çalışma</th><th scope="col" class="sayi">İşaretlenen gün</th></tr></thead>
       <tbody>
         <?php foreach ($evOzet as $eo): ?>
         <tr>

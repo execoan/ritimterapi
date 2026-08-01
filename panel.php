@@ -47,7 +47,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Grup</th><th>Hafta</th><th class="sayi">Teknik</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Grup</th><th scope="col">Hafta</th><th scope="col" class="sayi">Teknik</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($bekleyenler as $s): ?>
         <tr>
@@ -72,7 +72,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Öğrenci</th><th>Paket</th><th class="sayi">Kullanılan</th><th class="sayi">Kalan</th></tr></thead>
+      <thead><tr><th scope="col">Öğrenci</th><th scope="col">Paket</th><th scope="col" class="sayi">Kullanılan</th><th scope="col" class="sayi">Kalan</th></tr></thead>
       <tbody>
         <?php foreach ($bitenPaketler as $p): ?>
         <tr>
@@ -99,7 +99,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Saat</th><th>Grup</th><th>Hafta</th><th class="sayi">Teknik</th><th>Durum</th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Saat</th><th scope="col">Grup</th><th scope="col">Hafta</th><th scope="col" class="sayi">Teknik</th><th scope="col">Durum</th></tr></thead>
       <tbody>
         <?php foreach ($haftaOturumlari as $s): ?>
         <tr>
@@ -131,7 +131,7 @@ require APP_DIR . '/includes/view/header.php';
     <a class="btn btn-golge" href="<?= e(url('gruplar.php')) ?>">+ Yeni grup</a>
     <a class="btn btn-golge" href="<?= e(url('ogrenciler.php')) ?>">+ Yeni öğrenci</a>
     <a class="btn btn-golge" href="<?= e(url('teknikler.php')) ?>">+ Yeni teknik</a>
-    <a class="btn btn-golge" href="<?= e(url('metronom.php')) ?>">🎵 Metronom Stüdyosu</a>
+    <a class="btn btn-golge" href="<?= e(url('metronom.php')) ?>"><span class="emoji-sus" aria-hidden="true">🎵</span> Metronom Stüdyosu</a>
     <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>">Rapor hazırla</a>
   </div>
 </div>

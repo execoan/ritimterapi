@@ -25,13 +25,13 @@ require APP_DIR . '/includes/view/header.php';
 </div>
 
 <section class="motor-guvenlik" aria-labelledby="motorGuvenlikBaslik">
-  <span aria-hidden="true">🛡️</span>
+  <span class="emoji-sus" aria-hidden="true">🛡️</span>
   <div>
     <strong id="motorGuvenlikBaslik">Güvenli uygulama sınırı</strong>
     <p>Bu modül tanı koymaz ve bağımsız tedavi önermez. Hedef ve yoğunluk ilgili uzman tarafından belirlenmelidir.
       Ağrı, baş dönmesi, uyuşma veya olağandışı zorlanma olursa çalışma hemen durdurulmalıdır.</p>
   </div>
-  <button type="button" class="btn btn-tehlike" id="motorAcilDurdur" disabled>■ Güvenlik Durdurması</button>
+  <button type="button" class="btn btn-tehlike" id="motorAcilDurdur" disabled><span class="emoji-sus" aria-hidden="true">■</span> Güvenlik Durdurması</button>
 </section>
 
 <div class="motor-ana-grid">
@@ -121,7 +121,7 @@ require APP_DIR . '/includes/view/header.php';
 
     <div class="motor-kalibrasyon-panel">
       <div>
-        <strong>⏱ Cihaz zamanlama kalibrasyonu</strong>
+        <strong><span class="emoji-sus" aria-hidden="true">⏱</span> Cihaz zamanlama kalibrasyonu</strong>
         <small id="motorKalAciklama">Puanlı ölçümden önce kullanılan ses çıkışıyla kalibre edin.</small>
       </div>
       <button type="button" class="btn btn-kucuk btn-golge" id="motorKalibre">Kalibre et</button>
@@ -147,7 +147,7 @@ require APP_DIR . '/includes/view/header.php';
       </label>
       <div class="form-alan">
         <span>Harici pad</span>
-        <button type="button" class="btn btn-golge" id="motorMidiBagla">🎹 MIDI bağla</button>
+        <button type="button" class="btn btn-golge" id="motorMidiBagla"><span class="emoji-sus" aria-hidden="true">🎹</span> MIDI bağla</button>
         <small class="alan-ipucu" id="motorMidiDurum">C4 altı sol, C4 ve üstü sağ el kabul edilir.</small>
       </div>
     </div>
@@ -156,7 +156,7 @@ require APP_DIR . '/includes/view/header.php';
       <strong>Dönüşümlü · 60 BPM</strong>
       <span>30 sn · 4 hazırlık · ±140 ms</span>
     </div>
-    <button type="button" class="btn btn-birincil motor-baslat" id="motorBaslat">▶ Çalışmayı Başlat</button>
+    <button type="button" class="btn btn-birincil motor-baslat" id="motorBaslat"><span class="emoji-sus" aria-hidden="true">▶</span> Çalışmayı Başlat</button>
   </section>
 </div>
 
@@ -180,7 +180,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <div class="motor-sahne-butonlar">
     <button type="button" class="btn btn-golge" id="motorNormalDurdur">Çalışmayı erken bitir</button>
-    <button type="button" class="btn btn-tehlike" id="motorSahneAcil">■ Güvenlik Durdurması</button>
+    <button type="button" class="btn btn-tehlike" id="motorSahneAcil"><span class="emoji-sus" aria-hidden="true">■</span> Güvenlik Durdurması</button>
   </div>
 </section>
 

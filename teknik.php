@@ -42,7 +42,7 @@ require APP_DIR . '/includes/view/header.php';
   <?= kanit_rozet($teknik['kanit_duzeyi']) ?>
   <?= (int)$teknik['aktif'] !== 1 ? '<span class="rozet rozet-gri">Pasif</span>' : '' ?>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('teknikler.php')) ?>">← Kütüphaneye dön</a>
+    <a class="btn btn-golge" href="<?= e(url('teknikler.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Kütüphaneye dön</a>
   </div>
 </div>
 
@@ -109,7 +109,7 @@ require APP_DIR . '/includes/view/header.php';
   <div class="kart-baslik">
     <h2>Bilimsel dayanak</h2>
     <?php if ($bagliCalismalar): ?>
-    <span class="rozet rozet-acik">📚 <?= count($bagliCalismalar) ?> çalışma</span>
+    <span class="rozet rozet-acik"><span class="emoji-sus" aria-hidden="true">📚</span> <?= count($bagliCalismalar) ?> çalışma</span>
     <?php endif; ?>
     <div class="sag">
       <a class="btn btn-kucuk btn-golge" href="<?= e(url('calismalar.php')) ?>">Tüm çalışmalar →</a>

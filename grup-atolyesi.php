@@ -132,17 +132,17 @@ require APP_DIR . '/includes/view/header.php';
     </div>
     <p id="grupYonerge" class="grup-ana-yonerge"></p>
     <div class="grup-kolaylastirici">
-      <span aria-hidden="true">🎙️</span>
+      <span class="emoji-sus" aria-hidden="true">🎙️</span>
       <p><strong>Kolaylaştırıcı notu</strong><br><span id="grupKolaylastirici"></span></p>
     </div>
     <p id="grupDurum" class="grup-durum" role="status" aria-live="polite">Hazır</p>
   </div>
 
   <div class="grup-oynatici-kontroller">
-    <button type="button" id="grupOnceki" class="btn btn-golge">← Önceki</button>
+    <button type="button" id="grupOnceki" class="btn btn-golge"><span class="emoji-sus" aria-hidden="true">←</span> Önceki</button>
     <button type="button" id="grupDuraklat" class="btn btn-birincil">Duraklat</button>
     <button type="button" id="grupSonraki" class="btn btn-golge">Sonraki →</button>
-    <button type="button" id="grupBitir" class="btn btn-tehlike">■ Bitir ve sesi kes</button>
+    <button type="button" id="grupBitir" class="btn btn-tehlike"><span class="emoji-sus" aria-hidden="true">■</span> Bitir ve sesi kes</button>
   </div>
 </section>
 

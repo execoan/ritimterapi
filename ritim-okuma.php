@@ -49,7 +49,7 @@ require APP_DIR . '/includes/view/header.php';
       Vuruş için <kbd>Space</kbd> ya da alandaki pad.</p>
   </div>
   <?php if ($akisId): ?>
-  <a class="btn btn-kucuk btn-golge" href="<?= e(url('metronom.php?akis=' . $akisId)) ?>">← Ders akışına dön</a>
+  <a class="btn btn-kucuk btn-golge" href="<?= e(url('metronom.php?akis=' . $akisId)) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Ders akışına dön</a>
   <?php endif; ?>
 </div>
 
@@ -129,8 +129,8 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Katılımcı</th><th class="sayi">BPM</th>
-        <th class="sayi">Skor</th><th class="sayi">SD</th><th>Not</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Katılımcı</th><th scope="col" class="sayi">BPM</th>
+        <th scope="col" class="sayi">Skor</th><th scope="col" class="sayi">SD</th><th scope="col">Not</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($sonKayitlar as $k): ?>
         <tr>

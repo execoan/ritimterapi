@@ -51,7 +51,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Kod</th><th>Doğum yılı</th><th>Grup</th><th>Veli notu</th><th>Kayıt</th><th>Durum</th></tr></thead>
+      <thead><tr><th scope="col">Kod</th><th scope="col">Doğum yılı</th><th scope="col">Grup</th><th scope="col">Veli notu</th><th scope="col">Kayıt</th><th scope="col">Durum</th></tr></thead>
       <tbody>
         <?php foreach ($ogrenciler as $o): ?>
         <tr>

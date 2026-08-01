@@ -91,7 +91,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Şablon</th><th>Hedef kitle</th><th class="sayi">Oturum</th><th class="sayi">Oturum süresi</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Şablon</th><th scope="col">Hedef kitle</th><th scope="col" class="sayi">Oturum</th><th scope="col" class="sayi">Oturum süresi</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($sablonlar as $s): ?>
         <tr>
@@ -122,8 +122,8 @@ require APP_DIR . '/includes/view/header.php';
     </label>
     <label class="form-alan">Hedef kitle
       <select name="hedef_kitle" class="secim">
-        <option value="cocuk">🧒 Çocuk &amp; Genç</option>
-        <option value="yetiskin">🧑‍💼 Yetişkin</option>
+        <option value="cocuk"><span class="emoji-sus" aria-hidden="true">🧒</span> Çocuk &amp; Genç</option>
+        <option value="yetiskin"><span class="emoji-sus" aria-hidden="true">🧑‍💼</span> Yetişkin</option>
       </select>
     </label>
     <label class="form-alan">Oturum süresi (dk)
@@ -144,7 +144,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
 
   <details class="sablon-hafta" style="margin-bottom:1rem">
-    <summary><strong>⚙ Şablon bilgilerini düzenle</strong></summary>
+    <summary><strong><span class="emoji-sus" aria-hidden="true">⚙</span> Şablon bilgilerini düzenle</strong></summary>
     <form method="post" action="<?= e(url('sablonlar.php')) ?>" class="filtre-satir" style="margin-top:.6rem">
       <?= csrf_field() ?>
       <input type="hidden" name="islem" value="sablon_guncelle">
@@ -154,8 +154,8 @@ require APP_DIR . '/includes/view/header.php';
       </label>
       <label class="form-alan">Hedef kitle
         <select name="hedef_kitle" class="secim">
-          <option value="cocuk" <?= $secili['hedef_kitle'] === 'cocuk' ? 'selected' : '' ?>>🧒 Çocuk &amp; Genç</option>
-          <option value="yetiskin" <?= $secili['hedef_kitle'] === 'yetiskin' ? 'selected' : '' ?>>🧑‍💼 Yetişkin</option>
+          <option value="cocuk" <?= $secili['hedef_kitle'] === 'cocuk' ? 'selected' : '' ?>><span class="emoji-sus" aria-hidden="true">🧒</span> Çocuk &amp; Genç</option>
+          <option value="yetiskin" <?= $secili['hedef_kitle'] === 'yetiskin' ? 'selected' : '' ?>><span class="emoji-sus" aria-hidden="true">🧑‍💼</span> Yetişkin</option>
         </select>
       </label>
       <label class="form-alan">Oturum süresi (dk)
@@ -254,13 +254,13 @@ require APP_DIR . '/includes/view/header.php';
     </summary>
     <div class="tablo-sar">
       <table class="tablo">
-        <thead><tr><th style="width:60px">Oturum</th><th>Teknikler</th><th class="sayi" style="width:90px">Toplam</th><th style="width:150px"></th></tr></thead>
+        <thead><tr><th scope="col" style="width:60px">Oturum</th><th scope="col">Teknikler</th><th scope="col" class="sayi" style="width:90px">Toplam</th><th scope="col" style="width:150px"></th></tr></thead>
         <tbody>
           <?php foreach ($oturumlar as $o): ?>
           <tr>
             <td><strong><?= e($o['oturum_adi']) ?></strong>
               <?php if (!empty($o['protokol']) && isset(PROTOKOL_LABELS[$o['protokol']])): ?>
-              <br><span class="rozet rozet-acik" title="Haftanın protokolü">🧭 <?= e(PROTOKOL_LABELS[$o['protokol']]) ?></span>
+              <br><span class="rozet rozet-acik" title="Haftanın protokolü"><span class="emoji-sus" aria-hidden="true">🧭</span> <?= e(PROTOKOL_LABELS[$o['protokol']]) ?></span>
               <?php endif; ?>
             </td>
             <td>

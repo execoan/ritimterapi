@@ -55,8 +55,8 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Ad</th><th>İletişim</th><th>Kimin için</th>
-                 <th>Mesaj / profil</th><th>Durum</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Ad</th><th scope="col">İletişim</th><th scope="col">Kimin için</th>
+                 <th scope="col">Mesaj / profil</th><th scope="col">Durum</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($kayitlar as $k): ?>
         <tr>
@@ -68,7 +68,7 @@ require APP_DIR . '/includes/view/header.php';
           <td>
             <?= e($k['mesaj']) ?>
             <?php if (trim((string)$k['profil']) !== ''): ?>
-            <div class="alan-ipucu">🎧 <?= e($k['profil']) ?></div>
+            <div class="alan-ipucu"><span class="emoji-sus" aria-hidden="true">🎧</span> <?= e($k['profil']) ?></div>
             <?php endif; ?>
           </td>
           <td>

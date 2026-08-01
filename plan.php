@@ -47,7 +47,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik">
   <h1><?= $oturum ? 'Planı Düzenle — ' . e($oturum['grup_ad']) . ', ' . e(format_date_tr($oturum['tarih'])) : 'Oturum Planla' ?></h1>
   <?php if ($oturum): ?>
-  <div class="sag"><a class="btn btn-golge" href="<?= e(url('oturum.php?id=' . $oturumId)) ?>">← Oturuma dön</a></div>
+  <div class="sag"><a class="btn btn-golge" href="<?= e(url('oturum.php?id=' . $oturumId)) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Oturuma dön</a></div>
   <?php endif; ?>
 </div>
 

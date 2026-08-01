@@ -123,7 +123,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik">
   <h1>Site Yönetimi</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('index.php')) ?>" target="_blank" rel="noopener">🌐 Siteyi Görüntüle</a>
+    <a class="btn btn-golge" href="<?= e(url('index.php')) ?>" target="_blank" rel="noopener"><span class="emoji-sus" aria-hidden="true">🌐</span> Siteyi Görüntüle</a>
   </div>
 </div>
 

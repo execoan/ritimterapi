@@ -36,7 +36,7 @@ require APP_DIR . '/includes/view/header.php';
   <h1>Akademik Çalışmalar</h1>
   <span class="rozet rozet-acik"><?= count($calismalar) ?> kayıt</span>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('teknikler.php')) ?>">← Teknik Kütüphanesi</a>
+    <a class="btn btn-golge" href="<?= e(url('teknikler.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Teknik Kütüphanesi</a>
   </div>
 </div>
 
@@ -51,7 +51,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Çalışma</th><th>Tür</th><th>DOI</th><th class="sayi">Bağlı teknik</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Çalışma</th><th scope="col">Tür</th><th scope="col">DOI</th><th scope="col" class="sayi">Bağlı teknik</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($calismalar as $c): ?>
         <tr>

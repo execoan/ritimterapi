@@ -66,25 +66,31 @@ require APP_DIR . '/includes/view/header.php';
       <strong id="tkKalipBaslik">1 / 4</strong>
     </div>
     <div class="tk-sahne-arac">
-      <button type="button" class="btn btn-kucuk btn-golge" id="tkTamEkran" title="Yansıtmak için tam ekran">⛶ Tam ekran</button>
+      <button type="button" class="btn btn-kucuk btn-golge" id="tkTamEkran" title="Yansıtmak için tam ekran"><span class="emoji-sus" aria-hidden="true">⛶</span> Tam ekran</button>
     </div>
   </div>
 
   <!-- Grup şeridi: hangi grubun kaç vuruşu var, kim susuyor -->
-  <div class="tk-grup-serit" id="tkGrupSerit" aria-live="polite"></div>
+  <!--
+    İki görsel bölge de aria-live idi ve ikisi de AYNI işlemde yeniden
+    çiziliyordu: ekran okuyucu her kalıp değişiminde kutuları ve tek tek
+    vuruş karolarını üst üste okuyordu. Tek anlamlı duyuru okunur metindir;
+    canlı bölge oraya taşındı, bunlar sessiz görsel kaldı.
+  -->
+  <div class="tk-grup-serit" id="tkGrupSerit"></div>
 
-  <div class="tk-kalip" id="tkKalip" aria-live="polite"></div>
+  <div class="tk-kalip" id="tkKalip"></div>
 
-  <p class="tk-okunur" id="tkOkunur"></p>
+  <p class="tk-okunur" id="tkOkunur" role="status" aria-live="polite" aria-atomic="true"></p>
 
   <div class="tk-butonlar">
     <button type="button" class="btn btn-golge tk-nav" id="tkOnceki" aria-label="Önceki kalıp">←</button>
-    <button type="button" class="btn btn-birincil tk-cal" id="tkCal">▶ Çal</button>
+    <button type="button" class="btn btn-birincil tk-cal" id="tkCal"><span class="emoji-sus" aria-hidden="true">▶</span> Çal</button>
     <button type="button" class="btn btn-golge tk-nav" id="tkSonraki" aria-label="Sonraki kalıp">→</button>
   </div>
   <div class="tk-alt-butonlar">
-    <button type="button" class="btn btn-kucuk btn-golge" id="tkKarisik">🔀 Karışık kalıp</button>
-    <button type="button" class="btn btn-kucuk btn-golge" id="tkYazdir">🖨 Kartları yazdır</button>
+    <button type="button" class="btn btn-kucuk btn-golge" id="tkKarisik"><span class="emoji-sus" aria-hidden="true">🔀</span> Karışık kalıp</button>
+    <button type="button" class="btn btn-kucuk btn-golge" id="tkYazdir"><span class="emoji-sus" aria-hidden="true">🖨</span> Kartları yazdır</button>
   </div>
 </section>
 

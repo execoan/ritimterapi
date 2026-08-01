@@ -186,10 +186,10 @@ require APP_DIR . '/includes/view/header.php';
         </label>
         <label class="m-ayar">Alt bölünme
           <select id="mAltBolunme" class="secim">
-            <option value="1" selected>♩ Çeyrek</option>
-            <option value="2">♫ Sekizlik</option>
-            <option value="3">③ Üçleme</option>
-            <option value="4">♬ Onaltılık</option>
+            <option value="1" selected><span class="emoji-sus" aria-hidden="true">♩</span> Çeyrek</option>
+            <option value="2"><span class="emoji-sus" aria-hidden="true">♫</span> Sekizlik</option>
+            <option value="3"><span class="emoji-sus" aria-hidden="true">③</span> Üçleme</option>
+            <option value="4"><span class="emoji-sus" aria-hidden="true">♬</span> Onaltılık</option>
           </select>
         </label>
         <label class="m-ayar">Swing / shuffle
@@ -204,12 +204,12 @@ require APP_DIR . '/includes/view/header.php';
         </label>
         <label class="m-ayar">Ses kiti
           <select id="mSes" class="secim">
-            <option value="tahta" selected>🪵 Tahta blok</option>
-            <option value="klik">💻 Dijital klik</option>
-            <option value="klaves">🥢 Klaves</option>
-            <option value="zil">🔔 İnek çanı</option>
-            <option value="davul">🥁 Davul</option>
-            <option value="bip">🎹 Yumuşak bip</option>
+            <option value="tahta" selected><span class="emoji-sus" aria-hidden="true">🪵</span> Tahta blok</option>
+            <option value="klik"><span class="emoji-sus" aria-hidden="true">💻</span> Dijital klik</option>
+            <option value="klaves"><span class="emoji-sus" aria-hidden="true">🥢</span> Klaves</option>
+            <option value="zil"><span class="emoji-sus" aria-hidden="true">🔔</span> İnek çanı</option>
+            <option value="davul"><span class="emoji-sus" aria-hidden="true">🥁</span> Davul</option>
+            <option value="bip"><span class="emoji-sus" aria-hidden="true">🎹</span> Yumuşak bip</option>
           </select>
         </label>
         <label class="m-ayar">Ses düzeyi
@@ -268,7 +268,7 @@ require APP_DIR . '/includes/view/header.php';
       </div>
 
       <div class="m-premium-satir">
-        <label class="m-ayar">🎲 Rastgele sus
+        <label class="m-ayar"><span class="emoji-sus" aria-hidden="true">🎲</span> Rastgele sus
           <select id="mRastgeleSus" class="secim">
             <option value="0" selected>Kapalı</option>
             <option value="10">%10</option>
@@ -277,7 +277,7 @@ require APP_DIR . '/includes/view/header.php';
             <option value="75">%75</option>
           </select>
         </label>
-        <label class="m-ayar">⏲ Zamanlayıcı
+        <label class="m-ayar"><span class="emoji-sus" aria-hidden="true">⏲</span> Zamanlayıcı
           <select id="mZamanlayici" class="secim">
             <option value="0" selected>Kapalı</option>
             <option value="1">1 dk</option>
@@ -290,7 +290,7 @@ require APP_DIR . '/includes/view/header.php';
         <label class="m-ayar-onay"><input type="checkbox" id="mTitresim"> 📳 Titreşim</label>
         <!-- WCAG 2.1.4: tek karakterli kısayol (t = tap tempo) kapatılabilir olmalı -->
         <label class="m-ayar-onay"><input type="checkbox" id="mKisayolAcik" checked> ⌨ “t” kısayolu (tap tempo)</label>
-        <button type="button" class="m-mini-btn" id="mTamEkran" title="Sahneyi tam ekran yap">⛶ Tam ekran</button>
+        <button type="button" class="m-mini-btn" id="mTamEkran" title="Sahneyi tam ekran yap"><span class="emoji-sus" aria-hidden="true">⛶</span> Tam ekran</button>
       </div>
 
       <div class="m-preset-cubugu">
@@ -306,8 +306,8 @@ require APP_DIR . '/includes/view/header.php';
       </div>
 
       <div class="m-buton-satir">
-        <button type="button" class="btn btn-birincil m-baslat" id="mBaslat" aria-pressed="false">▶ Başlat</button>
-        <button type="button" class="btn btn-golge" id="mTap">👆 Tap Tempo</button>
+        <button type="button" class="btn btn-birincil m-baslat" id="mBaslat" aria-pressed="false"><span class="emoji-sus" aria-hidden="true">▶</span> Başlat</button>
+        <button type="button" class="btn btn-golge" id="mTap"><span class="emoji-sus" aria-hidden="true">👆</span> Tap Tempo</button>
       </div>
       <p class="alan-ipucu">Kısayollar: <kbd>Boşluk</kbd> başlat/durdur · <kbd>T</kbd> tap tempo · <kbd>↑↓</kbd> BPM
         · Swing sekizlik ve onaltılık ikililerine uygulanır. Sayarak giriş yalnız klik ve görsel sayaçla çalışır;
@@ -317,7 +317,7 @@ require APP_DIR . '/includes/view/header.php';
 
   <div class="m-sarki-bolum">
     <div class="m-sarki-baslik">
-      <h3>🎵 Şarkı temposu seç</h3>
+      <h3><span class="emoji-sus" aria-hidden="true">🎵</span> Şarkı temposu seç</h3>
       <span class="alan-ipucu">BPM'ler songbpm/tunebat kayıtlarından; kayıt sürümüne göre küçük fark olabilir.</span>
       <input type="search" id="sarkiAra" class="m-sarki-ara" placeholder="Şarkı veya sanatçı ara…">
     </div>
@@ -327,7 +327,7 @@ require APP_DIR . '/includes/view/header.php';
     <!-- ==================== ŞARKI BPM TAHMİN OYUNU ==================== -->
     <div class="oyun-kart" id="oyunKart">
       <div class="kart-baslik">
-        <h3>🎯 BPM Tahmin Oyunu</h3>
+        <h3><span class="emoji-sus" aria-hidden="true">🎯</span> BPM Tahmin Oyunu</h3>
         <span class="alan-ipucu">Listeden rastgele şarkı gelir; temposunu tahmin et. Şarkının kendisi
           çalınmaz — "Önce dinle" modunda temposu metronomla dinletilir. 5 turluk oyun; skorlar
           yalnız bu cihazda (rekor) tutulur, ölçüm kayıtlarına <strong>karışmaz</strong>.</span>
@@ -335,8 +335,8 @@ require APP_DIR . '/includes/view/header.php';
       <div class="filtre-satir">
         <label class="form-alan">Mod
           <select id="oyunMod" class="secim">
-            <option value="dinle" selected>🎧 Önce dinle — 10 sn tempo dinlet, sonra tahmin et</option>
-            <option value="hafiza">🧠 Hafızadan — şarkıyı zihninde canlandır, tap'le</option>
+            <option value="dinle" selected><span class="emoji-sus" aria-hidden="true">🎧</span> Önce dinle — 10 sn tempo dinlet, sonra tahmin et</option>
+            <option value="hafiza"><span class="emoji-sus" aria-hidden="true">🧠</span> Hafızadan — şarkıyı zihninde canlandır, tap'le</option>
           </select>
         </label>
         <label class="form-alan">Tahmin süresi
@@ -378,8 +378,8 @@ require APP_DIR . '/includes/view/header.php';
         </div>
         <div class="m-sonuc-detay">
           <table class="tablo">
-            <thead><tr><th>Tur</th><th>Şarkı</th><th class="sayi">Gerçek</th>
-                       <th class="sayi">Tahminin</th><th class="sayi">Hata</th><th class="sayi">Puan</th></tr></thead>
+            <thead><tr><th scope="col">Tur</th><th scope="col">Şarkı</th><th scope="col" class="sayi">Gerçek</th>
+                       <th scope="col" class="sayi">Tahminin</th><th scope="col" class="sayi">Hata</th><th scope="col" class="sayi">Puan</th></tr></thead>
             <tbody id="oyunTablo"></tbody>
           </table>
           <p class="alan-ipucu" id="oyunYorum"></p>
@@ -394,7 +394,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="kart m-calisma-merkezi" id="mCalismaMerkezi">
   <div class="kart-baslik m-cm-baslik">
     <div>
-      <h2>🎛 Çalışma Merkezi</h2>
+      <h2><span class="emoji-sus" aria-hidden="true">🎛</span> Çalışma Merkezi</h2>
       <span class="alan-ipucu">Şarkı, repertuvar veya teknik çalışma akışını hazırla; metronom adımları sırayla uygulasın ve süreyi günlüğe yazsın.</span>
     </div>
     <span class="m-cm-kayit-durum" id="mCmKayitDurum" role="status" aria-live="polite">Hazır</span>
@@ -410,7 +410,7 @@ require APP_DIR . '/includes/view/header.php';
         <div class="m-cm-butonlar">
           <button type="button" class="btn btn-kucuk btn-golge" id="mSetYeni">＋ Yeni</button>
           <button type="button" class="btn btn-kucuk btn-birincil" id="mSetKaydet">Kaydet</button>
-          <button type="button" class="btn btn-kucuk btn-golge" id="mSetCalistir">▶ Çalıştır</button>
+          <button type="button" class="btn btn-kucuk btn-golge" id="mSetCalistir"><span class="emoji-sus" aria-hidden="true">▶</span> Çalıştır</button>
           <button type="button" class="btn btn-kucuk btn-tehlike" id="mSetSil" disabled>Sil</button>
         </div>
       </div>
@@ -482,7 +482,7 @@ require APP_DIR . '/includes/view/header.php';
     <div class="m-set-oynatici-cubuk"><span id="mSetIlerleme"></span></div>
     <div class="m-cm-butonlar">
       <button type="button" class="m-mini-btn" id="mSetOnceki" title="Önceki adım">⏮</button>
-      <button type="button" class="btn btn-birincil" id="mSetBaslat">▶ Setlisti Başlat</button>
+      <button type="button" class="btn btn-birincil" id="mSetBaslat"><span class="emoji-sus" aria-hidden="true">▶</span> Setlisti Başlat</button>
       <button type="button" class="m-mini-btn" id="mSetSonraki" title="Sonraki adım">⏭</button>
       <button type="button" class="btn btn-kucuk btn-golge" id="mSetBitir">Bitir</button>
     </div>
@@ -492,7 +492,7 @@ require APP_DIR . '/includes/view/header.php';
 <!-- ==================== DERS AKIŞI ==================== -->
 <div class="kart" id="akisKart">
   <div class="kart-baslik">
-    <h2>🧭 Ders Akışı</h2>
+    <h2><span class="emoji-sus" aria-hidden="true">🧭</span> Ders Akışı</h2>
     <span class="alan-ipucu">Oturum planındaki teknikleri sırayla, süre sayacı ve zille çalıştırır —
       metronom ayarları serbest kalır.</span>
   </div>
@@ -531,12 +531,12 @@ require APP_DIR . '/includes/view/header.php';
         🧭 Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?> ↗</a>
       <?php else: ?>
       <button type="button" class="btn btn-kucuk btn-golge" id="akisProtokolAc"
-              data-protokol="<?= e($akisOturum['protokol']) ?>">🧭 Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?></button>
+              data-protokol="<?= e($akisOturum['protokol']) ?>"><span class="emoji-sus" aria-hidden="true">🧭</span> Haftanın protokolü: <?= e(PROTOKOL_LABELS[$akisOturum['protokol']]) ?></button>
       <?php endif; ?>
     <?php endif; ?>
     <div class="sag">
       <a class="btn btn-kucuk btn-golge" href="<?= e(url('oturum.php?id=' . (int)$akisOturum['id'])) ?>">Oturum kaydına git</a>
-      <a class="btn btn-kucuk btn-golge" href="<?= e(url('metronom.php')) ?>">✕ Akışı kapat</a>
+      <a class="btn btn-kucuk btn-golge" href="<?= e(url('metronom.php')) ?>"><span class="emoji-sus" aria-hidden="true">✕</span> Akışı kapat</a>
     </div>
   </div>
 
@@ -547,7 +547,7 @@ require APP_DIR . '/includes/view/header.php';
       <div class="m-ilerleme akis-cubuk"><div class="m-ilerleme-dolu" id="akisIlerleme" style="width:0"></div></div>
       <div class="akis-butonlar">
         <button type="button" class="m-mini-btn" id="akisOnceki" title="Önceki teknik">⏮</button>
-        <button type="button" class="btn btn-birincil m-baslat" id="akisBaslat">▶ Başlat</button>
+        <button type="button" class="btn btn-birincil m-baslat" id="akisBaslat"><span class="emoji-sus" aria-hidden="true">▶</span> Başlat</button>
         <button type="button" class="m-mini-btn" id="akisSonraki" title="Sonraki teknik">⏭</button>
         <button type="button" class="m-mini-btn" id="akisSifirla" title="Akışı başa sar">↺</button>
       </div>
@@ -584,7 +584,7 @@ require APP_DIR . '/includes/view/header.php';
   <section class="m-zaman-kalite" id="zamanKalitePanel" aria-labelledby="zamanKaliteBaslik">
     <div class="m-zaman-kalite-ust">
       <div>
-        <strong id="zamanKaliteBaslik">⏱ Profesyonel ölçüm sistemi</strong>
+        <strong id="zamanKaliteBaslik"><span class="emoji-sus" aria-hidden="true">⏱</span> Profesyonel ölçüm sistemi</strong>
         <small>Bütün zamanlama protokolleri aynı cihaz telafisini ve eşleştirme motorunu kullanır.</small>
       </div>
       <span class="m-zaman-rozet" id="zkRozet">Ses motoru bekleniyor</span>
@@ -600,7 +600,7 @@ require APP_DIR . '/includes/view/header.php';
       Mutlak senkronizasyon ölçümleri için kulaklıkla veya kullanacağın hoparlörle bir kez kalibre et.
     </p>
     <div class="m-zaman-butonlar">
-      <button type="button" class="btn btn-birincil btn-kucuk" id="zkKalibre">🎧 Kalibre et</button>
+      <button type="button" class="btn btn-birincil btn-kucuk" id="zkKalibre"><span class="emoji-sus" aria-hidden="true">🎧</span> Kalibre et</button>
       <button type="button" class="btn btn-golge btn-kucuk" id="zkYenile">Durumu yenile</button>
       <button type="button" class="btn btn-golge btn-kucuk" id="zkSifirla">Kalibrasyonu sıfırla</button>
     </div>
@@ -615,11 +615,11 @@ require APP_DIR . '/includes/view/header.php';
   </section>
 
   <div class="m-sekmeler" role="tablist" id="mSekmeler" data-acilacak="<?= e($acilacakProtokol) ?>">
-    <button type="button" class="m-sekme aktif" role="tab" aria-selected="true" id="mSekme-vurus" aria-controls="sekme-vurus" tabindex="0" data-sekme="vurus">🎯 Vuruş Tutturma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-bpm" aria-controls="sekme-bpm" tabindex="-1" data-sekme="bpm">🎧 BPM Bulma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-spontan" aria-controls="sekme-spontan" tabindex="-1" data-sekme="spontan">🫀 Spontan Tempo</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-aksak" aria-controls="sekme-aksak" tabindex="-1" data-sekme="aksak">🕳 Aksak Bulma</button>
-    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-icsel" aria-controls="sekme-icsel" tabindex="-1" data-sekme="icsel">🧭 İçsel Ritim</button>
+    <button type="button" class="m-sekme aktif" role="tab" aria-selected="true" id="mSekme-vurus" aria-controls="sekme-vurus" tabindex="0" data-sekme="vurus"><span class="emoji-sus" aria-hidden="true">🎯</span> Vuruş Tutturma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-bpm" aria-controls="sekme-bpm" tabindex="-1" data-sekme="bpm"><span class="emoji-sus" aria-hidden="true">🎧</span> BPM Bulma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-spontan" aria-controls="sekme-spontan" tabindex="-1" data-sekme="spontan"><span class="emoji-sus" aria-hidden="true">🫀</span> Spontan Tempo</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-aksak" aria-controls="sekme-aksak" tabindex="-1" data-sekme="aksak"><span class="emoji-sus" aria-hidden="true">🕳</span> Aksak Bulma</button>
+    <button type="button" class="m-sekme" role="tab" aria-selected="false" id="mSekme-icsel" aria-controls="sekme-icsel" tabindex="-1" data-sekme="icsel"><span class="emoji-sus" aria-hidden="true">🧭</span> İçsel Ritim</button>
   </div>
 
   <!-- Vuruş Tutturma -->
@@ -661,8 +661,8 @@ require APP_DIR . '/includes/view/header.php';
       </div>
       <div class="m-sonuc-detay">
         <table class="tablo">
-          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th><th class="sayi">Fazla</th>
-                     <th class="sayi">Ort. sapma</th><th class="sayi">Ort. |sapma|</th><th class="sayi">Skor</th></tr></thead>
+          <thead><tr><th scope="col">Faz</th><th scope="col" class="sayi">Vuruş</th><th scope="col" class="sayi">Kaçırılan</th><th scope="col" class="sayi">Fazla</th>
+                     <th scope="col" class="sayi">Ort. sapma</th><th scope="col" class="sayi">Ort. |sapma|</th><th scope="col" class="sayi">Skor</th></tr></thead>
           <tbody id="vtTablo"></tbody>
         </table>
         <div class="m-sapma-grafik" id="vtGrafik" title="Her vuruşun sapması: yukarı geç, aşağı erken"></div>
@@ -705,8 +705,8 @@ require APP_DIR . '/includes/view/header.php';
       </div>
       <div class="m-sonuc-detay">
         <table class="tablo">
-          <thead><tr><th>Tur</th><th class="sayi">Gerçek BPM</th><th class="sayi">Tahmin</th>
-                     <th class="sayi">Hata</th><th class="sayi">Skor</th></tr></thead>
+          <thead><tr><th scope="col">Tur</th><th scope="col" class="sayi">Gerçek BPM</th><th scope="col" class="sayi">Tahmin</th>
+                     <th scope="col" class="sayi">Hata</th><th scope="col" class="sayi">Skor</th></tr></thead>
           <tbody id="bfTablo"></tbody>
         </table>
         <div class="m-kaydet-satir">
@@ -769,10 +769,10 @@ require APP_DIR . '/includes/view/header.php';
     </div>
 
     <div class="m-test-sahne" id="abSahne" hidden>
-      <div class="m-faz-etiket" id="abFaz">🎧 Dinle…</div>
+      <div class="m-faz-etiket" id="abFaz"><span class="emoji-sus" aria-hidden="true">🎧</span> Dinle…</div>
       <div class="ab-cevaplar" id="abCevaplar" hidden>
-        <button type="button" class="btn btn-birincil ab-cevap" data-cevap="duzenli">✓ Düzenliydi</button>
-        <button type="button" class="btn btn-birincil ab-cevap" data-cevap="aksak">⚠ Aksadı</button>
+        <button type="button" class="btn btn-birincil ab-cevap" data-cevap="duzenli"><span class="emoji-sus" aria-hidden="true">✓</span> Düzenliydi</button>
+        <button type="button" class="btn btn-birincil ab-cevap" data-cevap="aksak"><span class="emoji-sus" aria-hidden="true">⚠</span> Aksadı</button>
       </div>
       <div class="m-tur-goster" id="abTur">Tur 1 / 8</div>
       <button type="button" class="btn btn-golge btn-kucuk" id="abIptal">İptal</button>
@@ -785,7 +785,7 @@ require APP_DIR . '/includes/view/header.php';
       </div>
       <div class="m-sonuc-detay">
         <table class="tablo">
-          <thead><tr><th>Tur</th><th>Dizi</th><th>Cevabın</th><th>Sonuç</th></tr></thead>
+          <thead><tr><th scope="col">Tur</th><th scope="col">Dizi</th><th scope="col">Cevabın</th><th scope="col">Sonuç</th></tr></thead>
           <tbody id="abTablo"></tbody>
         </table>
         <div class="m-kaydet-satir">
@@ -837,8 +837,8 @@ require APP_DIR . '/includes/view/header.php';
       </div>
       <div class="m-sonuc-detay">
         <table class="tablo">
-          <thead><tr><th>Faz</th><th class="sayi">Vuruş</th><th class="sayi">Kaçırılan</th><th class="sayi">Fazla</th>
-                     <th class="sayi">Ort. |sapma|</th><th class="sayi">Skor</th></tr></thead>
+          <thead><tr><th scope="col">Faz</th><th scope="col" class="sayi">Vuruş</th><th scope="col" class="sayi">Kaçırılan</th><th scope="col" class="sayi">Fazla</th>
+                     <th scope="col" class="sayi">Ort. |sapma|</th><th scope="col" class="sayi">Skor</th></tr></thead>
           <tbody id="irTablo"></tbody>
         </table>
         <div class="m-sapma-grafik" id="irGrafik" title="Mor çubuklar: metronomun sustuğu vuruşlar"></div>
@@ -860,7 +860,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Öğrenci</th><th>Protokol</th><th>Kaynak</th><th class="sayi">BPM</th><th class="sayi">Skor</th><th>Not</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Öğrenci</th><th scope="col">Protokol</th><th scope="col">Kaynak</th><th scope="col" class="sayi">BPM</th><th scope="col" class="sayi">Skor</th><th scope="col">Not</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($sonKayitlar as $k): ?>
         <tr>

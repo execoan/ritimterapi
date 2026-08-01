@@ -111,7 +111,7 @@ $navAktifMi = function (array $kategori) use ($aktifNav, $navAnahtar): bool {
     <button type="button" class="nav-hamburger" id="navHamburger" aria-label="Menüyü aç/kapat"
             aria-expanded="false" aria-controls="ustNav">☰</button>
     <nav class="ust-nav" id="ustNav">
-      <button type="button" class="btn btn-kucuk yukle-btn" id="uygulamaYukleBtn" hidden>📲 Uygulamayı Yükle</button>
+      <button type="button" class="btn btn-kucuk yukle-btn" id="uygulamaYukleBtn" hidden><span class="emoji-sus" aria-hidden="true">📲</span> Uygulamayı Yükle</button>
 
       <?php foreach ($navYapisi as $kategori): ?>
         <?php if ($kategori['tur'] === 'tek'): ?>

@@ -84,7 +84,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
              bu düğme onu ayarlayamayan kullanıcıya sayfa içi denetim verir. */ ?>
     <button type="button" class="t-btn t-btn-cerceve t-hareket-anahtari" id="tHareketAnahtari"
             aria-pressed="false" title="Sayfadaki hareketi durdur">
-      <span aria-hidden="true">🌀</span><span class="t-hareket-metin">Hareketi durdur</span>
+      <span class="emoji-sus" aria-hidden="true">🌀</span><span class="t-hareket-metin">Hareketi durdur</span>
     </button>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
       <?= $girisli ? 'Panele Git' : 'Giriş Yap' ?>
@@ -132,7 +132,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
            kartın içinde gerçek zamanlı nabız (zıplayan ikon + vuruş noktaları). -->
       <div class="t-tempo-oyun" id="tempoOyun">
         <div class="t-tempo-isik" aria-hidden="true"></div>
-        <p class="t-tempo-oyun-ust">🎯 TEMPOYU YAKALA</p>
+        <p class="t-tempo-oyun-ust"><span class="emoji-sus" aria-hidden="true">🎯</span> TEMPOYU YAKALA</p>
         <div class="t-tempo-gorsel" id="tempoGorsel" aria-hidden="true">
           <span class="t-tempo-ikon" id="tempoIkon">🎵</span>
           <span class="t-tempo-noktalar" id="tempoNoktalar"></span>
@@ -140,7 +140,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <p class="t-tempo-oyun-durum" id="tempoDurum">
           Gizli bir tempo 5 saniye çalacağız — hızını göstermeyeceğiz. Sonra dört seçenekten birini işaretleyin.
         </p>
-        <button type="button" class="t-btn t-btn-cerceve" id="tempoBaslat">▶ Gizli Tempoyu Çal</button>
+        <button type="button" class="t-btn t-btn-cerceve" id="tempoBaslat"><span class="emoji-sus" aria-hidden="true">▶</span> Gizli Tempoyu Çal</button>
         <div class="t-tempo-secenekler" id="tempoSecenekler" hidden></div>
         <p class="t-tempo-sonuc" id="tempoSonuc" hidden></p>
         <p class="t-tempo-skor" id="tempoSkor" hidden></p>
@@ -237,15 +237,15 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </div>
 
       <div class="t-tek-deney-alt">
-        <span>🎧 Ses tarayıcında üretilir</span>
-        <span>🔒 Otomatik kaydedilmez</span>
-        <span>◎ Bu bir değerlendirme değildir</span>
+        <span><span class="emoji-sus" aria-hidden="true">🎧</span> Ses tarayıcında üretilir</span>
+        <span><span class="emoji-sus" aria-hidden="true">🔒</span> Otomatik kaydedilmez</span>
+        <span><span class="emoji-sus" aria-hidden="true">◎</span> Bu bir değerlendirme değildir</span>
       </div>
     </article>
 
     <div class="t-deney-cta kayarak">
       <p>Bir vuruşla başlıyor. Birlikte çalınca gerçek bir atölyeye dönüşüyor.</p>
-      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit">→ İletişime Geç</a>
+      <a class="t-btn t-btn-dolu t-btn-buyuk" href="#kayit"><span class="emoji-sus" aria-hidden="true">→</span> İletişime Geç</a>
     </div>
   </div>
 </section>
@@ -259,7 +259,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <div class="t-olcek-deger" id="olcekDeger">4 838 400 000 ms</div>
       <p class="t-olcek-aciklama" id="olcekAciklama">Yoğunlaştırılmış akış: sekiz hafta, on altı oturum.</p>
       <div class="t-olcek-cubuk"><i id="olcekDolu"></i></div>
-      <p class="t-olcek-ipucu">↓ kaydırmaya devam edin</p>
+      <p class="t-olcek-ipucu"><span class="emoji-sus" aria-hidden="true">↓</span> kaydırmaya devam edin</p>
     </div>
   </div>
 </section>
@@ -551,7 +551,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
               <p>Aynı koşullarda tekrar; ön–son karşılaştırması uzman tarafından raporlanır.</p></div>
           </div>
         </div>
-        <p class="t-yansima kayarak" style="margin-top:1rem"><strong>🧠 Uygulayıcı:</strong>
+        <p class="t-yansima kayarak" style="margin-top:1rem"><strong><span class="emoji-sus" aria-hidden="true">🧠</span> Uygulayıcı:</strong>
           <?= e(site_text('moxo_uygulayici')) ?></p>
         <div class="t-iz-etiketler kayarak" style="margin-top:.8rem">
           <span>pakete isteğe bağlı eklenir</span><span>standart test koşulları</span><span>yazılı uzman raporu</span>
@@ -624,7 +624,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </a>
     </div>
     <div class="t-vurgu-kutu kayarak" data-tilt>
-      <div class="t-vurgu-buyuk">♩ = 60</div>
+      <div class="t-vurgu-buyuk"><span class="emoji-sus" aria-hidden="true">♩</span> = 60</div>
       <p>Saniyede bir vuruş. Metronomun kalbi, atölyenin nabzı.</p>
       <div class="t-ekolayzer t-ekolayzer-kucuk" aria-hidden="true">
         <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
@@ -731,11 +731,11 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <div class="t-ders-secim-grid">
           <label>
             <input type="radio" name="ders_turu" value="grup" required>
-            <span><b>🥁 Grup dersi</b><small>Birlikte çalma ve grup senkronisi</small></span>
+            <span><b><span class="emoji-sus" aria-hidden="true">🥁</span> Grup dersi</b><small>Birlikte çalma ve grup senkronisi</small></span>
           </label>
           <label>
             <input type="radio" name="ders_turu" value="ozel" required>
-            <span><b>🎧 Özel ders</b><small>Kişiye göre tempo ve çalışma planı</small></span>
+            <span><b><span class="emoji-sus" aria-hidden="true">🎧</span> Özel ders</b><small>Kişiye göre tempo ve çalışma planı</small></span>
           </label>
           <label>
             <input type="radio" name="ders_turu" value="kararsiz" required>

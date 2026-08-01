@@ -331,3 +331,16 @@ textarea.girdi { resize: vertical; min-height: 64px; }
 }
 .plan-tasi:hover { background: var(--amber-acik); border-color: var(--amber-koyu); }
 .plan-tasi:focus-visible { outline: 3px solid var(--amber-koyu); outline-offset: 1px; }
+
+/*
+ * Süs emojisi sarmalayıcısı (aria-hidden). Ekran okuyucudan gizlemek için
+ * span'e sarıldı; ama sarmalayıcı DÜZENİ değiştiriyordu:
+ *  - ".x > span { display:block }" gibi çocuk seçicileri span'i de yakalıyor,
+ *  - flex/grid kapsayıcıda span AYRI bir öğe oluyor (eskiden emoji, yanındaki
+ *    metinle tek bir anonim öğeydi) — orada display:inline blokifiye olduğu
+ *    için !important bile kurtarmıyor.
+ * display:contents kutuyu tümden kaldırır: emoji metni yeniden komşu metinle
+ * aynı akışa girer, yani görsel çıktı sarmalamadan ÖNCEKİ ile birebir aynıdır.
+ * aria-hidden düzenden bağımsızdır, gizleme aynen sürer.
+ */
+.emoji-sus { display: contents !important; }

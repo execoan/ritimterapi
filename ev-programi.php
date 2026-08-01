@@ -79,7 +79,7 @@ require APP_DIR . '/includes/view/header.php';
         <?php if ($gruplar): ?>
         <optgroup label="Gruba (tüm aktif öğrenciler)">
           <?php foreach ($gruplar as $g): ?>
-          <option value="g<?= (int)$g['id'] ?>">👥 <?= e($g['ad']) ?></option>
+          <option value="g<?= (int)$g['id'] ?>"><span class="emoji-sus" aria-hidden="true">👥</span> <?= e($g['ad']) ?></option>
           <?php endforeach; ?>
         </optgroup>
         <?php endif; ?>
@@ -130,7 +130,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Öğrenci</th><th>Çalışma</th><th>Aralık</th><th class="sayi">Bu hafta</th><th class="sayi">Toplam gün</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Öğrenci</th><th scope="col">Çalışma</th><th scope="col">Aralık</th><th scope="col" class="sayi">Bu hafta</th><th scope="col" class="sayi">Toplam gün</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($odevler as $o): ?>
         <tr>
@@ -167,7 +167,7 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Çalışma</th><th>Tür</th><th>Kitle</th><th class="sayi">Hafta</th><th class="sayi">Süre</th><th>Durum</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Çalışma</th><th scope="col">Tür</th><th scope="col">Kitle</th><th scope="col" class="sayi">Hafta</th><th scope="col" class="sayi">Süre</th><th scope="col">Durum</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($calismalar as $c): ?>
         <tr>

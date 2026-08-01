@@ -35,7 +35,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik yazdirmada-gizle">
   <h1>Katılım Belgesi</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>">← Raporlar</a>
+    <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Raporlar</a>
     <a class="btn btn-golge" href="<?= e(url('ogrenci.php?id=' . $ogrenciId)) ?>">Öğrenci sayfası</a>
     <?php if ($olcumlerIstendi): ?>
       <a class="btn btn-golge" href="<?= e($gorunum(false)) ?>">Ölçümsüz görünüm</a>
@@ -47,7 +47,7 @@ require APP_DIR . '/includes/view/header.php';
 
 <div class="bilgi-kutu yazdirmada-gizle">
   Belgede öğrencinin <strong>takma kodu</strong> yazar. Yazdırmadan önce
-  <strong>✏️ Sertifikayı Düzenle</strong> düğmesiyle gerçek adı yazabilir, istemediğiniz satırı
+  <strong><span class="emoji-sus" aria-hidden="true">✏️</span> Sertifikayı Düzenle</strong> düğmesiyle gerçek adı yazabilir, istemediğiniz satırı
   silebilirsiniz — <strong>kayıtlı veri değişmez</strong>. Belge veliye gider: dil kuralları
   gereği yalnız yapılanlar anlatılır, sonuç/etki iddiası eklenmez.
 </div>
@@ -102,7 +102,7 @@ require APP_DIR . '/includes/view/header.php';
       <div class="sertifika-olcum-baslik">Dönem Başı ve Dönem Sonu Metronom Ölçümleri</div>
       <table>
         <thead>
-          <tr><th class="sol">Çalışma</th><th>Dönem başı</th><th>Dönem sonu</th></tr>
+          <tr><th scope="col" class="sol">Çalışma</th><th scope="col">Dönem başı</th><th scope="col">Dönem sonu</th></tr>
         </thead>
         <tbody>
           <?php $karisikVar = false;

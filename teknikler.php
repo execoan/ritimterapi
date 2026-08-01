@@ -31,7 +31,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik">
   <h1>Teknik Kütüphanesi</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('calismalar.php')) ?>">📚 Akademik Çalışmalar</a>
+    <a class="btn btn-golge" href="<?= e(url('calismalar.php')) ?>"><span class="emoji-sus" aria-hidden="true">📚</span> Akademik Çalışmalar</a>
   </div>
 </div>
 
@@ -73,7 +73,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Teknik</th><th>Kategori</th><th>Seviye</th><th class="sayi">Süre</th><th>Hedef beceri</th><th>Kanıt</th><th>Dayanak</th><th class="sayi">İşlendi</th></tr></thead>
+      <thead><tr><th scope="col">Teknik</th><th scope="col">Kategori</th><th scope="col">Seviye</th><th scope="col" class="sayi">Süre</th><th scope="col">Hedef beceri</th><th scope="col">Kanıt</th><th scope="col">Dayanak</th><th scope="col" class="sayi">İşlendi</th></tr></thead>
       <tbody>
         <?php foreach ($teknikler as $t): ?>
         <tr>
@@ -88,7 +88,7 @@ require APP_DIR . '/includes/view/header.php';
           <td><?= kanit_rozet($t['kanit_duzeyi']) ?></td>
           <td>
             <?php if ((int)$t['calisma_sayisi'] > 0): ?>
-              <span class="rozet rozet-acik" title="Bağlı akademik çalışma sayısı">📚 <?= (int)$t['calisma_sayisi'] ?></span>
+              <span class="rozet rozet-acik" title="Bağlı akademik çalışma sayısı"><span class="emoji-sus" aria-hidden="true">📚</span> <?= (int)$t['calisma_sayisi'] ?></span>
             <?php else: ?>
               <span class="rozet rozet-gri" title="Bağlı akademik çalışma yok">yok</span>
             <?php endif; ?>

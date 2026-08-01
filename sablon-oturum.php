@@ -51,7 +51,7 @@ require APP_DIR . '/includes/view/header.php';
   <span class="rozet rozet-acik"><?= e($oturum['sablon_ad']) ?></span>
   <span class="rozet rozet-gri">Hafta <?= (int)$oturum['hafta_no'] ?><?= e($oturum['oturum_adi']) ?></span>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('sablonlar.php?id=' . (int)$oturum['sablon_id'])) ?>">← Şablona dön</a>
+    <a class="btn btn-golge" href="<?= e(url('sablonlar.php?id=' . (int)$oturum['sablon_id'])) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Şablona dön</a>
   </div>
 </div>
 
@@ -173,7 +173,7 @@ require APP_DIR . '/includes/view/header.php';
 
   <div class="kart">
     <div class="kart-baslik">
-      <h2>🏠 Haftanın ev görevleri</h2>
+      <h2><span class="emoji-sus" aria-hidden="true">🏠</span> Haftanın ev görevleri</h2>
       <span class="alan-ipucu">Haftaya bağlıdır (A/B ortak). Şablon gruba uygulanınca bu görevler
         o haftanın tarih aralığıyla öğrencilere otomatik ödev atanır.</span>
     </div>

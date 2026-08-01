@@ -215,7 +215,7 @@ require APP_DIR . '/includes/view/header.php';
   <p class="alan-ipucu">Tüm veriler tek dosyadadır. İndirilen kopya uygulama açıkken bile tutarlıdır
      (WAL içeriği dahil edilir). Kopyayı başka bir diske/buluta taşımak tam yedektir.</p>
   <div class="filtre-satir">
-    <a class="btn btn-birincil" href="<?= e(url('yedek.php?islem=indir')) ?>">⬇ Yedeği İndir</a>
+    <a class="btn btn-birincil" href="<?= e(url('yedek.php?islem=indir')) ?>"><span class="emoji-sus" aria-hidden="true">⬇</span> Yedeği İndir</a>
     <span class="alan-ipucu">Her gün ilk açılışta otomatik yedek de alınır (aşağıdaki liste, son 10 gün).</span>
   </div>
 </div>
@@ -248,7 +248,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Dosya</th><th>Alınma</th><th class="sayi">Boyut</th><th></th></tr></thead>
+      <thead><tr><th scope="col">Dosya</th><th scope="col">Alınma</th><th scope="col" class="sayi">Boyut</th><th scope="col"></th></tr></thead>
       <tbody>
         <?php foreach ($yedekler as $y): ?>
         <tr>

@@ -140,7 +140,7 @@ function sd_grafigi_svg(array $seri): string
 <div class="sayfa-baslik yazdirmada-gizle">
   <h1>Öğrenci Rapor Merkezi</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>">← Raporlar</a>
+    <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Raporlar</a>
     <a class="btn btn-golge" href="<?= e(url('ogrenci.php?id=' . $ogrenciId)) ?>">Öğrenci sayfası</a>
   </div>
 </div>
@@ -215,7 +215,7 @@ function sd_grafigi_svg(array $seri): string
     <?php foreach ($seriler as $pKod => $seri):
         $k = $karsilastirma[$pKod] ?? null; ?>
     <div class="rpr-protokol">
-      <h3>🧭 <?= e(protokol_etiketi($pKod)) ?>
+      <h3><span class="emoji-sus" aria-hidden="true">🧭</span> <?= e(protokol_etiketi($pKod)) ?>
         <?php if ($pKod === 'aksak_bulma'): ?><span class="rozet rozet-gri">eğitilmeyen sonda</span><?php endif; ?>
       </h3>
       <?= skor_grafigi_svg($seri) ?>
@@ -253,7 +253,7 @@ function sd_grafigi_svg(array $seri): string
           title="<?= e(format_date_tr($kt['tarih'], false)) ?> · <?= e(KATILIM_LABELS[$kt['durum']] ?? $kt['durum']) ?>"></span>
     <?php endforeach; ?>
   </div>
-  <p class="alan-ipucu">■ katıldı · ■ geç · ■ gelmedi (soldan sağa kronolojik)</p>
+  <p class="alan-ipucu"><span class="emoji-sus" aria-hidden="true">■</span> katıldı · ■ geç · ■ gelmedi (soldan sağa kronolojik)</p>
   <?php endif; ?>
   <?php endif; ?>
 
@@ -284,7 +284,7 @@ function sd_grafigi_svg(array $seri): string
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Teknik</th><th>Kategori</th><th class="sayi">Oturum</th></tr></thead>
+      <thead><tr><th scope="col">Teknik</th><th scope="col">Kategori</th><th scope="col" class="sayi">Oturum</th></tr></thead>
       <tbody>
         <?php foreach ($rapor['teknikler'] as $t): ?>
         <tr><td><?= e($t['ad']) ?></td><td><?= e($t['kategori']) ?></td>
@@ -328,7 +328,7 @@ function sd_grafigi_svg(array $seri): string
 <div class="kart yazdirmada-gizle" id="cumleHavuzu">
   <div class="kart-baslik">
     <h2>Hazır cümle havuzu</h2>
-    <span class="alan-ipucu">✏️ Düzenle modu açıkken tıkla → "Eğitmen değerlendirmesi" bölümüne eklenir.
+    <span class="alan-ipucu"><span class="emoji-sus" aria-hidden="true">✏️</span> Düzenle modu açıkken tıkla → "Eğitmen değerlendirmesi" bölümüne eklenir.
        Cümleler gözlemsel dille yazılmıştır; ekledikten sonra serbestçe değiştirebilirsiniz.</span>
   </div>
   <?php foreach ($hazirCumleler as $baslik => $cumleler): ?>

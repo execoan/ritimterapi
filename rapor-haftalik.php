@@ -14,7 +14,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik yazdirmada-gizle">
   <h1>Haftalık Eğitmen Raporu</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('rapor-haftalik.php?tarih=' . (new DateTime($pzt))->modify('-7 days')->format('Y-m-d'))) ?>">← Önceki hafta</a>
+    <a class="btn btn-golge" href="<?= e(url('rapor-haftalik.php?tarih=' . (new DateTime($pzt))->modify('-7 days')->format('Y-m-d'))) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Önceki hafta</a>
     <a class="btn btn-golge" href="<?= e(url('rapor-haftalik.php?tarih=' . (new DateTime($pzt))->modify('+7 days')->format('Y-m-d'))) ?>">Sonraki hafta →</a>
   </div>
 </div>
@@ -62,7 +62,7 @@ require APP_DIR . '/includes/view/header.php';
     </div>
     <?php endforeach; ?>
     <?php endforeach; ?>
-    <p class="alan-ipucu">✔ işlendi · ✖ atlandı · ▫ kayıt girilmedi</p>
+    <p class="alan-ipucu"><span class="emoji-sus" aria-hidden="true">✔</span> işlendi · ✖ atlandı · ▫ kayıt girilmedi</p>
   <?php endif; ?>
 </div>
 <script src="<?= e(asset('js/belge-duzenle.js')) ?>" defer></script>

@@ -13,7 +13,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik"><h1>Raporlar</h1></div>
 
 <div class="kart">
-  <h2>📊 Öğrenci Rapor Merkezi</h2>
+  <h2><span class="emoji-sus" aria-hidden="true">📊</span> Öğrenci Rapor Merkezi</h2>
   <p class="alan-ipucu">Tek öğrencinin dönem görünümü: protokol trend grafikleri (gürültü bandı yorumlu),
      katılım çizelgesi, ev pratiği, teknikler ve gözlemler. Bölümler seçilebilir; belge ekranda
      düzenlenip <strong>Yazdır / PDF</strong> ile çıkarılır. <strong>İç rapordur</strong> — skor içerdiği
@@ -139,8 +139,8 @@ require APP_DIR . '/includes/view/header.php';
   <p class="alan-ipucu">Kendi analizleriniz için ham veri — Excel/LibreOffice ile açılır
      (UTF-8, noktalı virgül ayraçlı). Kişisel izleme amaçlıdır; veli çıktısı değildir.</p>
   <div class="filtre-satir">
-    <a class="btn btn-golge" href="<?= e(url('disa-aktar.php?tur=protokol')) ?>">📊 Protokol sonuçları (CSV)</a>
-    <a class="btn btn-golge" href="<?= e(url('disa-aktar.php?tur=yoklama')) ?>">🗓 Yoklama kayıtları (CSV)</a>
+    <a class="btn btn-golge" href="<?= e(url('disa-aktar.php?tur=protokol')) ?>"><span class="emoji-sus" aria-hidden="true">📊</span> Protokol sonuçları (CSV)</a>
+    <a class="btn btn-golge" href="<?= e(url('disa-aktar.php?tur=yoklama')) ?>"><span class="emoji-sus" aria-hidden="true">🗓</span> Yoklama kayıtları (CSV)</a>
   </div>
 </div>
 <?php require APP_DIR . '/includes/view/footer.php'; ?>

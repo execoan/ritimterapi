@@ -149,8 +149,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <form method="post" action="<?= e(url('giris.php')) ?>" class="giris-hizli">
       <?= csrf_field() ?>
       <input type="hidden" name="hedef" value="<?= e($hedef) ?>">
-      <button type="submit" name="hizli" value="admin" class="t-btn t-btn-dolu giris-hizli-btn">⚡ Admin</button>
-      <button type="submit" name="hizli" value="egitmen" class="t-btn t-btn-dolu giris-hizli-btn">⚡ Eğitmen</button>
+      <button type="submit" name="hizli" value="admin" class="t-btn t-btn-dolu giris-hizli-btn"><span class="emoji-sus" aria-hidden="true">⚡</span> Admin</button>
+      <button type="submit" name="hizli" value="egitmen" class="t-btn t-btn-dolu giris-hizli-btn"><span class="emoji-sus" aria-hidden="true">⚡</span> Eğitmen</button>
     </form>
     <div class="giris-ayrac"><span>veya</span></div>
     <?php endif; ?>
@@ -172,7 +172,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <p class="giris-ipucu">Hızlı giriş geliştirme kolaylığıdır; yayına alırken
        <code>storage/gizli.php</code> içinde kapatın ve şifreleri değiştirin.</p>
     <?php endif; ?>
-    <a class="giris-geri" href="<?= e(url('index.php')) ?>">← Tanıtım sayfasına dön</a>
+    <a class="giris-geri" href="<?= e(url('index.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Tanıtım sayfasına dön</a>
   </div>
 </div>
 </body>

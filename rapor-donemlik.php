@@ -32,7 +32,7 @@ require APP_DIR . '/includes/view/header.php';
 <div class="sayfa-baslik yazdirmada-gizle">
   <h1>Dönemlik Grup Raporu</h1>
   <div class="sag">
-    <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>">← Raporlar</a>
+    <a class="btn btn-golge" href="<?= e(url('raporlar.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Raporlar</a>
   </div>
 </div>
 
@@ -83,7 +83,7 @@ require APP_DIR . '/includes/view/header.php';
   <h2 style="margin-top:1.3rem">Protokol gelişimi (iç izleme)</h2>
   <p class="alan-ipucu">Metronom Stüdyosu ve ev çalışması ölçümlerinin haftalık ortalamaları.
      Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansıtılmaz.</p>
-  <p class="alan-ipucu">📏 işaretli satırlarda ilk→son karşılaştırması yalnız standart koşullu ölçümlerden
+  <p class="alan-ipucu"><span class="emoji-sus" aria-hidden="true">📏</span> işaretli satırlarda ilk→son karşılaştırması yalnız standart koşullu ölçümlerden
      yapılmıştır; işaretsiz satırlarda koşullar (tempo/zorluk) değişmiş olabilir.
      Uçlardaki tek ölçüm yerine <strong>ilk/son blok medyanı</strong> alınır (ölçüm sayısı yettiğinde 3'er),
      böylece ilk denemedeki "görevi tanıma" etkisi ve günlük dalgalanma azalır.
@@ -91,7 +91,7 @@ require APP_DIR . '/includes/view/header.php';
      altında kalması "değişim yok" demek değildir — <em>ölçümle ayırt edilemiyor</em> demektir.</p>
   <?php foreach ($protokolRapor['haftalik'] as $pKod => $haftalar):
       ksort($haftalar); ?>
-  <h3 style="margin:.9rem 0 .4rem">🧭 <?= e(protokol_etiketi($pKod)) ?>
+  <h3 style="margin:.9rem 0 .4rem"><span class="emoji-sus" aria-hidden="true">🧭</span> <?= e(protokol_etiketi($pKod)) ?>
     <?php if ($pKod === 'aksak_bulma'): ?>
     <span class="rozet rozet-gri" title="Ev programında çalışılmayan, saf dinleme ölçümü">eğitilmeyen sonda</span>
     <?php endif; ?>
@@ -114,8 +114,8 @@ require APP_DIR . '/includes/view/header.php';
       if ($gelisenler): ?>
   <div class="tablo-sar" style="margin:.4rem 0 .8rem">
     <table class="tablo">
-      <thead><tr><th>Öğrenci</th><th class="sayi">Dönem başı</th><th class="sayi">Dönem sonu</th>
-                 <th class="sayi">Değişim</th><th>Yorum</th><th class="sayi">Ölçüm</th></tr></thead>
+      <thead><tr><th scope="col">Öğrenci</th><th scope="col" class="sayi">Dönem başı</th><th scope="col" class="sayi">Dönem sonu</th>
+                 <th scope="col" class="sayi">Değişim</th><th scope="col">Yorum</th><th scope="col" class="sayi">Ölçüm</th></tr></thead>
       <tbody>
         <?php foreach ($gelisenler as $kod => $v):
             $fark = (int)$v['fark'];
@@ -172,7 +172,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Tarih</th><th>Hafta</th><th class="sayi">Teknik</th><th class="sayi">Süre</th><th>Katılım</th><th>Not</th></tr></thead>
+      <thead><tr><th scope="col">Tarih</th><th scope="col">Hafta</th><th scope="col" class="sayi">Teknik</th><th scope="col" class="sayi">Süre</th><th scope="col">Katılım</th><th scope="col">Not</th></tr></thead>
       <tbody>
         <?php foreach ($oturumlar as $s): ?>
         <tr>

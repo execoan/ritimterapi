@@ -32,7 +32,7 @@ require APP_DIR . '/includes/view/header.php';
   <?php else: ?>
   <div class="tablo-sar">
     <table class="tablo">
-      <thead><tr><th>Ders / grup</th><th>Tür</th><th>Yaş aralığı</th><th>Ders günü</th><th class="sayi">Katılımcı</th><th class="sayi">Oturum</th><th>Durum</th></tr></thead>
+      <thead><tr><th scope="col">Ders / grup</th><th scope="col">Tür</th><th scope="col">Yaş aralığı</th><th scope="col">Ders günü</th><th scope="col" class="sayi">Katılımcı</th><th scope="col" class="sayi">Oturum</th><th scope="col">Durum</th></tr></thead>
       <tbody>
         <?php foreach ($gruplar as $g): ?>
         <tr>
