@@ -85,7 +85,8 @@ $navAktifMi = function (array $kategori) use ($aktifNav, $navAnahtar): bool {
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="<?= e(APP_NAME) ?>">
+<?php /* Telefon ana ekranındaki ad DIŞ yüzeydir: PUBLIC_BRAND kullanılır. */ ?>
+<meta name="apple-mobile-web-app-title" content="<?= e(PUBLIC_BRAND) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/app.css')) ?>">
 </head>
 <body>

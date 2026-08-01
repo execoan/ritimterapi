@@ -67,7 +67,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Giriş Yap | RitimTerapi</title>
+<title>Giriş Yap | <?= e(PUBLIC_BRAND) ?></title>
 <meta name="theme-color" content="#0c0a09">
 <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/landing.css')) ?>">

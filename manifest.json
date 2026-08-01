@@ -1,6 +1,6 @@
 {
-  "name": "RitimTerapi — Ritim Atölyesi Yönetimi",
-  "short_name": "RitimTerapi",
+  "name": "Ritim Atölyesi — Yönetim",
+  "short_name": "Ritim Atölyesi",
   "description": "Ritim atölyesi yönetim aracı: gruplar, öğrenciler, teknik kütüphanesi, ders planı, oturum kaydı ve raporlar.",
   "start_url": "./panel.php",
   "scope": "./",

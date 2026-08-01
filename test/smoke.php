@@ -457,7 +457,7 @@ try {
     $teknikAdet = (int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn();
     $pdo = null;
 } catch (Throwable $e) { $surum = -1; $teknikAdet = -1; }
-dogrula($surum === 17, 'göçler uygulanmış (user_version=17)', 'bulunan: ' . $surum);
+dogrula($surum === 18, 'göçler uygulanmış (user_version=18)', 'bulunan: ' . $surum);
 dogrula($teknikAdet >= 18, 'teknik kütüphanesi seed edilmiş', 'adet: ' . $teknikAdet);
 dogrula(str_contains(git_('teknikler.php', $jar)['govde'], 'Metronoma eşlik'), 'seed içeriği sayfada görünüyor');
 $grupAtolyesi = git_('grup-atolyesi.php', $jar)['govde'];
@@ -964,6 +964,29 @@ $bulunan = array_values(array_filter($yasakli, fn($k) => mb_stripos($veliBelge, 
 dogrula($veliBelge !== '' && !$bulunan, 'veli raporu belgesinde kilitli dil temiz', implode(', ', $bulunan));
 dogrula(git_('rapor-haftalik.php', $jar)['durum'] === 200
      && git_('rapor-donemlik.php?grup_id=' . $grupId, $jar)['durum'] === 200, 'haftalık ve dönemlik raporlar açılıyor');
+
+/* -------- Marka: iki ad, iki kitle (CLAUDE.md §3) --------
+   Panel içi ad "RitimTerapi" kalır; DIŞ yüzeylerin hiçbirinde geçmez.
+   Bu ayrım kolay bozulur: yeni bir herkese açık sayfa APP_NAME kullanıverir. */
+bolum('Marka ayrımı (panel içi / herkese açık)');
+/* ÇIKIŞLI çerezle bakılır: girişli oturumda giris.php panele yönlenir ve
+   denetim panelin HTML'ini ölçer — kontrol boşa çıkar. */
+$anonJar = [];
+$sizan = [];
+foreach (['index.php', 'giris.php', 'manifest.json', 'offline.html'] as $sf) {
+    $g = git_($sf, $anonJar);
+    if ($g['durum'] !== 200 || $g['govde'] === '') { $sizan[] = $sf . ' (durum ' . $g['durum'] . ')'; continue; }
+    if (str_contains($g['govde'], 'RitimTerapi')) { $sizan[] = $sf; }
+}
+dogrula(!$sizan, 'herkese açık yüzeyde "RitimTerapi" geçmiyor'
+    . ($sizan ? ' — ' . implode(', ', $sizan) : ''));
+dogrula(str_contains(git_('index.php', $jar)['govde'], 'Ritim Atölyesi'),
+    'tanıtım sayfasında marka Ritim Atölyesi');
+dogrula(str_contains(git_('manifest.json', $jar)['govde'], 'Ritim Atölyesi'),
+    'PWA manifest markası Ritim Atölyesi');
+/* Panel içi ad korunmalı — toplu değiştirmeyle her yerden silinmiş olmasın */
+dogrula(str_contains(git_('panel.php', $jar)['govde'], 'RitimTerapi'),
+    'panel içi ad RitimTerapi olarak duruyor');
 
 bolum('Ön kayıt (herkese açık form)');
 $halkJar = [];                              // giriş yapmamış ziyaretçi

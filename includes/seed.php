@@ -282,7 +282,7 @@ function seed_site(): void
         'program_aciklama' => 'RitimOdak yoğunlaştırılmış programı sekiz hafta boyunca iki bağımsız izde yürür: öğrenci izi (8–15 yaş) ve yetişkin izi (18+). '
                            . 'Haftada iki oturumla her hafta yeni bir hedef çalışılır; ilerleme kararları kayıtla verilir. '
                            . 'Katılım için ritim/müzik geçmişi gerekmez.',
-        'bizkimiz_metin'  => 'RitimTerapi; fizik öğretmenliğinden gelen ölçme alışkanlığını, ritim atölyesi '
+        'bizkimiz_metin'  => 'Ritim Atölyesi; fizik öğretmenliğinden gelen ölçme alışkanlığını, ritim atölyesi '
                            . 'eğitmenliğinin sahne enerjisiyle birleştiren bir eğitim girişimidir. Dalgalar, '
                            . 'frekanslar ve rezonans fizik dersinin konusu; vuruş, tempo ve senkron ise atölyenin. '
                            . 'İkisinin kesişiminde disiplinli ama oyunlu bir öğrenme alanı kuruyoruz.',
@@ -290,7 +290,7 @@ function seed_site(): void
         'iletisim_eposta'    => 'iletisim@ritimterapi.example',
         'iletisim_instagram' => '@ritimterapi',
         'iletisim_adres'     => 'Atölye adresi — şehir',
-        'alt_uyari'       => 'RitimTerapi bir eğitim aracıdır; sağlık ürünü veya hizmeti değildir. '
+        'alt_uyari'       => 'Ritim Atölyesi bir eğitim aracıdır; sağlık ürünü veya hizmeti değildir. '
                            . 'Tanı, tedavi ve klinik değerlendirme yalnız yetkili uzmanların işidir.',
     ];
     $ms = $pdo->prepare('INSERT INTO site_icerik (anahtar, deger) VALUES (?, ?)');

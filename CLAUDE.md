@@ -69,11 +69,28 @@ merkezî). CSRF ve flash desenleri var.
 Metronom Stüdyosu (`metronom.php`): Web Audio lookahead motoru; serbest metronom
 (tap tempo, ölçü, aksan, sessiz aralık) + dikkat protokolleri (Vuruş Tutturma
 sesli/sessiz fazlı ms-sapma testi, BPM Bulma) → `protokol_sonuclari` tablosuna
-0-100 skorla kaydedilir, öğrenci detayında trend gösterilir. Skorlar iç izleme
-aracıdır; **veli raporuna yansıtılmaz** (§2 gereği).
+0-100 skorla kaydedilir, öğrenci detayında trend gösterilir.
 
-Uygulama içi ad "RitimTerapi" (kullanıcı kararı, yereldir); veliye giden çıktıda
-marka **"Ritim Atölyesi"** — kırmızı çizgi (§2) veli çıktılarında geçerli.
+**Skorların veliye giden çıktılarda yeri (karar, Ağustos 2026):**
+- *Veli raporu* (`rapor-veli.php`): skor **yansıtılmaz**. Rapor ne yapıldığını
+  anlatır, ne kazandırdığını iddia etmez (§2).
+- *Katılım Belgesi* (`sertifika.php`): eğitmen isterse (`?olcumler=1`) dönem
+  başı/sonu ölçümleri **yalın sayı** olarak eklenebilir. Yorum, değerlendirme
+  veya sonuç iddiası eklenmez; belgede "eğitsel izleme amaçlıdır, değerlendirme
+  veya tanı aracı değildir" dipnotu ve ölçüm koşullarının aynı olup olmadığını
+  gösteren 📏 işareti bulunur. Bu bilinçli bir istisnadır — kural ile kodun
+  çelişmemesi için buraya yazıldı.
+
+**İki ad, iki kitle** (`includes/bootstrap.php`):
+- `APP_NAME = "RitimTerapi"` — yalnız **eğitmenin gördüğü panelde**. Yereldir,
+  klasör adı gibi.
+- `PUBLIC_BRAND = "Ritim Atölyesi"` — **dışarıya açılan her yüzeyde**: tanıtım
+  sitesi, giriş sayfası, PWA manifest'i, telefon ana ekranı adı, veli belgeleri,
+  katılımcı portalı. (`REPORT_BRAND` bunun geriye dönük adıdır, aynı değer.)
+
+Site internete açıldığı için bu ayrım artık yalnız belgelerde değil, her dış
+yüzeyde geçerli: arama motorunda ya da telefon ana ekranında "terapi" adıyla
+görünmek sunulmayan bir hizmeti çağrıştırır.
 
 ---
 

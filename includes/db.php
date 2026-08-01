@@ -558,6 +558,18 @@ function run_migrations(): void
             );
             CREATE INDEX ix_hiz_siniri_temizlik ON hiz_siniri(son_deneme);
         ",
+
+        // v18 — HERKESE AÇIK YÜZEYDE MARKA. Site internete açılıyor; dışarıya
+        //   giden her yerde ad "Ritim Atölyesi" (CLAUDE.md §2 — uygulama bir
+        //   eğitim aracı, sağlık ürünü değil). Panel içi ad "RitimTerapi" kalır.
+        //   Yalnız DOKUNULMAMIŞ tohum metinleri güncellenir: WHERE deger = eski
+        //   koşulu, eğitmen metni panelden düzenlediyse üzerine yazmayı önler.
+        18 => "-- TABLO site_icerik
+            UPDATE site_icerik
+               SET deger = replace(deger, 'RitimTerapi', 'Ritim Atölyesi')
+             WHERE anahtar IN ('bizkimiz_metin', 'alt_uyari')
+               AND deger LIKE 'RitimTerapi%';
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {
@@ -573,6 +585,19 @@ function run_migrations(): void
                 $pdo->exec('PRAGMA foreign_keys = ON');
             }
             continue;
+        }
+        /* "-- TABLO <ad>": göç yalnız o tablo VARSA çalışır.
+           Şema kuran göçler için değil, İÇERİK güncelleyen göçler için:
+           onlar daha eski bir göçün kurduğu tabloya yazar ve o tablo
+           yoksa (eksik/kısmi bir yükseltme yolunda) tüm zincir ölümcül
+           hatayla durur. Sürüm yine ilerletilir; yapılacak iş yoktur. */
+        if (preg_match('/^--\s*TABLO\s+([a-z_]+)/i', ltrim($sql), $mT)) {
+            $var = $pdo->prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?");
+            $var->execute([$mT[1]]);
+            if (!$var->fetchColumn()) {
+                $pdo->exec('PRAGMA user_version = ' . (int)$no);
+                continue;
+            }
         }
         $pdo->exec('BEGIN');
         try {

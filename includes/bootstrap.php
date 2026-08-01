@@ -21,9 +21,24 @@ $ozelDepo = getenv('RITIM_STORAGE');
 define('STORAGE_DIR', is_string($ozelDepo) && $ozelDepo !== ''
     ? rtrim($ozelDepo, '/\\')
     : APP_DIR . '/storage');
+/*
+ * İKİ AD, İKİ KİTLE — karıştırılmamalı:
+ *
+ *  APP_NAME     yalnız EĞİTMENİN gördüğü panelde geçer (sekme başlığı, üst
+ *               menü markası). Yereldir; klasör adı gibi.
+ *  PUBLIC_BRAND DIŞARIYA açılan her yüzeyde geçer: tanıtım sitesi, giriş
+ *               sayfası, PWA manifest'i, telefon ana ekranı adı, veli
+ *               belgeleri, katılımcı portalı.
+ *
+ * Gerekçe (CLAUDE.md §2): uygulama bir eğitim aracı, sağlık ürünü değil.
+ * Arama motorunda ya da telefonun ana ekranında "terapi" adıyla görünmek
+ * sunulmayan bir hizmeti çağrıştırır. Site internete açıldığı için bu ayrım
+ * artık yalnız belgelerde değil, her dış yüzeyde geçerli.
+ */
 define('APP_NAME', 'RitimTerapi');
-// Veliye giden çıktılarda kullanılan ad — "terapi" sözcüğü geçmez (CLAUDE.md).
-define('REPORT_BRAND', 'Ritim Atölyesi');
+define('PUBLIC_BRAND', 'Ritim Atölyesi');
+/* Geriye dönük ad: veli belgelerinde bu sabit kullanılıyordu, aynı değer. */
+define('REPORT_BRAND', PUBLIC_BRAND);
 
 /**
  * DAĞITIM KİPİ — uygulama nerede çalışıyor?

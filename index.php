@@ -55,7 +55,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RitimTerapi — Ritim, Dikkat ve Öz-Düzenleme Atölyesi</title>
+<title><?= e(PUBLIC_BRAND) ?> — Ritim, Dikkat ve Öz-Düzenleme</title>
 <meta name="description" content="Özel ders ve küçük grup ritim programları: bilimsel literatürden beslenen, kanıt düzeyi etiketli teknikler; şeffaf oturum kaydı ve raporlama.">
 <meta name="theme-color" content="#0c0a09">
 <link rel="manifest" href="<?= e(url('manifest.json')) ?>">
@@ -69,7 +69,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
 <nav class="t-nav" id="tNav">
   <div class="t-kapsayici t-nav-ic">
-    <a class="t-marka" href="#ust"><?= metronom_svg('t-logo', 'tg') ?><span>RitimTerapi</span></a>
+    <a class="t-marka" href="#ust"><?= metronom_svg('t-logo', 'tg') ?><span><?= e(PUBLIC_BRAND) ?></span></a>
     <div class="t-nav-linkler">
       <?php foreach ($bolumler as $b): ?>
       <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Canlı Deney', 'yontem' => 'Yöntem', 'program' => 'Program',
@@ -758,8 +758,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
 <footer class="t-alt">
   <div class="t-kapsayici">
-    <p><strong>RitimTerapi</strong> — <?= e(site_text('alt_uyari')) ?></p>
-    <p class="t-alt-kucuk">© <?= (int)now()->format('Y') ?> RitimTerapi ·
+    <p><strong><?= e(PUBLIC_BRAND) ?></strong> — <?= e(site_text('alt_uyari')) ?></p>
+    <p class="t-alt-kucuk">© <?= (int)now()->format('Y') ?> <?= e(PUBLIC_BRAND) ?> ·
       <?= e(site_text('iletisim_eposta', '')) ?> · <?= e(site_text('iletisim_instagram', '')) ?></p>
   </div>
 </footer>
