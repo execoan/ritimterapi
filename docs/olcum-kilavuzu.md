@@ -123,3 +123,65 @@ Raporlar → **Protokol CSV**: tarih, öğrenci, protokol, skor, kararlılık SD
 BPM, kaynak (atölye/ev), standart ölçüm, kalibrasyon kalitesi, not ve ham
 detay JSON'u. Kendi analizini bu dosya üzerinden yapabilirsin; ham JSON faz
 bazlı sapmaları ve kalibrasyon parametrelerini de içerir.
+
+---
+
+## Ölçeklerin denetimi ve gücü (Ağustos 2026)
+
+Skorlama formülleri benzetimle sınandı (her satır 3.000 sanal ölçüm).
+Üç ölçekte sorun bulundu ve düzeltildi; sonuçlar aşağıda.
+
+### Düzeltilenler
+
+**Aksak Bulma — şans düzeyi çıkarılmıyordu.** Test iki seçenekli (aksak /
+düzenli), yani madenî para atan biri ortalama 4/8 tutturur. Eski formül buna
+50 puan veriyordu ve bu sayı, grafikte Vuruş Tutturma'nın 50'siyle yan yana
+duruyordu. Hiç becerisi olmayan biri 8 turda **%14,2 olasılıkla 75+**
+alıyordu. Yeni formül şans payını çıkarır (`100·max(0, 2p−1)`): aynı kişi
+artık ortalama 15 alıyor, 75+ olasılığı %4,4'e düştü. 4/8 = 0 puan.
+
+**Spontan Tempo — tavan çok alçaktı.** Eşikler CV %2 → 100, %12 → 0 idi.
+Literatürde yetişkin kendiliğinden vuruş CV'si ~%2-5; yani tipik bir yetişkin
+ölçümün tavanında başlıyor ve gelişme hiç görünmüyordu. Yeni aralık %1 → 100,
+%15 → 0. Şimdi CV %2 → 93, %5 → 71, %8 → 50; hem yetişkin hem çocuk bandı
+ayırt edici.
+
+**Vuruş Tutturma — ölçeğin %90'ı kullanılmıyordu.** Değerlendirme penceresi
+hep `0,30 × vuruş aralığı` idi; 72 BPM'de bu ±250 ms demek, oysa yetişkinde
+eşzamanlama sapması tipik 20-50 ms, çocukta 40-80 ms. Sonuç: herkes 87-97
+arasına sıkışıyordu. Pencere artık 120 ms'de kırpılıyor (oran kuralı hızlı
+tempoda korunur — Weber). Ölçülen yayılım:
+
+| zamanlama SD | eski skor | yeni skor |
+|---|---|---|
+| 10 ms | 96,7 | 93,2 |
+| 30 ms | 90,2 | 79,6 |
+| 60 ms | 80,4 | 57,5 |
+| 90 ms | 70,4 | 37,5 |
+
+### Gürültü bandı (MDC95) ne yapıyor, ne yapmıyor
+
+**Yanlış alarm oranı düşük — bant işini yapıyor.** Yeteneği sabit tutulan
+sanal bir katılımcıda sistem %1,4-3,1 oranında "anlamlı" diyor. Yani
+"ilerleme var" dediğinde büyük olasılıkla haklı.
+
+**Buna karşılık duyarlılığı düşük.** 6 oturumda, zamanlama SD'si 40 ms'den
+20 ms'ye inen GERÇEK bir gelişme yalnız **%27** olasılıkla bandı aşıyor.
+Yani "gürültü bandı içinde" çıktısı **"ilerleme yok" demek değildir** —
+"bu kadar ölçümle ayırt edilemiyor" demektir. Arayüz dili de bunu söylüyor.
+
+Ölçeği genişletmek bunu düzeltmez: yeni ve eski ölçek aynı gücü veriyor
+(%26,1 vs %26,5) — sinyal ve gürültü birlikte ölçeklendiği için. Gücü
+gerçekten artıran iki şey var:
+
+| | 16 vuruş | 32 vuruş | 64 vuruş |
+|---|---|---|---|
+| **6 ölçüm** | %27 | %44 | %62 |
+| **8 ölçüm** | %42 | %68 | %92 |
+| **12 ölçüm** | %55 | %86 | %99 |
+
+(40 ms → 20 ms gelişimini yakalama oranı; yanlış alarm her durumda %2'nin altında.)
+
+**Pratik sonuç:** dönem başı/sonu karşılaştırması yapılacaksa faz başına
+**32 vuruş** seçin ve dönem boyunca **en az 8 ölçüm** alın. Varsayılan 16
+vuruş kısa ve çocuk için yorucu değil, ama trend izlemeye yetmez.

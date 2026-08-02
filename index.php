@@ -65,6 +65,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
 </head>
 <body class="tanitim">
 
+<?php require APP_DIR . '/includes/view/uygulama-serit.php'; ?>
+
 <div class="t-ilerleme" id="tIlerleme" aria-hidden="true"></div>
 
 <nav class="t-nav" id="tNav">
@@ -759,11 +761,18 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <footer class="t-alt">
   <div class="t-kapsayici">
     <p><strong><?= e(PUBLIC_BRAND) ?></strong> — <?= e(site_text('alt_uyari')) ?></p>
+    <?php /* Katılımcı portalının sitede hiç girişi yoktu: kodu olan öğrenci
+             adresi elle yazmak zorunda kalıyordu. */ ?>
+    <p class="t-alt-kucuk">
+      <a href="<?= e(url('ev.php')) ?>">Ev Çalışmalarım</a> — erişim kodun varsa buradan gir ·
+      <a href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>"><?= $girisli ? 'Panel' : 'Eğitmen girişi' ?></a>
+    </p>
     <p class="t-alt-kucuk">© <?= (int)now()->format('Y') ?> <?= e(PUBLIC_BRAND) ?> ·
       <?= e(site_text('iletisim_eposta', '')) ?> · <?= e(site_text('iletisim_instagram', '')) ?></p>
   </div>
 </footer>
 
 <script src="<?= e(asset('js/landing.js')) ?>"></script>
+<script src="<?= e(asset('js/uygulama-yukle.js')) ?>"></script>
 </body>
 </html>

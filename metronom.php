@@ -642,7 +642,13 @@ require APP_DIR . '/includes/view/header.php';
           <option value="8">8 + 8 vuruş</option>
           <option value="16" selected>16 + 16 vuruş</option>
           <option value="24">24 + 24 vuruş</option>
+          <option value="32">32 + 32 vuruş — dönem karşılaştırması için</option>
         </select>
+        <?php /* Vuruş sayısı ölçümün KESİNLİĞİNİ belirler. Benzetimle ölçüldü
+                 (docs/olcum-kilavuzu.md): 6 oturumda 40→20 ms'lik gerçek bir
+                 gelişme 16 vuruşta %27, 32 vuruşta %44 olasılıkla gürültü
+                 bandını aşıyor. Trend izlenecekse uzun sürüm gerekir. */ ?>
+        <small class="alan-ipucu">Uzun sürüm daha kesin ölçer; trend izleyecekseniz 32 seçin.</small>
       </label>
       <button type="button" class="btn btn-birincil" id="vtBaslat">Testi Başlat</button>
     </div>
@@ -781,9 +787,15 @@ require APP_DIR . '/includes/view/header.php';
     <div class="m-sonuc" id="abSonuc" hidden>
       <div class="m-skor-kart">
         <div class="m-skor" id="abSkor">–</div>
-        <div class="m-skor-etiket">ALGI SKORU<br><small>8 turda doğru oranı</small></div>
+        <?php /* Skor ŞANS DÜZELTMELİ: iki seçenekli testte para atarak %50
+                 tutturulur, o yüzden %50 = 0 puan. Ham doğru sayısı ayrıca
+                 gösterilir, yoksa "6/8 doğru → 50 puan" kafa karıştırır. */ ?>
+        <div class="m-skor-etiket">ALGI SKORU<br><small id="abHam">—</small></div>
       </div>
       <div class="m-sonuc-detay">
+        <p class="alan-ipucu">İki seçenek olduğu için rastgele işaretleyen biri
+          8 turun ~4'ünü tutturur. Skor bu şans payı çıkarılarak hesaplanır:
+          <strong>4/8 = 0 puan</strong>, 6/8 = 50, 8/8 = 100.</p>
         <table class="tablo">
           <thead><tr><th scope="col">Tur</th><th scope="col">Dizi</th><th scope="col">Cevabın</th><th scope="col">Sonuç</th></tr></thead>
           <tbody id="abTablo"></tbody>

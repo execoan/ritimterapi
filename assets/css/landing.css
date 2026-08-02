@@ -1163,3 +1163,54 @@ html.hareket-kapali { scroll-behavior: auto !important; }
  * aria-hidden düzenden bağımsızdır, gizleme aynen sürer.
  */
 .emoji-sus { display: contents !important; }
+
+/* ---------- Uygulama kurulum şeridi ---------- */
+/*
+ * Sayfanın en üstünde durur ve akışı iter (position:fixed DEĞİL): sabit
+ * konumlandırma mobilde adres çubuğuyla çakışıp içeriği örtüyor, ayrıca
+ * "kapat" düğmesine ulaşmayı zorlaştırıyor.
+ */
+.uyg-serit {
+  background: linear-gradient(90deg, #d97706, #b45309);
+  color: #1c1917;
+  border-bottom: 1px solid rgba(0, 0, 0, .25);
+}
+.uyg-serit-ic {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; gap: .7rem;
+  padding: .6rem 1rem;
+}
+.uyg-serit-ikon { font-size: 1.3rem; flex: 0 0 auto; }
+.uyg-serit-metin { margin: 0; flex: 1 1 auto; font-size: .93rem; line-height: 1.45; }
+.uyg-serit-metin strong { font-weight: 800; }
+/* Dokunma hedefi en az 44x44 (WCAG 2.5.5). Olculdu: onceki hali
+   31x30 idi — telefonda kapatmak icin nisan almak gerekiyordu. */
+.uyg-serit-kur {
+  flex: 0 0 auto; cursor: pointer;
+  background: #1c1917; color: #fef3c7;
+  border: 0; border-radius: 9px;
+  padding: .7rem 1.1rem; min-height: 44px;
+  font-weight: 700; font-size: .9rem;
+  font-family: inherit;
+}
+.uyg-serit-kur:hover { background: #292524; }
+.uyg-serit-kapat {
+  flex: 0 0 auto; cursor: pointer;
+  background: transparent; border: 0; color: #1c1917;
+  font-size: 1.1rem; line-height: 1; border-radius: 8px;
+  min-width: 44px; min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.uyg-serit-kapat:hover { background: rgba(0, 0, 0, .12); }
+.uyg-serit-kur:focus-visible,
+.uyg-serit-kapat:focus-visible { outline: 3px solid #1c1917; outline-offset: 2px; }
+.uyg-serit-yardim {
+  margin: 0; padding: 0 1rem .6rem; max-width: 1100px;
+  margin-inline: auto; font-size: .85rem; opacity: .85;
+}
+@media (max-width: 640px) {
+  .uyg-serit-ic { flex-wrap: wrap; padding: .55rem .8rem; }
+  .uyg-serit-metin { flex: 1 1 100%; order: 2; font-size: .88rem; }
+  .uyg-serit-kur { order: 3; }
+  .uyg-serit-kapat { order: 1; margin-left: auto; }
+}

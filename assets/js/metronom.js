@@ -1793,13 +1793,13 @@
       var kacirilan = vt.fazVurus - vurulanAdet;
       var fazla = Math.max(0, fazlar[f].deneme - vurulanAdet);
       var mutlak = ort(s.map(Math.abs));
-      var hamSkor = s.length ? Math.max(0, 1 - mutlak / (0.30 * aralikMs)) : 0;
-      var isabet = vurulanAdet / vt.fazVurus;
-      var dogruluk = vurulanAdet / Math.max(1, fazlar[f].deneme);
+      /* Skor çekirdekte (metronom-cekirdegi.js): birim testin gördüğü yer.
+         Pencere 0,30×aralık idi — 72 BPM'de ±250 ms, herkes 87-97'ye
+         sıkışıyordu; artık 120 ms'de kırpılıyor. */
       return {
         n: s.length, kacirilan: kacirilan, fazla: fazla,
         ortSapma: Math.round(ort(s)), ortMutlak: Math.round(mutlak),
-        skor: Math.round(100 * hamSkor * isabet * dogruluk)
+        skor: metronomCekirdegi.vurusSkoru(mutlak, vurulanAdet, vt.fazVurus, fazlar[f].deneme, aralikMs)
       };
     }
     var f1 = fazOzet(1), f2 = fazOzet(2);
@@ -2031,7 +2031,7 @@
     var varyans = ort(araliklar.map(function (a) { return (a - ortMs) * (a - ortMs); }));
     var cv = ortMs > 0 ? Math.sqrt(varyans) / ortMs : 1;
     var smt = ortMs > 0 ? Math.round(60000 / ortMs) : 0;
-    var skor = Math.max(0, Math.min(100, Math.round(100 * (1 - (cv - 0.02) / 0.10))));
+    var skor = metronomCekirdegi.spontanSkoru(cv);
 
     byId('stSkor').textContent = skor;
     byId('stOzet').innerHTML = 'Spontan tempon: <strong>' + smt + ' BPM</strong> '
@@ -2139,8 +2139,9 @@
     ab.aktif = false;
     byId('abSahne').hidden = true;
     byId('abSonuc').hidden = false;
-    var skor = Math.round(100 * ab.dogru / ab.TOPLAM);
+    var skor = metronomCekirdegi.aksakSkoru(ab.dogru, ab.TOPLAM);
     byId('abSkor').textContent = skor;
+    byId('abHam').textContent = ab.dogru + '/' + ab.TOPLAM + ' doğru · şans payı çıkarıldı';
     byId('abTablo').innerHTML = ab.sonuclar.map(function (s, i) {
       return '<tr><td>' + (i + 1) + '</td><td>' + s.dizi + '</td><td>' + s.cevap + '</td>' +
              '<td>' + (s.dogru ? '✅' : '❌') + '</td></tr>';

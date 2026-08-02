@@ -111,12 +111,19 @@ $flashlar = flash_get();
 <title>Ev Çalışmalarım | <?= e(REPORT_BRAND) ?></title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0c0a09">
+<?php /* Katılımcı portalı da kurulabilir olmalı: ev çalışması telefondan
+         yapılıyor, her seferinde tarayıcı açıp adres yazmak engel. */ ?>
+<link rel="manifest" href="<?= e(url('manifest.json')) ?>">
+<link rel="apple-touch-icon" href="<?= e(asset('img/apple-touch-icon.png')) ?>">
+<meta name="apple-mobile-web-app-title" content="<?= e(PUBLIC_BRAND) ?>">
 <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/landing.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/metronom.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/ev.css')) ?>">
 </head>
 <body class="tanitim">
+
+<?php require APP_DIR . '/includes/view/uygulama-serit.php'; ?>
 
 <?php if (!$ogrenci): ?>
 <div class="ev-giris">
@@ -394,5 +401,6 @@ $flashlar = flash_get();
 <script src="<?= e(asset('vendor/abcjs/abcjs-basic-min.js')) ?>"></script>
 <script src="<?= e(asset('js/ritim-okuma.js')) ?>"></script>
 <script src="<?= e(asset('js/ev.js')) ?>"></script>
+<script src="<?= e(asset('js/uygulama-yukle.js')) ?>"></script>
 </body>
 </html>

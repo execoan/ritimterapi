@@ -988,6 +988,49 @@ dogrula(str_contains(git_('manifest.json', $jar)['govde'], 'Ritim Atölyesi'),
 dogrula(str_contains(git_('panel.php', $jar)['govde'], 'RitimTerapi'),
     'panel içi ad RitimTerapi olarak duruyor');
 
+/* -------- Kurulabilir uygulama (PWA) --------
+   Üç kitle var (eğitmen → panel, katılımcı → ev, ziyaretçi → tanıtım) ama
+   tek manifest. start_url panel.php iken katılımcı kurunca giriş kapısına
+   düşüyordu; şerit de yalnız panelde vardı, yani dışarıdan kurulamıyordu. */
+bolum('Kurulabilir uygulama');
+$mf = git_('manifest.json', $anonJar);
+$mj = json_decode($mf['govde'], true);
+dogrula($mf['durum'] === 200 && is_array($mj), 'manifest.json geçerli JSON');
+dogrula(($mj['start_url'] ?? '') === './index.php',
+    'start_url herkese açık sayfa (giriş kapısı değil)', (string)($mj['start_url'] ?? '—'));
+dogrula(($mj['display'] ?? '') === 'standalone' && !empty($mj['icons']),
+    'manifest standalone ve ikonlu');
+/* İkon 404 verirse tarayıcı kurulumu hiç önermez — sessiz bir arıza. */
+$ikonKotu = [];
+foreach ($mj['icons'] ?? [] as $ic) {
+    if (git_((string)$ic['src'], $anonJar)['durum'] !== 200) { $ikonKotu[] = $ic['src']; }
+}
+dogrula(!$ikonKotu, 'manifest ikonları sunuluyor', implode(', ', $ikonKotu));
+$kisayolUrl = array_column($mj['shortcuts'] ?? [], 'url');
+dogrula(in_array('./ev.php', $kisayolUrl, true) && in_array('./panel.php', $kisayolUrl, true),
+    'kısayollarda hem panel hem katılımcı portalı var');
+
+/* Şerit ve betik herkese açık ÜÇ yüzeyde de olmalı */
+$eksikSerit = $eksikManifest = [];
+foreach (['index.php', 'giris.php', 'ev.php'] as $sf) {
+    $g = git_($sf, $anonJar)['govde'];
+    if (!str_contains($g, 'id="uygulamaSerit"') || !str_contains($g, 'uygulama-yukle.js')) {
+        $eksikSerit[] = $sf;
+    }
+    if (!str_contains($g, 'rel="manifest"')) { $eksikManifest[] = $sf; }
+}
+dogrula(!$eksikSerit, 'kurulum şeridi herkese açık yüzeylerde', implode(', ', $eksikSerit));
+dogrula(!$eksikManifest, 'manifest herkese açık yüzeylere bağlı', implode(', ', $eksikManifest));
+/* Şerit varsayılan GİZLİ gelmeli: kararı JS verir (kurulu mu, tarayıcı
+   destekliyor mu). Açık gelirse JS kapalı kullanıcı çalışmayan düğme görür. */
+dogrula((bool)preg_match('/id="uygulamaSerit"[^>]*\shidden/', git_('index.php', $anonJar)['govde']),
+    'şerit varsayılan gizli (görünürlüğe JS karar verir)');
+dogrula(str_contains(git_('index.php', $anonJar)['govde'], 'ev.php'),
+    'tanıtım sayfasında katılımcı portalı bağlantısı var');
+dogrula(str_contains(git_('assets/js/uygulama-yukle.js', $anonJar)['govde'], 'beforeinstallprompt')
+     && str_contains(git_('assets/js/uygulama-yukle.js', $anonJar)['govde'], 'Ana Ekrana Ekle'),
+    'kurulum betiği hem Android hem iOS yolunu içeriyor');
+
 bolum('Ön kayıt (herkese açık form)');
 $halkJar = [];                              // giriş yapmamış ziyaretçi
 $t = csrf_al('index.php', $halkJar);

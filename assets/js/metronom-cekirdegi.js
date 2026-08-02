@@ -100,6 +100,91 @@
     };
   }
 
+  /* ================================================================
+     SKORLAMA — 0-100 ölçekler
+     ================================================================
+     Buradaki üç fonksiyon metronom.js'in içindeydi ve sınanamıyordu.
+     Sayısal denetimde (Ağu 2026) üçünde de ölçek sorunu çıktı; hepsi
+     düzeltildi ve buraya, birim testin gördüğü yere taşındı.
+
+     ORTAK KURAL: 0 = "ölçülebilir beceri gösterilmedi", 100 = "bu araçla
+     ayırt edilebilen en iyi başarım". Farklı protokollerin skorları aynı
+     grafikte yan yana çizildiği için ortak tabanları olmak ZORUNDA.
+     ================================================================ */
+
+  /**
+   * Aksak Bulma — İKİ SEÇENEKLİ zorunlu seçim (aksak / düzenli).
+   *
+   * Eski formül doğrudan yüzde alıyordu: hiç becerisi olmayan biri madenî
+   * para atarak ortalama 50 alıyor, 8 turda %14 olasılıkla 75+ çıkıyordu.
+   * Aynı grafikte Vuruş Tutturma'nın 50'siyle yan yana durunca yanıltıcı.
+   * Şans düzeyi çıkarılır: p=0,50 → 0 · p=0,75 → 50 · p=1,00 → 100.
+   */
+  function aksakSkoru(dogru, toplam) {
+    toplam = Math.round(Number(toplam) || 0);
+    /* Sıfır tur = beceri kanıtı yok. Toplamı 1'e yükseltip bölmek,
+       hiç yapılmamış bir testten 100 puan çıkarabiliyordu. */
+    if (toplam <= 0) { return 0; }
+    dogru = Math.max(0, Math.min(toplam, Math.round(Number(dogru) || 0)));
+    var p = dogru / toplam;
+    return Math.max(0, Math.min(100, Math.round(100 * (2 * p - 1))));
+  }
+
+  /**
+   * Spontan Tempo — kendiliğinden vuruşun düzenliliği (CV).
+   *
+   * Eski eşikler 0,02–0,12 idi: literatürde yetişkin kendiliğinden vuruş
+   * CV'si ~%2-5, yani tipik bir yetişkin ÖLÇÜMÜN TAVANINDA başlıyor ve
+   * gelişme hiç görünmüyordu. Aralık gerçek dağılımı kapsayacak biçimde
+   * genişletildi: CV %1 → 100, %15 → 0. Çocukta tipik ~%8-12 olduğu için
+   * orta bant artık çocuklar için de ayırt edici.
+   */
+  var ST_TAVAN_CV = 0.01;
+  var ST_TABAN_CV = 0.15;
+  function spontanSkoru(cv) {
+    cv = Number(cv);
+    if (!isFinite(cv) || cv < 0) { return 0; }
+    var oran = (cv - ST_TAVAN_CV) / (ST_TABAN_CV - ST_TAVAN_CV);
+    return Math.max(0, Math.min(100, Math.round(100 * (1 - oran))));
+  }
+
+  /**
+   * Vuruş Tutturma değerlendirme penceresi.
+   *
+   * Eskiden pencere hep 0,30 × vuruş aralığıydı. 72 BPM'de bu ±250 ms
+   * demek; oysa yetişkinde eşzamanlama sapması tipik 20-50 ms, çocukta
+   * 40-80 ms. Sonuç: herkes 87-97 arasına sıkışıyor, ölçeğin %90'ı
+   * kullanılmıyor ve 20 ms → 10 ms gibi GERÇEK bir gelişme 3 puan
+   * ediyordu (gürültü bandının çok altında, yani görünmez).
+   *
+   * Oran kuralı hızlı tempoda korunur (Weber: değişkenlik aralıkla
+   * ölçeklenir), yavaş tempoda 120 ms'de kırpılır. Aynı kırpma deseni
+   * poliritim çekirdeğinde de var (etkinPencere) — tutarlı.
+   */
+  var VT_PENCERE_TAVAN_MS = 120;
+  function vurusPenceresi(aralikMs) {
+    var oransal = 0.30 * Math.max(1, Number(aralikMs) || 0);
+    return Math.min(oransal, VT_PENCERE_TAVAN_MS);
+  }
+
+  /**
+   * Vuruş Tutturma faz skoru.
+   * @param ortMutlakMs ortalama |sapma|
+   * @param vurulanAdet pencereye giren AYRI hedef sayısı
+   * @param hedefAdet   fazdaki hedef sayısı
+   * @param denemeAdet  toplam dokunuş (fazla vuruş cezası için)
+   */
+  function vurusSkoru(ortMutlakMs, vurulanAdet, hedefAdet, denemeAdet, aralikMs) {
+    hedefAdet = Math.max(1, Number(hedefAdet) || 0);
+    vurulanAdet = Math.max(0, Math.min(hedefAdet, Number(vurulanAdet) || 0));
+    if (!vurulanAdet) { return 0; }
+    var pencere = vurusPenceresi(aralikMs);
+    var hamSkor = Math.max(0, 1 - Math.max(0, Number(ortMutlakMs) || 0) / pencere);
+    var isabet = vurulanAdet / hedefAdet;
+    var dogruluk = vurulanAdet / Math.max(1, Number(denemeAdet) || 0);
+    return Math.round(100 * hamSkor * isabet * dogruluk);
+  }
+
   return {
     SURUM: SURUM,
     GRUPLAMALAR: GRUPLAMALAR,
@@ -108,6 +193,13 @@
     gruplamaCoz: gruplamaCoz,
     gruplamaDeseni: gruplamaDeseni,
     altVurusOfsetleri: altVurusOfsetleri,
-    girisBilgisi: girisBilgisi
+    girisBilgisi: girisBilgisi,
+    ST_TAVAN_CV: ST_TAVAN_CV,
+    ST_TABAN_CV: ST_TABAN_CV,
+    VT_PENCERE_TAVAN_MS: VT_PENCERE_TAVAN_MS,
+    aksakSkoru: aksakSkoru,
+    spontanSkoru: spontanSkoru,
+    vurusPenceresi: vurusPenceresi,
+    vurusSkoru: vurusSkoru
   };
 });

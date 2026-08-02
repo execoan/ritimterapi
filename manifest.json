@@ -1,72 +1,117 @@
 {
-  "name": "Ritim Atölyesi — Yönetim",
-  "short_name": "Ritim Atölyesi",
-  "description": "Ritim atölyesi yönetim aracı: gruplar, öğrenciler, teknik kütüphanesi, ders planı, oturum kaydı ve raporlar.",
-  "start_url": "./panel.php",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "any",
-  "background_color": "#faf8f5",
-  "theme_color": "#1c1917",
-  "lang": "tr",
-  "icons": [
-    {
-      "src": "assets/img/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "assets/img/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Panel",
-      "short_name": "Panel",
-      "description": "Bu haftaki oturumlar ve bekleyen yoklamalar",
-      "url": "./panel.php",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Metronom Stüdyosu",
-      "short_name": "Metronom",
-      "description": "Metronom ve dikkat protokolleri",
-      "url": "./metronom.php",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Oturum Planla",
-      "short_name": "Planla",
-      "description": "Bir gruba yeni oturum planla",
-      "url": "./plan.php",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Oturumlar ve Yoklama",
-      "short_name": "Oturumlar",
-      "description": "Oturum listesi ve yoklama girişi",
-      "url": "./oturumlar.php",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Öğrenciler",
-      "short_name": "Öğrenciler",
-      "description": "Öğrenci listesi ve detayları",
-      "url": "./ogrenciler.php",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Raporlar",
-      "short_name": "Raporlar",
-      "description": "Haftalık, dönemlik ve veli raporları",
-      "url": "./raporlar.php",
-      "icons": [{ "src": "assets/img/icon-192.png", "sizes": "192x192" }]
-    }
-  ],
-  "categories": ["education", "productivity"],
-  "prefer_related_applications": false
+    "name": "Ritim Atölyesi — Yönetim",
+    "short_name": "Ritim Atölyesi",
+    "description": "Ritim atölyesi: ders planı, oturum kaydı, metronom stüdyosu ve ev çalışmaları.",
+    "start_url": "./index.php",
+    "scope": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#faf8f5",
+    "theme_color": "#1c1917",
+    "lang": "tr",
+    "icons": [
+        {
+            "src": "assets/img/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "assets/img/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Panel",
+            "short_name": "Panel",
+            "description": "Bu haftaki oturumlar ve bekleyen yoklamalar",
+            "url": "./panel.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Ev Çalışmalarım",
+            "short_name": "Ev",
+            "description": "Katılımcı portalı — haftalık ev çalışmaları",
+            "url": "./ev.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Metronom Stüdyosu",
+            "short_name": "Metronom",
+            "description": "Metronom ve dikkat protokolleri",
+            "url": "./metronom.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Oturum Planla",
+            "short_name": "Planla",
+            "description": "Bir gruba yeni oturum planla",
+            "url": "./plan.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Oturumlar ve Yoklama",
+            "short_name": "Oturumlar",
+            "description": "Oturum listesi ve yoklama girişi",
+            "url": "./oturumlar.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Öğrenciler",
+            "short_name": "Öğrenciler",
+            "description": "Öğrenci listesi ve detayları",
+            "url": "./ogrenciler.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        },
+        {
+            "name": "Raporlar",
+            "short_name": "Raporlar",
+            "description": "Haftalık, dönemlik ve veli raporları",
+            "url": "./raporlar.php",
+            "icons": [
+                {
+                    "src": "assets/img/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
+    "categories": [
+        "education",
+        "productivity"
+    ],
+    "prefer_related_applications": false
 }

@@ -120,8 +120,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
   .giris-ipucu { color: var(--t-soluk); font-size: .76rem; margin: 1rem 0 0; text-align: center; }
   .giris-ipucu code { color: #fbbf24; }
 </style>
+<?php /* Giris sayfasi da herkese acik bir yuzey: buradan da kurulabilsin. */ ?>
+<link rel="manifest" href="<?= e(url('manifest.json')) ?>">
+<link rel="apple-touch-icon" href="<?= e(asset('img/apple-touch-icon.png')) ?>">
+<meta name="apple-mobile-web-app-title" content="<?= e(PUBLIC_BRAND) ?>">
 </head>
 <body class="tanitim">
+
+<?php require APP_DIR . '/includes/view/uygulama-serit.php'; ?>
 <div class="giris-sahne">
   <div class="t-halka t-halka-1" aria-hidden="true"></div>
   <div class="t-halka t-halka-2" aria-hidden="true"></div>
@@ -175,5 +181,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <a class="giris-geri" href="<?= e(url('index.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Tanıtım sayfasına dön</a>
   </div>
 </div>
+<script src="<?= e(asset('js/uygulama-yukle.js')) ?>"></script>
 </body>
 </html>
