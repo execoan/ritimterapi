@@ -66,6 +66,26 @@ yansımaları); panel sayfaları `giris.php` şifre kapısının arkasında
 (`storage/gizli.php` → `PANEL_SIFRE`, varsayılan "ritim"; koruma bootstrap'ta
 merkezî). CSRF ve flash desenleri var.
 
+**Görünüm paneli (`site.php#gorunum`) — tanıtım sayfası KODSUZ yönetilir.**
+Yeni bir renk/animasyon isteği geldiğinde CSS'e dokunma, önce buraya bak:
+- Tema: eğitmen **tek ana renk + tek karşı ışık** seçer; açık/koyu tonlar
+  HSL uzayında `tema_ton()` ile türetilir (`includes/helpers.php`). Beş ayrı
+  renk seçtirmek uyumsuz skala üretir — türetme her zaman tutarlıdır.
+- `landing.css` hiçbir yerde sabit marka rengi taşımaz: `rgb(var(--vurgu) / a)`
+  deseni kullanılır. Yeni CSS yazarken de bu desene uy, hex gömme.
+  Canvas (`landing.js` → `TEMA_VURGU_RGB`) ve SVG logo degradeleri de okur.
+- `tema_stil_blogu()` çıktısı yalnız **doğrulanmış hex'ten sayısal türetmedir**;
+  `<style>` içine kullanıcı metni asla girmez (CSS enjeksiyonu yapısal olarak
+  imkânsız). Varsayılan temada blok hiç basılmaz.
+- Animasyon kipi (tam/sakin/kapalı) `<html>` sınıfı olarak iner; **ziyaretçinin
+  sistem tercihi ve sayfadaki ⏸ düğmesi her durumda üstündür**.
+
+**Tanıtım videosu:** `video_embed_bilgisi()` KATI ayrıştırıcıdır — yalnız
+YouTube (çerezsiz `youtube-nocookie` gömme), Vimeo ve yerel mp4/webm tanınır,
+gerisi `null`. CSP `frame-src` ikinci kilittir. Gömme **tıkla-yükle**: ziyaretçi
+kapağa dokunmadan dış servise tek istek gitmez. Bölümü kapatmak için URL'yi
+silmek yeter (bölüm + menü bağlantısı kendiliğinden kaybolur).
+
 Metronom Stüdyosu (`metronom.php`): Web Audio lookahead motoru; serbest metronom
 (tap tempo, ölçü, aksan, sessiz aralık) + dikkat protokolleri (Vuruş Tutturma
 sesli/sessiz fazlı ms-sapma testi, BPM Bulma) → `protokol_sonuclari` tablosuna
