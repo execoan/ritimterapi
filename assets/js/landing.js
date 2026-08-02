@@ -1307,3 +1307,160 @@
   })();
 
 })();
+
+/* ================================================================
+   PREMIUM KATMAN — imleç ışığı, paralaks, eğilen kartlar, başlık
+   ================================================================
+   Ayrı bir IIFE: ana modülün iç durumuna gerek yok. Tüm kare
+   döngüleri her karede kisitli()'yi yoklar — kullanıcı "Hareketi
+   durdur"a basınca bir sonraki karede dururlar; MutationObserver
+   gerekmez, sınıf yoklaması ucuzdur.
+   ================================================================ */
+(function () {
+  'use strict';
+
+  function kisitli() {
+    return document.documentElement.classList.contains('hareket-kapali')
+      || (window.matchMedia
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+  var inceIsaretci = window.matchMedia
+    && window.matchMedia('(pointer: fine)').matches;
+
+  /* ---------------------------------------------------------------
+     1) Başlık: kelime kelime perde açılışı.
+     Sözcükler span'lere sarılır (--i = sıra); em.t-gradyan TEK parça
+     sarılır — background-clip:text'li öğenin çocuklarını ayrı ayrı
+     dönüştürmek bazı tarayıcılarda degradeyi bozar.
+     --------------------------------------------------------------- */
+  (function () {
+    if (kisitli()) { return; }   // kısıtlıysa başlık düz metin kalır
+    var h1 = document.querySelector('.t-hero h1');
+    if (!h1) { return; }
+    var sira = 0;
+    Array.prototype.slice.call(h1.childNodes).forEach(function (c) {
+      if (c.nodeType === 3 && c.textContent.trim() !== '') {
+        var parca = document.createDocumentFragment();
+        c.textContent.split(/(\s+)/).forEach(function (p) {
+          if (p === '') { return; }
+          if (/^\s+$/.test(p)) { parca.appendChild(document.createTextNode(p)); return; }
+          var d = document.createElement('span');
+          d.className = 't-soz';
+          d.style.setProperty('--i', String(sira++));
+          d.textContent = p;
+          parca.appendChild(d);
+        });
+        h1.replaceChild(parca, c);
+      } else if (c.nodeType === 1 && c.tagName === 'EM') {
+        var sargi = document.createElement('span');
+        sargi.className = 't-soz';
+        sargi.style.setProperty('--i', String(sira++));
+        h1.replaceChild(sargi, c);
+        sargi.appendChild(c);
+      }
+    });
+    h1.classList.add('t-baslik-canli');
+  })();
+
+  /* ---------------------------------------------------------------
+     2) İmleç ışığı — sayfayı gezen yumuşak spot.
+     Yalnız ince işaretçi (fare); dokunmatikte anlamsız.
+     --------------------------------------------------------------- */
+  (function () {
+    var isik = document.getElementById('tIsik');
+    if (!isik || !inceIsaretci) { return; }
+    var hx = -900, hy = -900, gx = hx, gy = hy, calisiyor = false;
+    document.addEventListener('pointermove', function (ev) {
+      if (kisitli()) { isik.classList.remove('acik'); return; }
+      hx = ev.clientX; hy = ev.clientY;
+      isik.classList.add('acik');
+      if (!calisiyor) { calisiyor = true; requestAnimationFrame(adim); }
+    }, { passive: true });
+    function adim() {
+      if (kisitli()) { calisiyor = false; return; }
+      gx += (hx - gx) * .16;
+      gy += (hy - gy) * .16;
+      isik.style.transform = 'translate3d(' + (gx - 280).toFixed(1) + 'px,'
+        + (gy - 280).toFixed(1) + 'px,0)';
+      if (Math.abs(gx - hx) > .4 || Math.abs(gy - hy) > .4) {
+        requestAnimationFrame(adim);
+      } else { calisiyor = false; }
+    }
+  })();
+
+  /* ---------------------------------------------------------------
+     3) Hero paralaksı — data-derinlik taşıyan KAPSAYICILAR imlecin
+     tersine kayar. Hedefler bilerek sarmalayıcı: kendi transform
+     animasyonu olan öğeye inline transform yazmak animasyonu ezer.
+     --------------------------------------------------------------- */
+  (function () {
+    if (!inceIsaretci) { return; }
+    var hero = document.querySelector('.t-hero');
+    if (!hero) { return; }
+    var katmanlar = Array.prototype.slice.call(hero.querySelectorAll('[data-derinlik]'));
+    if (!katmanlar.length) { return; }
+    var hx = 0, hy = 0, gx = 0, gy = 0, calisiyor = false;
+    hero.addEventListener('pointermove', function (ev) {
+      var r = hero.getBoundingClientRect();
+      hx = (ev.clientX - r.left) / Math.max(1, r.width) - .5;
+      hy = (ev.clientY - r.top) / Math.max(1, r.height) - .5;
+      basla();
+    }, { passive: true });
+    hero.addEventListener('pointerleave', function () { hx = 0; hy = 0; basla(); });
+    function basla() {
+      if (!calisiyor) { calisiyor = true; requestAnimationFrame(adim); }
+    }
+    function adim() {
+      if (kisitli()) {
+        katmanlar.forEach(function (k) { k.style.transform = ''; });
+        calisiyor = false; return;
+      }
+      gx += (hx - gx) * .07;
+      gy += (hy - gy) * .07;
+      katmanlar.forEach(function (k) {
+        var d = parseFloat(k.dataset.derinlik) || 0;
+        k.style.transform = 'translate3d(' + (-gx * d).toFixed(2) + 'px,'
+          + (-gy * d).toFixed(2) + 'px,0)';
+      });
+      if (Math.abs(gx - hx) > .002 || Math.abs(gy - hy) > .002) {
+        requestAnimationFrame(adim);
+      } else { calisiyor = false; }
+    }
+  })();
+
+  /* ---------------------------------------------------------------
+     4) Eğilen kartlar (data-tilt) — 3B derinlik, en çok ~7 derece.
+     --------------------------------------------------------------- */
+  (function () {
+    if (!inceIsaretci) { return; }
+    document.querySelectorAll('[data-tilt]').forEach(function (el) {
+      el.addEventListener('pointermove', function (ev) {
+        if (kisitli()) { el.style.transform = ''; return; }
+        var r = el.getBoundingClientRect();
+        var x = (ev.clientX - r.left) / Math.max(1, r.width) - .5;
+        var y = (ev.clientY - r.top) / Math.max(1, r.height) - .5;
+        el.style.transform = 'perspective(900px) rotateX(' + (-y * 7).toFixed(2)
+          + 'deg) rotateY(' + (x * 7).toFixed(2) + 'deg) translateY(-2px)';
+      });
+      el.addEventListener('pointerleave', function () { el.style.transform = ''; });
+    });
+  })();
+
+  /* ---------------------------------------------------------------
+     5) Mıknatıs CTA — büyük düğme imlece hafifçe uzanır.
+     --------------------------------------------------------------- */
+  (function () {
+    if (!inceIsaretci) { return; }
+    var btn = document.querySelector('.t-cta-satir .t-btn-buyuk');
+    if (!btn) { return; }
+    btn.addEventListener('pointermove', function (ev) {
+      if (kisitli()) { btn.style.transform = ''; return; }
+      var r = btn.getBoundingClientRect();
+      var x = (ev.clientX - r.left) / Math.max(1, r.width) - .5;
+      var y = (ev.clientY - r.top) / Math.max(1, r.height) - .5;
+      btn.style.transform = 'translate(' + (x * 9).toFixed(1) + 'px,'
+        + (y * 7 - 2).toFixed(1) + 'px)';
+    });
+    btn.addEventListener('pointerleave', function () { btn.style.transform = ''; });
+  })();
+})();

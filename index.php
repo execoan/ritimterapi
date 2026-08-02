@@ -95,16 +95,22 @@ function metronom_svg(string $sinif, string $gradyanId): string
 </nav>
 
 <header class="t-hero" id="ust">
+  <!-- Premium sahne katmanları: iki renkli aurora + dev metronom kadranı.
+       Tümü süs (aria-hidden); paralaks hedefleri data-derinlik taşır ve
+       dönüş İÇ öğededir ki paralaksın inline transform'u dönüşü ezmesin. -->
+  <div class="t-aurora t-aurora-1" aria-hidden="true"></div>
+  <div class="t-aurora t-aurora-2" aria-hidden="true"></div>
+  <div class="t-kadran-sar" aria-hidden="true" data-derinlik="14"><div class="t-kadran"></div></div>
   <canvas class="t-alan-tuval" id="ritimAlani" aria-hidden="true"></canvas>
   <div class="t-halka t-halka-1" aria-hidden="true"></div>
   <div class="t-halka t-halka-2" aria-hidden="true"></div>
   <div class="t-halka t-halka-3" aria-hidden="true"></div>
-  <div class="t-parcaciklar" aria-hidden="true">
+  <div class="t-parcaciklar" aria-hidden="true" data-derinlik="9">
     <?php for ($i = 0; $i < 14; $i++): ?>
     <i style="left:<?= 4 + $i * 7 ?>%;animation-duration:<?= 7 + ($i * 137) % 9 ?>s;animation-delay:<?= ($i * 53) % 70 / 10 ?>s"></i>
     <?php endfor; ?>
   </div>
-  <div class="t-notalar" aria-hidden="true">
+  <div class="t-notalar" aria-hidden="true" data-derinlik="18">
     <span style="left:8%;animation-delay:0s">♪</span>
     <span style="left:22%;animation-delay:2.2s">♩</span>
     <span style="left:38%;animation-delay:4.4s">♬</span>
@@ -132,7 +138,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <!-- ===== Tempoyu Yakala: gizli tempo, ayarlanamaz, çoktan seçmeli tahmin =====
            Sabit 5 saniyelik dinletme (tempodan bağımsız — her tur aynı sürede biter),
            kartın içinde gerçek zamanlı nabız (zıplayan ikon + vuruş noktaları). -->
-      <div class="t-tempo-oyun" id="tempoOyun">
+      <div class="t-tempo-oyun" id="tempoOyun" data-tilt>
         <div class="t-tempo-isik" aria-hidden="true"></div>
         <p class="t-tempo-oyun-ust"><span class="emoji-sus" aria-hidden="true">🎯</span> TEMPOYU YAKALA</p>
         <div class="t-tempo-gorsel" id="tempoGorsel" aria-hidden="true">
@@ -158,6 +164,14 @@ function metronom_svg(string $sinif, string $gradyanId): string
     </div>
 
     <div class="t-hero-gorsel" id="heroGorsel" aria-hidden="true">
+      <!-- Metronomun yörüngesinde dönen çember yazı — editoryal imza.
+           Sözcükler hero üstbaşlığıyla aynı (yeni iddia eklemez, §2). -->
+      <div class="t-halka-yazi-sar" data-derinlik="24">
+        <svg class="t-halka-yazi" viewBox="0 0 200 200">
+          <defs><path id="tHalkaYol" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"/></defs>
+          <text><textPath href="#tHalkaYol">Ritim · Dikkat · Öz-Düzenleme · Atölye · Ritim · Dikkat · Öz-Düzenleme ·</textPath></text>
+        </svg>
+      </div>
       <div class="t-vurus-halkasi" id="vurusHalkasi"></div>
       <div class="t-yorunge" aria-hidden="true"><b>🥁</b><b>🪘</b><b>🎵</b></div>
       <?= metronom_svg('t-buyuk-metronom t-sarkacli', 'hg') ?>
@@ -166,7 +180,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
   <div class="t-kapsayici t-sayilar kayarak">
     <?php for ($i = 1; $i <= 4; $i++): ?>
-    <div class="t-sayi-kart">
+    <div class="t-sayi-kart" data-tilt>
       <span class="t-sayi" data-hedef="<?= e(site_text('sayi_' . $i . '_deger', '0')) ?>">0</span>
       <span class="t-sayi-etiket"><?= e(site_text('sayi_' . $i . '_etiket')) ?></span>
     </div>
@@ -176,6 +190,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
 <div class="t-serit" aria-hidden="true">
   <div class="t-serit-ic">
+    <span><?= e(site_text('serit_metin')) ?> · </span><span><?= e(site_text('serit_metin')) ?> · </span>
+  </div>
+  <div class="t-serit-ic t-serit-dis">
     <span><?= e(site_text('serit_metin')) ?> · </span><span><?= e(site_text('serit_metin')) ?> · </span>
   </div>
 </div>
@@ -772,6 +789,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
   </div>
 </footer>
 
+<div class="t-isik" id="tIsik" aria-hidden="true"></div>
 <script src="<?= e(asset('js/landing.js')) ?>"></script>
 <script src="<?= e(asset('js/uygulama-yukle.js')) ?>"></script>
 </body>

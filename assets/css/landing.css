@@ -1214,3 +1214,176 @@ html.hareket-kapali { scroll-behavior: auto !important; }
   .uyg-serit-kur { order: 3; }
   .uyg-serit-kapat { order: 1; margin-left: auto; }
 }
+
+/* ================================================================
+   PREMIUM KATMAN (Ağu 2026) — "sanat eseri" geçişi
+   ================================================================
+   İlke: daha fazla öğe DEĞİL, daha iyi ışık ve koreografi. Sürekli
+   animasyonların tümü yalnız transform/opacity kullanır (GPU); blur
+   filtresi büyük yüzeylere uygulanmaz (telefonda ısınma/takılma yapar,
+   yumuşak geçişler önceden-yumuşatılmış radial-gradient'le alınır).
+   Tüm yeni sınıflar hem html.hareket-kapali evrensel kuralına hem de
+   dosya sonundaki prefers-reduced-motion bloğuna tabidir.
+   ================================================================ */
+
+/* ---------- Aurora: iki renkli sahne ışığı ---------- */
+/* Amber tek başına düzdü; karşısına derin menekşe kondu — iki kaynaklı
+   ışık, "stüdyo sahnesi" hissinin kendisi. */
+.t-aurora {
+  position: absolute; border-radius: 50%;
+  pointer-events: none; z-index: 0;
+}
+.t-aurora-1 {
+  width: 860px; height: 860px; left: -20%; top: -34%;
+  background: radial-gradient(circle,
+    rgba(245, 158, 11, .21), rgba(245, 158, 11, .06) 46%, transparent 68%);
+  animation: aurora-a 26s ease-in-out infinite alternate;
+}
+.t-aurora-2 {
+  width: 720px; height: 720px; right: -18%; bottom: -42%;
+  background: radial-gradient(circle,
+    rgba(124, 58, 237, .17), rgba(124, 58, 237, .05) 46%, transparent 70%);
+  animation: aurora-b 33s ease-in-out infinite alternate;
+}
+@keyframes aurora-a { to { transform: translate3d(9%, 12%, 0) scale(1.14); } }
+@keyframes aurora-b { to { transform: translate3d(-8%, -11%, 0) scale(1.12); } }
+
+/* ---------- Kadran: dev metronom ölçeği ---------- */
+/* Sarmalayıcı imleç paralaksının hedefi; DÖNÜŞ içteki ::before'dadır.
+   İkisi aynı öğede olsaydı inline paralaks transform'u dönüşü ezerdi. */
+.t-kadran-sar {
+  position: absolute; right: -13%;
+  top: 50%; width: min(78vmin, 780px); aspect-ratio: 1;
+  margin-top: calc(min(78vmin, 780px) / -2);
+  pointer-events: none; z-index: 0; opacity: .55;
+}
+.t-kadran { position: absolute; inset: 0; }
+.t-kadran::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: repeating-conic-gradient(
+    rgba(245, 158, 11, .5) 0 .5deg, transparent .5deg 6deg);
+  -webkit-mask: radial-gradient(closest-side,
+    transparent 84%, #000 84.5%, #000 91.5%, transparent 92%);
+  mask: radial-gradient(closest-side,
+    transparent 84%, #000 84.5%, #000 91.5%, transparent 92%);
+  animation: kadran-don 90s linear infinite;
+}
+.t-kadran::after {
+  content: ""; position: absolute; inset: 6.5%;
+  border: 1px solid rgba(245, 158, 11, .13); border-radius: 50%;
+}
+@keyframes kadran-don { to { transform: rotate(360deg); } }
+@media (max-width: 860px) { .t-kadran-sar { display: none; } }
+
+/* ---------- Çember yazı: metronomun yörüngesinde ---------- */
+.t-halka-yazi-sar {
+  position: absolute; inset: 0; margin: auto;
+  width: min(132%, 470px); aspect-ratio: 1;
+  pointer-events: none; z-index: 1;
+}
+.t-halka-yazi { width: 100%; height: 100%; animation: kadran-don 55s linear infinite reverse; }
+.t-halka-yazi text {
+  fill: rgba(250, 250, 249, .34); font-size: 10.5px;
+  font-weight: 700; letter-spacing: 3.4px; text-transform: uppercase;
+}
+
+/* ---------- İmleç ışığı (yalnız ince işaretçi) ---------- */
+.t-isik {
+  position: fixed; left: 0; top: 0; width: 560px; height: 560px;
+  z-index: 1; pointer-events: none; opacity: 0; transition: opacity .6s;
+  background: radial-gradient(circle,
+    rgba(251, 191, 36, .10), rgba(251, 191, 36, .03) 42%, transparent 66%);
+  mix-blend-mode: screen; will-change: transform;
+}
+.t-isik.acik { opacity: 1; }
+
+/* ---------- Başlık: kelime kelime perde açılışı ---------- */
+.t-baslik-canli .t-soz {
+  display: inline-block;
+  opacity: 0; transform: translateY(.55em) rotate(2deg); filter: blur(8px);
+  animation: soz-gel .8s cubic-bezier(.22, 1, .36, 1) forwards;
+  animation-delay: calc(.12s + var(--i, 0) * .07s);
+}
+@keyframes soz-gel { to { opacity: 1; transform: none; filter: none; } }
+
+.t-hero .t-ustbaslik {
+  animation: iz-gel 1.1s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+.t-hero .t-ustbaslik::before {
+  content: ""; display: inline-block; width: 36px; height: 2px;
+  background: linear-gradient(90deg, #fbbf24, transparent);
+  margin-right: .6rem; vertical-align: middle;
+  animation: cizgi-buyu 1.1s .1s cubic-bezier(.22, 1, .36, 1) backwards;
+}
+@keyframes iz-gel { from { opacity: 0; letter-spacing: 11px; transform: translateY(8px); } }
+@keyframes cizgi-buyu { from { width: 0; opacity: 0; } }
+
+/* Başlık bir tık daha anıtsal */
+.t-hero h1 { font-size: clamp(2.3rem, 6vw, 4rem); letter-spacing: -.5px; }
+
+/* ---------- CTA: parıltı süpürmesi + nefes ---------- */
+.t-btn-dolu { position: relative; overflow: hidden; }
+.t-btn-dolu::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: -75%; width: 45%;
+  transform: skewX(-22deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent);
+  transition: left .55s ease;
+}
+.t-btn-dolu:hover::after, .t-btn-dolu:focus-visible::after { left: 130%; }
+.t-btn-buyuk { animation: cta-nabiz 3.4s ease-in-out infinite; }
+@keyframes cta-nabiz {
+  50% { box-shadow: 0 6px 32px rgba(245, 158, 11, .55); }
+}
+
+/* ---------- Kayan şerit: karşı yönde kontur satırı ---------- */
+/* İkinci satır içi boş harflerle ters akar — tek satır bilgi, çift satır
+   kompozisyondur. aria-hidden üst kapsayıcıdan miras alınır. */
+.t-serit-dis {
+  animation: serit-kay 34s linear infinite reverse;
+  color: transparent; -webkit-text-stroke: 1px rgba(251, 191, 36, .5);
+  opacity: .8;
+}
+
+/* ---------- Nav: altın kıl çizgisi ---------- */
+.t-nav::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(245, 158, 11, .55), transparent);
+  pointer-events: none;
+}
+
+/* ---------- Kaydırma açılışı: sinema netleşmesi ---------- */
+/* Var olan .kayarak kuralının üstüne blur eklenir (dosyada sonra geldiği
+   için kazanır). Tek seferlik geçiştir, kalıcı maliyeti yok. */
+.kayarak {
+  opacity: 0; transform: translateY(26px); filter: blur(7px);
+  transition: opacity .7s ease, transform .7s ease, filter .7s ease;
+}
+.kayarak.gorunur { opacity: 1; transform: none; filter: blur(0); }
+
+/* ---------- Eğilen kartlar (JS data-tilt) ---------- */
+[data-tilt] { transition: transform .5s cubic-bezier(.22, 1, .36, 1); will-change: transform; }
+
+/* ---------- Premium bitiş: kaydırma çubuğu + seçim ---------- */
+body.tanitim { scrollbar-color: #b45309 #17120f; }
+body.tanitim::-webkit-scrollbar { width: 11px; }
+body.tanitim::-webkit-scrollbar-track { background: #17120f; }
+body.tanitim::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d97706, #92400e);
+  border-radius: 8px; border: 3px solid #17120f;
+}
+body.tanitim ::selection { background: rgba(245, 158, 11, .45); color: #0c0a09; }
+
+/* Süs katmanları geriye çekilir: yeni ışık nefes alsın */
+.t-notalar span { opacity: .55; }
+
+/* ---------- Hareket kısıtlaması: yeni katmanın tamamı ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .t-aurora, .t-kadran::before, .t-halka-yazi,
+  .t-btn-buyuk, .t-serit-dis,
+  .t-baslik-canli .t-soz, .t-hero .t-ustbaslik, .t-hero .t-ustbaslik::before
+    { animation: none !important; }
+  .t-baslik-canli .t-soz { opacity: 1; transform: none; filter: none; }
+  .t-isik { display: none; }
+  .kayarak { filter: none; }
+  [data-tilt] { transform: none !important; transition: none !important; }
+}
