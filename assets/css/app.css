@@ -395,3 +395,20 @@ textarea.girdi { resize: vertical; min-height: 64px; }
   .uyg-serit-kur { order: 3; }
   .uyg-serit-kapat { order: 1; margin-left: auto; }
 }
+
+/* ---------- Görünüm paneli (site.php#gorunum) ---------- */
+.tema-hazirlar { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
+.tema-hazir-btn {
+  display: inline-flex; align-items: center; gap: .45rem;
+  padding: .45rem .8rem; border-radius: 999px; cursor: pointer;
+  background: var(--kart-zemin); border: 1px solid var(--cizgi);
+  color: var(--metin); font-family: inherit; font-size: .88rem; font-weight: 600;
+}
+.tema-hazir-btn:hover { border-color: #d97706; }
+.tema-renk {
+  width: 15px; height: 15px; border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, .25); display: inline-block;
+}
+.tema-renk + .tema-renk { margin-left: -8px; }
+.tema-renk-girdi { padding: .15rem; height: 42px; cursor: pointer; }
+.gorunum-form .form-grid { margin: .8rem 0; }

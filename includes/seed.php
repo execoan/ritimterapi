@@ -235,6 +235,13 @@ function seed_site(): void
                     SELECT 'moxo', 'MOXO dikkat ölçümü — isteğe bağlı',
                            (SELECT COALESCE(MAX(sira), 0) + 1 FROM site_bolumleri), 1
                     WHERE NOT EXISTS (SELECT 1 FROM site_bolumleri WHERE anahtar = 'moxo')");
+        /* Tanıtım videosu bölümü — mevcut kurulumlara da eklenir. Görünürlüğü
+           iki kapı birden belirler: bölüm anahtarı (sıralama listesi) VE
+           video_url doluluğu (Görünüm paneli); URL boşsa bölüm hiç çizilmez. */
+        $pdo->exec("INSERT OR IGNORE INTO site_bolumleri (anahtar, baslik, sira, gorunur)
+                    SELECT 'video', 'Tanıtım videosu',
+                           (SELECT COALESCE(MAX(sira), 0) + 1 FROM site_bolumleri), 1
+                    WHERE NOT EXISTS (SELECT 1 FROM site_bolumleri WHERE anahtar = 'video')");
         /* Etkileşimli bölümler ziyaretçiyi ilk ekranda yakalasın diye EN BAŞA
            eklenir (mevcut sıranın önüne). Eğitmen sürükle-bırakla istediği
            yere taşıyabilir; ilk kaydetmede sıra numaraları 1..N'e normalleşir. */
@@ -258,9 +265,10 @@ function seed_site(): void
         ['nabiz',       'Dünyanın nabzı', 5],
         ['protokoller', 'Metronom modülü ve dikkat protokolleri', 6],
         ['moxo',        'MOXO dikkat ölçümü — isteğe bağlı', 7],
-        ['galeri',      'Atölyeden kareler', 8],
-        ['bizkimiz',    'Fizikten ritme uzanan bir sınıf', 9],
-        ['iletisim',    'Bize ulaşın', 10],
+        ['video',       'Tanıtım videosu', 8],
+        ['galeri',      'Atölyeden kareler', 9],
+        ['bizkimiz',    'Fizikten ritme uzanan bir sınıf', 10],
+        ['iletisim',    'Bize ulaşın', 11],
     ];
     $bs = $pdo->prepare('INSERT INTO site_bolumleri (anahtar, baslik, sira, gorunur) VALUES (?, ?, ?, 1)');
     foreach ($bolumler as $b) { $bs->execute($b); }

@@ -63,7 +63,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 }
 ?>
 <!doctype html>
-<html lang="tr">
+<html lang="tr"<?= tema_html_sinif() ?>>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -71,6 +71,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 <meta name="theme-color" content="#0c0a09">
 <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/landing.css')) ?>">
+<?php $temaCss = tema_stil_blogu(); if ($temaCss !== ''): ?><style><?= $temaCss ?></style><?php endif; ?>
 <style>
   .giris-sahne {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -134,7 +135,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
   <div class="giris-kart">
     <svg class="t-logo" viewBox="0 0 64 64" aria-hidden="true">
       <defs><linearGradient id="gg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/>
+        <stop offset="0" style="stop-color:rgb(var(--vurgu-acik, 251 191 36))"/><stop offset="1" style="stop-color:rgb(var(--vurgu-koyu, 217 119 6))"/>
       </linearGradient></defs>
       <path d="M25 5 H39 L52.5 53.5 Q53.8 58 49.2 58 H14.8 Q10.2 58 11.5 53.5 Z" fill="url(#gg)"/>
       <path d="M29.2 12 H34.8 L40.6 51 H23.4 Z" fill="#1e293b"/>

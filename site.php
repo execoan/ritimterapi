@@ -111,6 +111,49 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         redirect('site.php#galeri');
     }
 
+    /* ---- Görünüm: tema rengi + animasyon + tanıtım videosu ----
+       WordPress mantığı: eğitmen kod dosyasına dokunmadan siteyi giydirir.
+       Tüm değerler doğrulanır; geçersiz olan SESSİZCE eski değerde kalmaz,
+       açıkça söylenir — "kaydettim sandım" en sinsi hatadır. */
+    if ($islem === 'gorunum') {
+        $hatalar = [];
+
+        /* Hazır tema düğmesi: iki rengi birden doldurur */
+        $hazir = (string)($_POST['hazir'] ?? '');
+        if ($hazir !== '' && isset(TEMA_HAZIR[$hazir])) {
+            site_text_set('tema_vurgu', TEMA_HAZIR[$hazir]['vurgu']);
+            site_text_set('tema_ikincil', TEMA_HAZIR[$hazir]['ikincil']);
+            flash_set('basari', '“' . TEMA_HAZIR[$hazir]['ad'] . '” teması uygulandı.');
+            redirect('site.php#gorunum');
+        }
+
+        $vurgu = strtolower(trim((string)($_POST['tema_vurgu'] ?? '')));
+        $ikincil = strtolower(trim((string)($_POST['tema_ikincil'] ?? '')));
+        if (hex_gecerli($vurgu)) { site_text_set('tema_vurgu', $vurgu); }
+        else { $hatalar[] = 'ana renk (#rrggbb biçiminde olmalı)'; }
+        if (hex_gecerli($ikincil)) { site_text_set('tema_ikincil', $ikincil); }
+        else { $hatalar[] = 'karşı ışık rengi'; }
+
+        $anim = (string)($_POST['tema_animasyon'] ?? 'tam');
+        site_text_set('tema_animasyon',
+            in_array($anim, ['tam', 'sakin', 'kapali'], true) ? $anim : 'tam');
+
+        $videoUrl = trim((string)($_POST['video_url'] ?? ''));
+        if ($videoUrl === '') {
+            site_text_set('video_url', '');   // bölüm kendiliğinden gizlenir
+        } elseif (video_embed_bilgisi($videoUrl)) {
+            site_text_set('video_url', $videoUrl);
+        } else {
+            $hatalar[] = 'video bağlantısı (YouTube/Vimeo bağlantısı ya da'
+                . ' assets/ altında .mp4 yolu olmalı)';
+        }
+
+        flash_set($hatalar ? 'hata' : 'basari', $hatalar
+            ? 'Şunlar kaydedilemedi: ' . implode(' · ', $hatalar) . '. Kalanlar kaydedildi.'
+            : 'Görünüm kaydedildi. Tanıtım sayfası, giriş ve katılımcı portalı güncellendi.');
+        redirect('site.php#gorunum');
+    }
+
     redirect('site.php');
 }
 
@@ -125,6 +168,67 @@ require APP_DIR . '/includes/view/header.php';
   <div class="sag">
     <a class="btn btn-golge" href="<?= e(url('index.php')) ?>" target="_blank" rel="noopener"><span class="emoji-sus" aria-hidden="true">🌐</span> Siteyi Görüntüle</a>
   </div>
+</div>
+
+<?php $tema = tema_ayarlari(); $videoKayitli = site_text('video_url', ''); ?>
+<div class="kart" id="gorunum">
+  <div class="kart-baslik">
+    <div>
+      <h2><span class="emoji-sus" aria-hidden="true">🎨</span> Görünüm</h2>
+      <span class="alan-ipucu">Tanıtım sayfasının teması — kod dosyasına dokunmadan.
+        Açık/koyu tonlar seçtiğiniz ana renkten kendiliğinden türetilir.</span>
+    </div>
+  </div>
+
+  <form method="post" action="<?= e(url('site.php')) ?>" class="gorunum-form">
+    <?= csrf_field() ?>
+    <input type="hidden" name="islem" value="gorunum">
+
+    <div class="form-alan"><span>Hazır temalar</span>
+      <div class="tema-hazirlar">
+        <?php foreach (TEMA_HAZIR as $anahtar => $h): ?>
+        <button type="submit" name="hazir" value="<?= e($anahtar) ?>" class="tema-hazir-btn"
+                title="<?= e($h['ad']) ?> temasını uygula">
+          <span class="tema-renk" style="background:<?= e($h['vurgu']) ?>"></span><span
+                class="tema-renk" style="background:<?= e($h['ikincil']) ?>"></span>
+          <?= e($h['ad']) ?><?= $tema['vurgu'] === $h['vurgu'] && $tema['ikincil'] === $h['ikincil'] ? ' ✓' : '' ?>
+        </button>
+        <?php endforeach; ?>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <label class="form-alan">Ana renk
+        <input type="color" name="tema_vurgu" value="<?= e($tema['vurgu']) ?>" class="girdi tema-renk-girdi">
+        <small class="alan-ipucu">Düğmeler, vurgular, metronom — sitenin kimliği.</small>
+      </label>
+      <label class="form-alan">Karşı ışık
+        <input type="color" name="tema_ikincil" value="<?= e($tema['ikincil']) ?>" class="girdi tema-renk-girdi">
+        <small class="alan-ipucu">Arka plandaki ikinci parıltı (aurora).</small>
+      </label>
+      <label class="form-alan">Animasyon
+        <select name="tema_animasyon" class="secim">
+          <option value="tam" <?= $tema['animasyon'] === 'tam' ? 'selected' : '' ?>>Tam — sahne ışıkları, kayan şerit, tümü</option>
+          <option value="sakin" <?= $tema['animasyon'] === 'sakin' ? 'selected' : '' ?>>Sakin — süs animasyonları durur, geçişler kalır</option>
+          <option value="kapali" <?= $tema['animasyon'] === 'kapali' ? 'selected' : '' ?>>Kapalı — tümü durur</option>
+        </select>
+        <small class="alan-ipucu">Ziyaretçinin sistem tercihi ve sayfadaki ⏸ düğmesi her durumda üstündür.</small>
+      </label>
+    </div>
+
+    <div class="form-alan">
+      <label for="videoUrl">Tanıtım videosu bağlantısı</label>
+      <input type="text" name="video_url" id="videoUrl" class="girdi"
+             value="<?= e($videoKayitli) ?>" placeholder="https://www.youtube.com/watch?v=…  ·  https://vimeo.com/…  ·  assets/video/tanitim.mp4">
+      <small class="alan-ipucu">
+        Doluysa ana sayfada “Tanıtım” bölümü görünür; <strong>boş bırakınca bölüm kaybolur</strong>.
+        YouTube/Vimeo videoları ziyaretçi dokunmadan yüklenmez (tıkla-oynat kapak).
+        Sıralamadaki “Tanıtım videosu” satırından da açıp kapatabilirsiniz.
+      </small>
+    </div>
+
+    <button type="submit" class="btn btn-birincil">Görünümü Kaydet</button>
+  </form>
 </div>
 
 <form method="post" action="<?= e(url('site.php')) ?>">

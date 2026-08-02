@@ -344,3 +344,158 @@ function locked_language_flags(string $text): array
     }
     return array_values(array_unique($bulunan));
 }
+
+/* =================================================================
+   GÖRÜNÜM (TEMA) — WordPress benzeri: panelden renk/animasyon seçimi
+   =================================================================
+   Tasarım kararı: eğitmen TEK ana renk + TEK karşı ışık seçer; açık/koyu
+   tonlar HSL uzayında buradan türetilir. Beş ayrı renk seçtirmek hem
+   yorucu hem riskli (uyumsuz skala kolay); tek kaynaktan türetme her
+   zaman tutarlı bir skala verir. Değerler site_icerik'te durur, landing
+   CSS'i bu değişkenleri :root'ta bekler (varsayılan Amber).
+   ================================================================= */
+
+const TEMA_HAZIR = [
+    'amber'   => ['ad' => 'Amber Sahne', 'vurgu' => '#f59e0b', 'ikincil' => '#7c3aed'],
+    'okyanus' => ['ad' => 'Okyanus',     'vurgu' => '#38bdf8', 'ikincil' => '#f59e0b'],
+    'zumrut'  => ['ad' => 'Zümrüt',      'vurgu' => '#34d399', 'ikincil' => '#818cf8'],
+    'gul'     => ['ad' => 'Gül',         'vurgu' => '#fb7185', 'ikincil' => '#38bdf8'],
+    'lavanta' => ['ad' => 'Lavanta',     'vurgu' => '#a78bfa', 'ikincil' => '#fbbf24'],
+];
+
+function hex_gecerli(string $h): bool
+{
+    return (bool)preg_match('/^#[0-9a-fA-F]{6}$/', $h);
+}
+
+/** '#f59e0b' → '245 158 11' (CSS `rgb(var(--x) / a)` sözdizimi için). */
+function hex_rgb_uclusu(string $hex): string
+{
+    return sprintf('%d %d %d',
+        hexdec(substr($hex, 1, 2)), hexdec(substr($hex, 3, 2)), hexdec(substr($hex, 5, 2)));
+}
+
+/** RGB(0-255) → HSL(0-1) */
+function rgb_hsl(int $r, int $g, int $b): array
+{
+    $r /= 255; $g /= 255; $b /= 255;
+    $maks = max($r, $g, $b); $min = min($r, $g, $b);
+    $l = ($maks + $min) / 2;
+    if ($maks === $min) { return [0.0, 0.0, $l]; }
+    $f = $maks - $min;
+    $s = $l > .5 ? $f / (2 - $maks - $min) : $f / ($maks + $min);
+    $h = match (true) {
+        $maks === $r => (($g - $b) / $f + ($g < $b ? 6 : 0)) / 6,
+        $maks === $g => (($b - $r) / $f + 2) / 6,
+        default      => (($r - $g) / $f + 4) / 6,
+    };
+    return [$h, $s, $l];
+}
+
+/** HSL(0-1) → '#rrggbb' */
+function hsl_hex(float $h, float $s, float $l): string
+{
+    if ($s == 0) { $r = $g = $b = $l; }
+    else {
+        $ton = function (float $p, float $q, float $t): float {
+            if ($t < 0) { $t += 1; }
+            if ($t > 1) { $t -= 1; }
+            if ($t < 1 / 6) { return $p + ($q - $p) * 6 * $t; }
+            if ($t < 1 / 2) { return $q; }
+            if ($t < 2 / 3) { return $p + ($q - $p) * (2 / 3 - $t) * 6; }
+            return $p;
+        };
+        $q = $l < .5 ? $l * (1 + $s) : $l + $s - $l * $s;
+        $p = 2 * $l - $q;
+        $r = $ton($p, $q, $h + 1 / 3); $g = $ton($p, $q, $h); $b = $ton($p, $q, $h - 1 / 3);
+    }
+    return sprintf('#%02x%02x%02x',
+        (int)round($r * 255), (int)round($g * 255), (int)round($b * 255));
+}
+
+/** Rengi aydınlık ekseninde kaydırır (lFark: -1..+1), uçlarda kırpar. */
+function tema_ton(string $hex, float $lFark): string
+{
+    [$h, $s, $l] = rgb_hsl(
+        (int)hexdec(substr($hex, 1, 2)),
+        (int)hexdec(substr($hex, 3, 2)),
+        (int)hexdec(substr($hex, 5, 2)));
+    return hsl_hex($h, $s, max(.08, min(.92, $l + $lFark)));
+}
+
+/** Kayıtlı tema; geçersiz/boş değerde Amber varsayılanı. */
+function tema_ayarlari(): array
+{
+    $vurgu = site_text('tema_vurgu', '');
+    if (!hex_gecerli($vurgu)) { $vurgu = '#f59e0b'; }
+    $ikincil = site_text('tema_ikincil', '');
+    if (!hex_gecerli($ikincil)) { $ikincil = '#7c3aed'; }
+    $anim = site_text('tema_animasyon', '');
+    if (!in_array($anim, ['tam', 'sakin', 'kapali'], true)) { $anim = 'tam'; }
+    return ['vurgu' => strtolower($vurgu), 'ikincil' => strtolower($ikincil), 'animasyon' => $anim];
+}
+
+/**
+ * <head> için :root değişken bloğu. Değerler yalnız doğrulanmış hex'ten
+ * sayısal türetmeyle üretilir — CSS enjeksiyonu YAPISAL olarak imkânsız.
+ * Varsayılan temada boş döner (CSS'teki değerler zaten Amber).
+ */
+function tema_stil_blogu(): string
+{
+    $t = tema_ayarlari();
+    if ($t['vurgu'] === '#f59e0b' && $t['ikincil'] === '#7c3aed') { return ''; }
+    $v = $t['vurgu'];
+    return ':root{'
+        . '--vurgu:'       . hex_rgb_uclusu($v) . ';'
+        . '--vurgu-acik:'  . hex_rgb_uclusu(tema_ton($v, +.13)) . ';'
+        . '--vurgu-koyu:'  . hex_rgb_uclusu(tema_ton($v, -.07)) . ';'
+        . '--vurgu-derin:' . hex_rgb_uclusu(tema_ton($v, -.17)) . ';'
+        . '--vurgu-kahve:' . hex_rgb_uclusu(tema_ton($v, -.27)) . ';'
+        . '--ikincil:'     . hex_rgb_uclusu($t['ikincil']) . ';'
+        . '}';
+}
+
+/** <html> sınıfı: sakin/kapalı animasyon kipi (Görünüm panelinden). */
+function tema_html_sinif(): string
+{
+    $anim = tema_ayarlari()['animasyon'];
+    if ($anim === 'kapali') { return ' class="hareket-kapali"'; }
+    if ($anim === 'sakin')  { return ' class="tema-sakin"'; }
+    return '';
+}
+
+/* =================================================================
+   TANITIM VİDEOSU — panelden bağlantı, tıkla-yükle gömme
+   ================================================================= */
+
+/**
+ * Video bağlantısını KATI biçimde çözer; tanımadığı her şey null.
+ * Yalnız üç biçim: YouTube (nocookie gömme), Vimeo, yerel mp4/webm.
+ * Serbest URL iframe'e gitmez — CSP frame-src de ikinci kilit.
+ */
+function video_embed_bilgisi(string $url): ?array
+{
+    $url = trim($url);
+    if ($url === '') { return null; }
+
+    /* YouTube: watch?v=ID · youtu.be/ID · shorts/ID · embed/ID
+       Sınırlayıcı ~ ÇÜNKÜ desenin içinde # var ([^#]*): # sınırlayıcı
+       olsaydı desen orada biterdi — bu tam olarak yaşandı ve YouTube
+       bağlantıları sessizce çözülemedi. */
+    if (preg_match('~^https?://(?:www\.|m\.)?(?:youtube(?:-nocookie)?\.com/(?:watch\?(?:[^#]*&)?v=|shorts/|embed/|live/)|youtu\.be/)([A-Za-z0-9_-]{6,20})~', $url, $m)) {
+        return ['tur' => 'youtube',
+                'kaynak' => 'https://www.youtube-nocookie.com/embed/' . $m[1] . '?rel=0'];
+    }
+    /* Vimeo: vimeo.com/123456789 */
+    if (preg_match('#^https?://(?:www\.)?vimeo\.com/(\d{6,12})#', $url, $m)) {
+        return ['tur' => 'vimeo',
+                'kaynak' => 'https://player.vimeo.com/video/' . $m[1]];
+    }
+    /* Yerel dosya: göreli yol, gezinme yok, yalnız mp4/webm, var olmalı */
+    if (preg_match('#^[a-z0-9_/.-]+\.(mp4|webm)$#i', $url)
+        && !str_contains($url, '..') && $url[0] !== '/'
+        && is_file(APP_DIR . '/' . $url)) {
+        return ['tur' => 'dosya', 'kaynak' => $url];
+    }
+    return null;
+}

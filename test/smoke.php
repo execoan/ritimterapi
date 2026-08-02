@@ -968,6 +968,81 @@ dogrula(git_('rapor-haftalik.php', $jar)['durum'] === 200
 /* -------- Marka: iki ad, iki kitle (CLAUDE.md §3) --------
    Panel içi ad "RitimTerapi" kalır; DIŞ yüzeylerin hiçbirinde geçmez.
    Bu ayrım kolay bozulur: yeni bir herkese açık sayfa APP_NAME kullanıverir. */
+/* -------- Görünüm paneli (tema + video) --------
+   WordPress benzeri: eğitmen panelden renk/animasyon/video yönetir.
+   Buradaki zincir uçtan uca: kaydet → tanıtım sayfasına yansıdı mı. */
+bolum('Görünüm paneli (tema + video)');
+$t = csrf_al('site.php', $jar);
+dogrula($t !== '', 'site.php CSRF jetonu alındı');
+
+/* 1) Tema + sakin animasyon + YouTube videosu birlikte kaydedilir */
+gonder('site.php', ['csrf_token' => $t, 'islem' => 'gorunum',
+    'tema_vurgu' => '#22c55e', 'tema_ikincil' => '#38bdf8',
+    'tema_animasyon' => 'sakin',
+    'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'], $jar);
+$g = git_('index.php', $jar)['govde'];
+dogrula(str_contains($g, '--vurgu:34 197 94'), 'tema rengi tanıtım sayfasına yansıdı (#22c55e → 34 197 94)');
+dogrula(str_contains($g, 'class="tema-sakin"'), 'sakin animasyon kipi <html> sınıfına yansıdı');
+dogrula(str_contains($g, 'data-embed="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'),
+    'YouTube bağlantısı çerezsiz gömme kapağına dönüştü');
+dogrula(str_contains($g, '#video') && str_contains($g, 'Tanıtım'), 'video bölümü ve menü bağlantısı görünür');
+/* '<iframe' aranır, 'iframe' değil: sözcük sayfadaki açıklamada geçiyor
+   ve düz arama boşuna kırmızı yakıyordu. */
+dogrula(!str_contains($g, '<iframe'), 'iframe etiketi SAYFADA YOK — yalnız tıklanınca kurulur');
+
+/* 2) Geçersiz bağlantı: kaydedilmez, eski video kalır, açıkça söylenir */
+$t = csrf_al('site.php', $jar);
+$y = gonder('site.php', ['csrf_token' => $t, 'islem' => 'gorunum',
+    'tema_vurgu' => '#22c55e', 'tema_ikincil' => '#38bdf8', 'tema_animasyon' => 'sakin',
+    'video_url' => 'javascript:alert(1)'], $jar);
+$panel = git_('site.php', $jar)['govde'];
+dogrula(str_contains($panel, 'video bağlantısı'), 'geçersiz video bağlantısı açıkça reddedildi');
+dogrula(str_contains(git_('index.php', $jar)['govde'], 'youtube-nocookie.com/embed/dQw4w9WgXcQ'),
+    'geçersiz denemede eski video korundu');
+
+/* 3) Hazır tema düğmesi + kapalı animasyon */
+$t = csrf_al('site.php', $jar);
+gonder('site.php', ['csrf_token' => $t, 'islem' => 'gorunum', 'hazir' => 'okyanus'], $jar);
+dogrula(str_contains(git_('index.php', $jar)['govde'], '--vurgu:56 189 248'),
+    'hazır tema (Okyanus) tek düğmeyle uygulandı');
+
+/* 4) Varsayılana dönüş: stil bloğu KAYBOLMALI (fazladan CSS taşınmaz),
+      video boşalınca bölüm ve menü bağlantısı kaybolmalı */
+$t = csrf_al('site.php', $jar);
+gonder('site.php', ['csrf_token' => $t, 'islem' => 'gorunum',
+    'tema_vurgu' => '#f59e0b', 'tema_ikincil' => '#7c3aed',
+    'tema_animasyon' => 'tam', 'video_url' => ''], $jar);
+$g = git_('index.php', $jar)['govde'];
+dogrula(!str_contains($g, '--vurgu:'), 'varsayılan temada stil bloğu hiç basılmıyor');
+dogrula(!str_contains($g, 'id="video"') && !str_contains($g, 'data-embed'),
+    'video bağlantısı silinince bölüm kayboldu');
+dogrula(!preg_match('/<html[^>]*class=/', $g), 'tam animasyonda <html> sınıfsız');
+
+/* 5) Yeni güvenlik başlıkları */
+$anonJar2 = [];
+$bas = git_('giris.php', $anonJar2)['basliklar'];
+dogrula(str_contains($bas, 'frame-src') && str_contains($bas, 'youtube-nocookie.com'),
+    'CSP frame-src yalnız tanınan oynatıcılara açık');
+dogrula(str_contains($bas, 'Cross-Origin-Opener-Policy: same-origin'),
+    'COOP başlığı gönderiliyor');
+
+/* -------- Mobil düzen gerilemeleri --------
+   Yerleşim HTTP düzeyinde ölçülemez; onun yerine yerleşimi BOZAN kuralların
+   varlığı denetlenir. Süs halkası kabın dışına taşacak biçimde konumlanır;
+   kırpma kuralı silinirse telefonda sayfa yatay kayar (390px görünümde
+   belge 490px ölçülmüştü). */
+bolum('Mobil düzen');
+$cssJar = [];
+$evCss = git_('assets/css/ev.css', $cssJar)['govde'];
+dogrula((bool)preg_match('/\.ev-giris\s*\{[^}]*overflow:\s*hidden/', $evCss),
+    'katılımcı giriş ekranı süs halkasını kırpıyor (yatay kayma yok)');
+$lCss = git_('assets/css/landing.css', $cssJar)['govde'];
+dogrula(str_contains($lCss, '@media (max-width: 720px)') && str_contains($lCss, '.t-nav-linkler'),
+    'telefonda gezinme bağlantıları gizlenmiyor, şeride iniyor');
+$mCss = git_('assets/css/metronom.css', $cssJar)['govde'];
+dogrula((bool)preg_match('/\.m-sekmeler\s*\{[^}]*overflow-x:\s*auto/', $mCss),
+    'metronom sekme şeridi telefonda kaydırılabilir');
+
 bolum('Marka ayrımı (panel içi / herkese açık)');
 /* ÇIKIŞLI çerezle bakılır: girişli oturumda giris.php panele yönlenir ve
    denetim panelin HTML'ini ölçer — kontrol boşa çıkar. */

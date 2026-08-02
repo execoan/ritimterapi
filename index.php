@@ -31,6 +31,12 @@ $galeriFotolar = gallery_list(true);
 if (!$galeriFotolar) {
     $bolumler = array_values(array_filter($bolumler, fn($b) => $b['anahtar'] !== 'galeri'));
 }
+/* Video da aynı desen: geçerli bağlantı yoksa bölüm ve menü bağlantısı
+   kendiliğinden kaybolur — "kapatmak" için URL'yi silmek de yeter. */
+$videoBilgi = video_embed_bilgisi(site_text('video_url', ''));
+if (!$videoBilgi) {
+    $bolumler = array_values(array_filter($bolumler, fn($b) => $b['anahtar'] !== 'video'));
+}
 
 $heroSatirlar = preg_split('/\r\n|\r|\n/', site_text('hero_baslik', "Vuruşu bul.\nRitmi koru.\nKendi temponu keşfet."));
 $heroSatirlar = array_values(array_filter(array_map('trim', $heroSatirlar), fn($s) => $s !== ''));
@@ -40,7 +46,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 {
     return '<svg class="' . $sinif . '" viewBox="0 0 64 64" aria-hidden="true">'
         . '<defs><linearGradient id="' . $gradyanId . '" x1="0" y1="0" x2="0" y2="1">'
-        . '<stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/>'
+        . '<stop offset="0" style="stop-color:rgb(var(--vurgu-acik, 251 191 36))"/><stop offset="1" style="stop-color:rgb(var(--vurgu-koyu, 217 119 6))"/>'
         . '</linearGradient></defs>'
         . '<path d="M25 5 H39 L52.5 53.5 Q53.8 58 49.2 58 H14.8 Q10.2 58 11.5 53.5 Z" fill="url(#' . $gradyanId . ')"/>'
         . '<path d="M29.2 12 H34.8 L40.6 51 H23.4 Z" fill="#1e293b"/>'
@@ -51,7 +57,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 }
 ?>
 <!doctype html>
-<html lang="tr">
+<html lang="tr"<?= tema_html_sinif() ?>>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -62,6 +68,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <link rel="icon" type="image/svg+xml" href="<?= e(asset('img/favicon.svg')) ?>">
 <link rel="apple-touch-icon" href="<?= e(asset('img/apple-touch-icon.png')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/landing.css')) ?>">
+<?php $temaCss = tema_stil_blogu(); if ($temaCss !== ''): ?><style><?= $temaCss ?></style><?php endif; ?>
 </head>
 <body class="tanitim">
 
@@ -79,7 +86,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <?php if ($b['anahtar'] === 'iletisim') { continue; } ?>
       <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Canlı Deney', 'yontem' => 'Yöntem', 'program' => 'Program',
           'bilim' => 'Bilim', 'nabiz' => 'Nabız', 'protokoller' => 'Protokoller', 'moxo' => 'MOXO',
-          'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz'][$b['anahtar']] ?? $b['baslik']) ?></a>
+          'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'video' => 'Tanıtım'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
     </div>
     <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">İletişim</a>
@@ -631,6 +638,33 @@ function metronom_svg(string $sinif, string $gradyanId): string
   </div>
 </section>
 <?php endif; ?>
+
+<?php elseif ($bolum['anahtar'] === 'video'): ?>
+<!-- ==================== TANITIM VİDEOSU (CMS: Görünüm paneli) ====================
+     Tıkla-yükle: dış oynatıcı (YouTube/Vimeo) SAYFA AÇILIRKEN YÜKLENMEZ;
+     ziyaretçi kapağa dokununca iframe kurulur. Hem hız hem mahremiyet:
+     dokunmayan ziyaretçi için dış servise tek istek bile gitmez. -->
+<section class="t-bolum t-video-bolum" id="video">
+  <div class="t-kapsayici">
+    <p class="t-bolum-ustbaslik kayarak"><?= e(site_text('video_ustbaslik', 'TANITIM')) ?></p>
+    <h2 class="kayarak"><?= e(site_text('video_baslik', 'Atölyeyi bir de böyle görün')) ?></h2>
+    <?php if (site_text('video_aciklama', '') !== ''): ?>
+    <p class="t-bolum-aciklama kayarak"><?= e(site_text('video_aciklama')) ?></p>
+    <?php endif; ?>
+    <div class="t-video kayarak">
+      <?php if ($videoBilgi['tur'] === 'dosya'): ?>
+      <video controls preload="metadata" playsinline src="<?= e(url($videoBilgi['kaynak'])) ?>"></video>
+      <?php else: ?>
+      <button type="button" class="t-video-kapak" data-embed="<?= e($videoBilgi['kaynak']) ?>">
+        <span class="t-video-oynat" aria-hidden="true">▶</span>
+        <span class="t-video-not">Videoyu oynat
+          <small>Dokununca <?= $videoBilgi['tur'] === 'youtube' ? 'YouTube' : 'Vimeo' ?> üzerinden yüklenir</small>
+        </span>
+      </button>
+      <?php endif; ?>
+    </div>
+  </div>
+</section>
 
 <?php elseif ($bolum['anahtar'] === 'bizkimiz'): ?>
 <section class="t-bolum" id="bizkimiz">

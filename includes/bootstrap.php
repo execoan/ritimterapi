@@ -133,10 +133,19 @@ if (!headers_sent()) {
        style-src'de 'unsafe-inline' KALIYOR: sayfalarda ~140 satır içi style
        özniteliği var ve stil enjeksiyonu betik çalıştıramaz; asıl tehlike olan
        kod yürütmesi kapatıldı. Bunu da kapatmak stil taşıma işi ister. */
+    /* frame-src: tanıtım videosu gömme için YALNIZ iki kaynak — YouTube'un
+       çerezsiz alanı ve Vimeo oynatıcısı. video_embed_bilgisi() zaten yalnız
+       bu ikisini üretir; CSP ikinci kilittir (biri delinirse öbürü tutar). */
     header("Content-Security-Policy: default-src 'self'; "
         . "script-src 'self' 'nonce-" . csp_nonce() . "'; "
         . "style-src 'self' 'unsafe-inline'; img-src 'self' data:; object-src 'none'; "
+        . "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com; "
         . "base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+    /* Pencere referansı ve kaynak paylaşımı: başka origin bizim pencereye
+       window.opener ile dokunamasın, kaynaklarımızı gömemesin. */
+    header('Cross-Origin-Opener-Policy: same-origin');
+    header('Cross-Origin-Resource-Policy: same-origin');
+    header('X-Permitted-Cross-Domain-Policies: none');
     /* HSTS yalnız gerçekten HTTPS'teyken: HTTP üzerinden yollamak anlamsız,
        yanlış kurulumda siteyi erişilemez kılabilir. */
     if (guvenli_baglanti_mi()) {

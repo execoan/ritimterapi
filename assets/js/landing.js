@@ -1,3 +1,13 @@
+/* Tema vurgu rengi — canvas degradeleri CSS degiskeninden okur; Gorunum
+   panelinde renk degisince tuval de uyum saglar. JS yuklendiginde <head>
+   stil blogu coktan uygulanmistir, tek okuma yeterli. */
+var TEMA_VURGU_RGB = (function () {
+  try {
+    var v = getComputedStyle(document.documentElement).getPropertyValue("--vurgu").trim();
+    if (/^\d{1,3} \d{1,3} \d{1,3}$/.test(v)) { return v.split(" ").join(", "); }
+  } catch (e) {}
+  return "245, 158, 11";
+})();
 /* RitimTerapi tanıtım sitesi — animasyon ve ritim davranışları */
 (function () {
   'use strict';
@@ -247,7 +257,7 @@
         if (alfa <= 0) { d.olu = true; return; }
         ciz.beginPath();
         ciz.arc(mx, my, d.r, 0, Math.PI * 2);
-        ciz.strokeStyle = 'rgba(245, 158, 11, ' + (alfa * 0.28 * d.guc).toFixed(3) + ')';
+        ciz.strokeStyle = 'rgba(' + TEMA_VURGU_RGB + ', ' + (alfa * 0.28 * d.guc).toFixed(3) + ')';
         ciz.lineWidth = 1.6;
         ciz.stroke();
       });
@@ -287,7 +297,7 @@
         ciz.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ciz.fillStyle = p.p > 0.75
           ? 'rgba(167, 139, 250, ' + parlak.toFixed(3) + ')'
-          : 'rgba(245, 158, 11, ' + parlak.toFixed(3) + ')';
+          : 'rgba(' + TEMA_VURGU_RGB + ', ' + parlak.toFixed(3) + ')';
         ciz.fill();
 
         // Yakın komşuları ince çizgiyle bağla — "alan" hissi
@@ -298,7 +308,7 @@
           if (au < 6400) {
             ciz.beginPath();
             ciz.moveTo(p.x, p.y); ciz.lineTo(q.x, q.y);
-            ciz.strokeStyle = 'rgba(245, 158, 11, ' + (0.09 * (1 - au / 6400)).toFixed(3) + ')';
+            ciz.strokeStyle = 'rgba(' + TEMA_VURGU_RGB + ', ' + (0.09 * (1 - au / 6400)).toFixed(3) + ')';
             ciz.lineWidth = 0.6;
             ciz.stroke();
           }
@@ -659,7 +669,7 @@
       var f = hz();
       var orta = Y / 2;
       ciz.lineWidth = 2;
-      ciz.strokeStyle = f >= 24 ? '#a78bfa' : '#f59e0b';
+      ciz.strokeStyle = f >= 24 ? '#a78bfa' : 'rgb(' + TEMA_VURGU_RGB + ')';
       ciz.beginPath();
       var t = ctx ? ctx.currentTime : 0;
       for (var x = 0; x <= G; x++) {
@@ -1304,7 +1314,10 @@
     try { kayitli = localStorage.getItem(ANAHTAR); } catch (e) {}
     var sistem = window.matchMedia
       && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    uygula(kayitli !== null ? kayitli === '1' : !!sistem, false);
+    /* Panelin "animasyon: kapali" secimi sunucudan <html> sinifi olarak
+       gelir; ziyaretcinin kendi secimi (localStorage) yine de ustundur. */
+    var sunucuKapali = document.documentElement.classList.contains('hareket-kapali');
+    uygula(kayitli !== null ? kayitli === '1' : (sunucuKapali || !!sistem), false);
 
     btn.addEventListener('click', function () {
       uygula(btn.getAttribute('aria-pressed') !== 'true', true);
@@ -1468,4 +1481,28 @@
     });
     btn.addEventListener('pointerleave', function () { btn.style.transform = ''; });
   })();
+})();
+
+/* ================================================================
+   TANITIM VIDEOSU — tikla-yukle kapak
+   Dis oynatici ancak ziyaretci isteyince kurulur. SAVUNMA: data-embed
+   yalniz beklenen iki gomme biciminiyse iframe olur; baska hicbir deger
+   DOM'a yazilmaz (sunucu zaten kati uretir, bu ikinci kilittir).
+   ================================================================ */
+(function () {
+  'use strict';
+  var kapak = document.querySelector('.t-video-kapak');
+  if (!kapak) { return; }
+  kapak.addEventListener('click', function () {
+    var kaynak = kapak.dataset.embed || '';
+    var guvenli = /^https:\/\/(www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{6,20}(\?[a-z0-9=&_]*)?|player\.vimeo\.com\/video\/\d{6,12})$/.test(kaynak);
+    if (!guvenli) { return; }
+    var cerceve = document.createElement('iframe');
+    cerceve.src = kaynak + (kaynak.indexOf('?') >= 0 ? '&' : '?') + 'autoplay=1';
+    cerceve.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
+    cerceve.allowFullscreen = true;
+    cerceve.referrerPolicy = 'strict-origin-when-cross-origin';
+    cerceve.title = 'Tanitim videosu';
+    kapak.parentNode.replaceChild(cerceve, kapak);
+  });
 })();

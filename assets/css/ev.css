@@ -560,3 +560,11 @@
     animation: none !important; transition: none !important; transform: none !important;
   }
 }
+
+/*
+ * Süs halkası (.t-halka) tasarım gereği kabın DIŞINA taşar; tanıtım
+ * sayfasında .t-hero bunu overflow:hidden ile kırpar, katılımcı giriş
+ * ekranında o kırpma yoktu. Sonuç: telefonda sayfa yatay kayıyordu
+ * (390px görünümde belge genişliği 490px ölçüldü). Kırpma eklendi.
+ */
+.ev-giris { position: relative; overflow: hidden; }
