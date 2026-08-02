@@ -74,19 +74,25 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <a class="t-marka" href="#ust"><?= metronom_svg('t-logo', 'tg') ?><span><?= e(PUBLIC_BRAND) ?></span></a>
     <div class="t-nav-linkler">
       <?php foreach ($bolumler as $b): ?>
+      <?php /* "İletişim" bağlantısı atlanır: sağdaki çerçeveli düğme zaten
+               oraya götürüyor — menüde iki kez "İletişim" görünüyordu. */ ?>
+      <?php if ($b['anahtar'] === 'iletisim') { continue; } ?>
       <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Canlı Deney', 'yontem' => 'Yöntem', 'program' => 'Program',
           'bilim' => 'Bilim', 'nabiz' => 'Nabız', 'protokoller' => 'Protokoller', 'moxo' => 'MOXO',
-          'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'iletisim' => 'İletişim'][$b['anahtar']] ?? $b['baslik']) ?></a>
+          'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
     </div>
     <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">İletişim</a>
     <?php /* WCAG 2.2.2 (Duraklat/Durdur/Gizle): sayfada 5 sn'den uzun süren,
              kendiliğinden başlayan hareket var (kayan şerit, yörünge, parçacıklar).
              İşletim sistemi tercihi (prefers-reduced-motion) zaten dinleniyor;
-             bu düğme onu ayarlayamayan kullanıcıya sayfa içi denetim verir. */ ?>
-    <button type="button" class="t-btn t-btn-cerceve t-hareket-anahtari" id="tHareketAnahtari"
-            aria-pressed="false" title="Sayfadaki hareketi durdur">
-      <span class="emoji-sus" aria-hidden="true">🌀</span><span class="t-hareket-metin">Hareketi durdur</span>
+             bu düğme onu ayarlayamayan kullanıcıya sayfa içi denetim verir.
+             Simge duraklat/oynat dilinde: ⏸ = animasyonlar akıyor, durdurabilirsin;
+             ▶ = durmuş, başlatabilirsin. Ad ve ipucu JS'te güncel tutulur. */ ?>
+    <button type="button" class="t-hareket-anahtari" id="tHareketAnahtari"
+            aria-pressed="false" aria-label="Sayfadaki animasyonları durdur"
+            title="Sayfadaki animasyonları durdur">
+      <span class="t-hareket-ikon" aria-hidden="true">⏸</span>
     </button>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
       <?= $girisli ? 'Panele Git' : 'Giriş Yap' ?>

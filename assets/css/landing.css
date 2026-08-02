@@ -1387,3 +1387,44 @@ body.tanitim ::selection { background: rgba(245, 158, 11, .45); color: #0c0a09; 
   .kayarak { filter: none; }
   [data-tilt] { transform: none !important; transition: none !important; }
 }
+
+/* ================================================================
+   NAV DÜZENİ (Ağu 2026) — ekran görüntüsüyle gelen düzeltme
+   ================================================================
+   Sorun: 1100px'lik kapsayıcıya 9 bağlantı + 3 düğme sıkışınca
+   "Canlı Deney" ve "Biz Kimiz" iki satıra kırılıyor, "Giriş Yap"
+   kesiliyordu. Çözüm: nav kendi genişliğini kullanır, hiçbir öğe
+   satır kırmaz; bağlantı şeridi dar ekranda kaydırılabilir olur
+   (çubuk gizli, kenarlar maskeyle yumuşar).
+   ================================================================ */
+.t-nav-ic { max-width: 1280px; flex-wrap: nowrap; gap: 1rem; }
+.t-btn { white-space: nowrap; }
+.t-nav-linkler {
+  min-width: 0;                      /* flex çocuğu küçülebilsin */
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg,
+    transparent, #000 14px, #000 calc(100% - 14px), transparent);
+  mask-image: linear-gradient(90deg,
+    transparent, #000 14px, #000 calc(100% - 14px), transparent);
+}
+.t-nav-linkler::-webkit-scrollbar { display: none; }
+.t-nav-linkler a { white-space: nowrap; font-size: .92rem; }
+
+/* Animasyon anahtarı: yuvarlak, yalnız simge (⏸/▶). Metinli hâli hem
+   yer kaplıyor hem "Hareketi aç" olarak anlaşılmıyordu; duraklat/oynat
+   simgesi evrensel. Erişilebilir ad aria-label + title'da (JS günceller). */
+.t-hareket-anahtari {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .18);
+  color: var(--t-soluk); cursor: pointer; padding: 0;
+  font-size: .92rem; line-height: 1; font-family: inherit;
+  transition: color .2s, border-color .2s, background .2s;
+}
+.t-hareket-anahtari:hover { color: #fff; border-color: var(--t-amber); }
+.t-hareket-anahtari:focus-visible { outline: 2px solid var(--t-amber); outline-offset: 2px; }
+.t-hareket-anahtari[aria-pressed="true"] {
+  background: rgba(217, 119, 6, .2); border-color: var(--t-amber); color: #fbbf24;
+}
+.t-hareket-ikon { transform: translateX(.5px); }

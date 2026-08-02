@@ -1283,13 +1283,18 @@
     var btn = document.getElementById('tHareketAnahtari');
     if (!btn) { return; }
     var ANAHTAR = 'ritim-hareket-kapali';
-    var metin = btn.querySelector('.t-hareket-metin');
+    var ikon = btn.querySelector('.t-hareket-ikon');
 
+    /* Duraklat/oynat dili: ⏸ = animasyonlar akıyor (basınca durur),
+       ▶ = durmuş (basınca başlar). "Hareketi aç" metni anlaşılmıyordu. */
     function uygula(kapali, yaz) {
       document.documentElement.classList.toggle('hareket-kapali', kapali);
       btn.setAttribute('aria-pressed', kapali ? 'true' : 'false');
-      btn.title = kapali ? 'Sayfadaki hareketi geri aç' : 'Sayfadaki hareketi durdur';
-      if (metin) { metin.textContent = kapali ? 'Hareketi aç' : 'Hareketi durdur'; }
+      var ad = kapali ? 'Sayfadaki animasyonları başlat'
+                      : 'Sayfadaki animasyonları durdur';
+      btn.title = ad;
+      btn.setAttribute('aria-label', ad);
+      if (ikon) { ikon.textContent = kapali ? '▶' : '⏸'; }
       if (yaz) { try { localStorage.setItem(ANAHTAR, kapali ? '1' : '0'); } catch (e) {} }
     }
 
