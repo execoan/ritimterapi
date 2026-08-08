@@ -1215,6 +1215,66 @@ dogrula(strncmp($yd['govde'], 'SQLite format 3', 15) === 0
 $yd = git_('yedek.php?islem=indir&dosya=' . rawurlencode('../gizli.php'), $jar);
 dogrula($yd['durum'] === 404 && !str_contains($yd['govde'], 'PANEL_KULLANICILAR'), 'yedek indirme yol gezinmesine kapalı');
 
+/* -------- GERİ YÜKLEME: TAM TUR --------
+   İndirme test ediliyordu ama GERİ GETİRME hiç sınanmamıştı — yedeklemenin
+   asıl işe yarayan yarısı o. Buradaki tur gerçek: sunucudaki günlük yedek
+   (test verisi oluşmadan ÖNCE alınmıştır) geri yüklenir, test öğrencisinin
+   KAYBOLMASI beklenir; ardından geri yüklemenin kendi emniyet kopyası
+   (oncesi-*) yüklenip öğrenci GERİ GELMELİ. Böylece hem "gerçekten değişti"
+   hem "geri alınabiliyor" kanıtlanır ve veritabanı testin bulduğu hâle döner. */
+$otoYedekler = glob($TEMP . '/yedek/otomatik-*.sqlite') ?: [];
+$otoAd = $otoYedekler ? basename($otoYedekler[0]) : '';
+dogrula($otoAd !== '', 'sunucuda geri yüklenebilir günlük yedek var');
+
+if ($otoAd !== '') {
+    /* Onay kutusu işaretlenmeden geri yükleme OLMAMALI */
+    $t = csrf_al('yedek.php', $jar);
+    gonder('yedek.php', ['csrf_token' => $t, 'islem' => 'geri_yukle_oto', 'dosya' => $otoAd], $jar);
+    $pk = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+    dogrula((int)$pk->query("SELECT COUNT(*) FROM ogrenciler WHERE kod='DUMAN-1'")->fetchColumn() === 1,
+        'onaysız geri yükleme reddedildi (veri duruyor)');
+    $pk = null;
+
+    /* Yol gezinmesi: yedek dizini dışına çıkılamamalı */
+    $t = csrf_al('yedek.php', $jar);
+    gonder('yedek.php', ['csrf_token' => $t, 'islem' => 'geri_yukle_oto',
+                         'dosya' => '../gizli.php', 'onay' => '1'], $jar);
+    dogrula(is_file($TEMP . '/ritim.sqlite')
+        && strncmp((string)@file_get_contents($TEMP . '/ritim.sqlite', false, null, 0, 15), 'SQLite format 3', 15) === 0,
+        'geri yüklemede yol gezinmesi engellendi (veritabanı bozulmadı)');
+
+    /* Gerçek geri yükleme: test öncesi duruma dön */
+    $t = csrf_al('yedek.php', $jar);
+    gonder('yedek.php', ['csrf_token' => $t, 'islem' => 'geri_yukle_oto',
+                         'dosya' => $otoAd, 'onay' => '1'], $jar);
+    $pk = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+    $kaldiMi = (int)$pk->query("SELECT COUNT(*) FROM ogrenciler WHERE kod='DUMAN-1'")->fetchColumn();
+    $pk = null;
+    dogrula($kaldiMi === 0, 'geri yükleme veritabanını GERÇEKTEN değiştirdi (test verisi gitti)');
+
+    /* Geri yükleme kendi emniyet kopyasını almış olmalı */
+    $emniyetler = glob($TEMP . '/yedek/oncesi-*.sqlite') ?: [];
+    dogrula((bool)$emniyetler, 'geri yüklemeden önce emniyet kopyası alındı');
+
+    /* Emniyet kopyasından dönülebiliyor mu — yanlış yedeği yükleyen eğitmen
+       kilitlenmemeli. Bu adım aynı zamanda testin verisini geri getirir. */
+    if ($emniyetler) {
+        usort($emniyetler, fn($a, $b) => filemtime($b) <=> filemtime($a));
+        $t = csrf_al('yedek.php', $jar);
+        gonder('yedek.php', ['csrf_token' => $t, 'islem' => 'geri_yukle_oto',
+                             'dosya' => basename($emniyetler[0]), 'onay' => '1'], $jar);
+        $pk = new PDO('sqlite:' . $TEMP . '/ritim.sqlite');
+        $geldiMi = (int)$pk->query("SELECT COUNT(*) FROM ogrenciler WHERE kod='DUMAN-1'")->fetchColumn();
+        $pk = null;
+        dogrula($geldiMi === 1, 'emniyet kopyasından geri dönüldü (yanlış yedek kurtarılabiliyor)');
+    }
+
+    /* Uygulama geri yüklemeden sonra çalışır durumda mı */
+    dogrula(git_('ogrenciler.php', $jar)['durum'] === 200
+         && str_contains(git_('panel.php', $jar)['govde'], 'RitimTerapi'),
+        'geri yükleme sonrası uygulama açılıyor');
+}
+
 bolum('Hatalı girdi dayanıklılığı');
 $y = git_('ogrenci.php?id=abc', $jar);
 dogrula($y['durum'] === 404 && !str_contains($y['govde'], 'SQLSTATE'), 'bozuk id → temiz 404 (SQL hatası sızmıyor)');

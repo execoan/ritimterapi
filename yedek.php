@@ -13,7 +13,10 @@ $dbDosya = STORAGE_DIR . '/ritim.sqlite';
 /** storage/yedek içindeki bir dosya adını güvenle doğrular. */
 function yedek_dosya_dogrula(string $ad): ?string
 {
-    if (!preg_match('/^(otomatik|oncesi)-[0-9\-]{8,17}\.sqlite$/', $ad)) { return null; }
+    /* 'oncesi-' adlarına benzersizlik son eki eklendi (bkz. yedek_geri_yukle);
+       desen onaltılık son eki de kabul etmeli, yoksa yeni emniyet kopyaları
+       listede görünür ama geri yüklenemezdi. */
+    if (!preg_match('/^(otomatik|oncesi)-[0-9a-f\-]{8,26}\.sqlite$/', $ad)) { return null; }
     $yol = backup_dir() . '/' . $ad;
     return is_file($yol) ? $yol : null;
 }
@@ -40,7 +43,20 @@ function yedek_geri_yukle(string $kaynak): ?string
 {
     $hata = yedek_icerik_dogrula($kaynak);
     if ($hata !== null) { return $hata; }
-    $emniyet = backup_dir() . '/oncesi-' . date('Ymd-His') . '.sqlite';
+    /*
+     * Emniyet kopyasının adı BENZERSİZ olmalı ve KAYNAĞI EZMEMELİ.
+     * Eski hâli 'oncesi-<saniye>.sqlite' idi; backup_snapshot() hedefte
+     * dosya varsa onu SİLER. Aynı saniye içinde bir 'oncesi-*' yedeğine
+     * dönülmek istendiğinde emniyet adı kaynakla çakışıyor, kaynak dosya
+     * siliniyor ve üzerine GÜNCEL veri yazılıyordu; ardından o dosya geri
+     * kopyalandığı için geri yükleme hiçbir şey getirmiyor, üstelik o yedek
+     * de yok oluyordu. Rastgele son ek çakışmayı kırar, döngü de kaynağı
+     * kesin korur (dosya sistemi çözünürlüğüne güvenmeden).
+     */
+    $kaynakGercek = realpath($kaynak);
+    do {
+        $emniyet = backup_dir() . '/oncesi-' . date('Ymd-His') . '-' . bin2hex(random_bytes(2)) . '.sqlite';
+    } while (is_file($emniyet) || realpath($emniyet) === $kaynakGercek);
     if (!backup_snapshot($emniyet)) { return 'Emniyet yedeği alınamadı; geri yükleme durduruldu.'; }
     db_close();
     @unlink(STORAGE_DIR . '/ritim.sqlite-wal');
