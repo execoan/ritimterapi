@@ -30,6 +30,8 @@ if errorlevel 1 goto :son
 "%PHP%" "%~dp0test\kilitli-dil.test.php"
 if errorlevel 1 goto :son
 "%PHP%" "%~dp0test\smoke.php"
+if errorlevel 1 goto :son
+"%PHP%" "%~dp0test\sentetik.test.php"
 :son
 echo.
 pause

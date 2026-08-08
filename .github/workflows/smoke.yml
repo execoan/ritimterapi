@@ -41,3 +41,4 @@ jobs:
           php test/olcum.test.php
           php test/kilitli-dil.test.php
           php test/smoke.php
+          php test/sentetik.test.php
