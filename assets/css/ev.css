@@ -576,3 +576,31 @@
     display: inline-flex; align-items: center; min-height: 44px;
   }
 }
+
+/* ---------- Yönlü nota geri bildirimi (Ağu 2026) ----------
+   Eski boyama İKİLİYDİ (yeşil/kırmızı); artık eşleşen nota ERKEN mi GEÇ mi
+   vurulduğunu da söylüyor. Renk körlüğü için renk tek taşıyıcı değil:
+   sayım hecesine ▲/▼ işareti eklenir, sonuç panelinde efsanesi vardır.
+   Sıra önemli: ro-erken/ro-gec, ro-dogru'dan SONRA gelir ki dolguyu ezsin. */
+.ro-porteli .abcjs-note.ro-erken path,
+.ro-porteli .abcjs-note.ro-erken ellipse,
+.ro-porteli .abcjs-note.ro-erken polygon {
+  fill: #38bdf8 !important; stroke: #38bdf8 !important;
+}
+.ro-porteli .abcjs-note.ro-gec path,
+.ro-porteli .abcjs-note.ro-gec ellipse,
+.ro-porteli .abcjs-note.ro-gec polygon {
+  fill: #fb923c !important; stroke: #fb923c !important;
+}
+.ro-hucre .ro-hece.ro-erken::after { content: " ▲"; color: #38bdf8; font-size: .85em; }
+.ro-hucre .ro-hece.ro-gec::after   { content: " ▼"; color: #fb923c; font-size: .85em; }
+.ro-hece.ro-erken::after { content: " ▲"; color: #38bdf8; font-size: .85em; }
+.ro-hece.ro-gec::after   { content: " ▼"; color: #fb923c; font-size: .85em; }
+
+.ro-efsane {
+  margin: .5rem 0 0; text-align: center; color: #a8a29e; font-size: .78rem;
+}
+.ro-efsane-tam   { color: #4ade80; }
+.ro-efsane-erken { color: #38bdf8; }
+.ro-efsane-gec   { color: #fb923c; }
+.ro-efsane-kacik { color: #fb7185; }

@@ -82,12 +82,33 @@
   var ses = {
     ctx: null,
     master: null,
+    kompresor: null,
+    /*
+     * Çıkış zinciri: master → kompresör → hoparlör.
+     *
+     * Kompresör KIRPMA KORUMASIDIR: davul aksanında kick (0,9) + fırça
+     * gürültüsü (0,35) + alt bölünme tıkı aynı anda çalınca toplam genlik
+     * 1,0'ı aşıyor ve telefon hoparlöründe çatırtılı dijital kırpma
+     * duyuluyordu (OfflineAudioContext ile ölçüldü: kırpılan örnek > 0).
+     * Yumuşak dizli kompresör tepeleri eşiğin altına toplar; tınıyı
+     * değiştirmez, yalnız çakışma anlarını korur.
+     */
+    zinciriKur: function () {
+      this.kompresor = this.ctx.createDynamicsCompressor();
+      this.kompresor.threshold.value = -10;
+      this.kompresor.knee.value = 12;
+      this.kompresor.ratio.value = 5;
+      this.kompresor.attack.value = 0.002;
+      this.kompresor.release.value = 0.08;
+      this.kompresor.connect(this.ctx.destination);
+      this.master = this.ctx.createGain();   // düzeyi çağıran ayarlar (hazirla/sustur)
+      this.master.connect(this.kompresor);
+    },
     hazirla: function () {
       if (!this.ctx) {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-        this.master = this.ctx.createGain();
+        this.zinciriKur();
         this.master.gain.value = 0.8;
-        this.master.connect(this.ctx.destination);
       }
       if (this.ctx.state === 'suspended') { this.ctx.resume(); }
       return this.ctx;
@@ -98,14 +119,33 @@
        Testler vuruşları ileri tarihli olarak Web Audio'ya yazar (BPM Bulma
        8 vuruşu tek seferde); yalnız zamanlayıcıyı durdurmak sesi kesmez.
        Master kazancı yeniden kurmak, çalmayı bekleyen düğümleri çıkıştan
-       kopararak hepsini tek hamlede susturur. */
+       kopararak hepsini tek hamlede susturur. Zincir kompresörle birlikte
+       AYNI biçimde yeniden kurulur — koruma susturmadan sonra da sürsün. */
     sustur: function () {
       if (!this.ctx || !this.master) { return; }
       var duzey = this.master.gain.value;
       try { this.master.disconnect(); } catch (e) { /* zaten kopuk */ }
-      this.master = this.ctx.createGain();
+      try { if (this.kompresor) { this.kompresor.disconnect(); } } catch (e2) { /* kopuk */ }
+      this.zinciriKur();
       this.master.gain.value = duzey;
-      this.master.connect(this.ctx.destination);
+    },
+
+    /* 2-4 ms'lik gürültü tıkırtısı — vuruşun BAŞLANGIÇ anını keskinleştirir.
+       Saf osilatör sesleri (klik/klaves) kalabalık salonda "yumuşak" kalıyor;
+       gerçek perküsyonun tanınırlığı bu geniş bantlı ilk milisaniyelerden
+       gelir. Tını değişmez, yalnız vuruş anı netleşir. */
+    tikirti: function (zaman, guc) {
+      var ctx = this.ctx;
+      var n = ctx.createBufferSource();
+      var buf = ctx.createBuffer(1, Math.max(8, Math.round(ctx.sampleRate * 0.004)), ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < d.length; i++) { d[i] = (Math.random() * 2 - 1) * (1 - i / d.length); }
+      n.buffer = buf;
+      var ng = ctx.createGain();
+      ng.gain.setValueAtTime(guc, zaman);
+      ng.gain.exponentialRampToValueAtTime(0.001, zaman + 0.004);
+      n.connect(ng).connect(this.master);
+      n.start(zaman);
     },
 
     /* Ana vuruş. vurgu: true/2 = aksan, false/1 = normal (0 çağrılmaz). */
@@ -122,6 +162,7 @@
         g.gain.setValueAtTime(aksan ? 0.55 : 0.35, zaman);
         g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.045);
         o.connect(g); o.start(zaman); o.stop(zaman + 0.05);
+        this.tikirti(zaman, aksan ? 0.22 : 0.13);
 
       } else if (tur === 'bip') {
         var o2 = ctx.createOscillator();
@@ -139,6 +180,7 @@
         g.gain.setValueAtTime(aksan ? 0.65 : 0.45, zaman);
         g.gain.exponentialRampToValueAtTime(0.001, zaman + 0.035);
         o3.connect(g); o3.start(zaman); o3.stop(zaman + 0.04);
+        this.tikirti(zaman, aksan ? 0.2 : 0.12);
 
       } else if (tur === 'zil') { /* inek çanı: iki metalik kare dalga */
         var z1 = ctx.createOscillator(); var z2 = ctx.createOscillator();
@@ -578,8 +620,16 @@
     setTimeout(function () {
       if (!m.calisiyor || jenerasyon !== m.jenerasyon) { return; }
       m.sarkacYonu = -m.sarkacYonu;
-      m.el.sarkac.style.transition = 'transform ' + sure.toFixed(3) + 's ease-in-out';
-      m.el.sarkac.style.transform = 'rotate(' + (26 * m.sarkacYonu) + 'deg)';
+      /* Hareket azaltılmışsa sarkaç DİK durur. Buradaki inline transition
+         CSS'teki "transition: none" kuralını eziyordu — yani azaltılmış
+         hareket tercihi sarkaç için hiç işlemiyordu; karar JS'e taşındı. */
+      if (hareketAzaltilmis()) {
+        m.el.sarkac.style.transition = 'none';
+        m.el.sarkac.style.transform = 'rotate(0deg)';
+      } else {
+        m.el.sarkac.style.transition = 'transform ' + sure.toFixed(3) + 's ease-in-out';
+        m.el.sarkac.style.transform = 'rotate(' + (26 * m.sarkacYonu) + 'deg)';
+      }
       if (faz && faz.giriste) {
         m.el.sayac.classList.remove('m-sayac-simdi');
         m.el.sayac.textContent = 'G ' + (olcuIcindeki + 1);

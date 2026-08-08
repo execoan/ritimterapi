@@ -1145,6 +1145,26 @@ $mCssTam = git_('assets/css/metronom.css', $cssJar)['govde'];
 dogrula(str_contains($mCssTam, '.oyun-kart h3') || str_contains($mCssTam, '.m-sahne h3'),
     'koyu sahnedeki başlık ve etiketler açık renge çekildi');
 
+/* -------- Metronom/nota gelistirmeleri (Agu 2026) -------- */
+bolum('Metronom ve nota gerilemeleri');
+$mg2 = git_('metronom.php', $jar)['govde'];
+dogrula(str_contains($mg2, 'stop-color:rgb(var(--vurgu-acik'),
+    'stüdyo metronom SVG tema değişkenini okuyor');
+$mjs = git_('assets/js/metronom.js', $cssJar)['govde'];
+dogrula(str_contains($mjs, 'createDynamicsCompressor'),
+    'metronom çıkış zincirinde kırpma koruması (kompresör) var');
+dogrula(str_contains($mjs, 'hareketAzaltilmis()') && str_contains($mjs, "rotate(0deg)"),
+    'azaltılmış harekette sarkaç dik duruyor (inline transition kaçağı kapalı)');
+$rjs2 = git_('assets/js/ritim-okuma.js', $cssJar)['govde'];
+dogrula(str_contains($rjs2, 'createDynamicsCompressor'),
+    'ritim okuma çıkışında da kırpma koruması var');
+dogrula(str_contains($rjs2, 'sapmaSinifi'),
+    'nota geri bildirimi yönlü (erken/geç sınıflandırıcısı)');
+$evc = git_('assets/css/ev.css', $cssJar)['govde'];
+dogrula(str_contains($evc, '.ro-erken') && str_contains($evc, '.ro-gec')
+     && str_contains($evc, '::after'),
+    'yönlü geri bildirim renk + işaretle (yalnız renk değil)');
+
 bolum('Marka ayrımı (panel içi / herkese açık)');
 /* ÇIKIŞLI çerezle bakılır: girişli oturumda giris.php panele yönlenir ve
    denetim panelin HTML'ini ölçer — kontrol boşa çıkar. */

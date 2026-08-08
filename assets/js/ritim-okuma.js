@@ -759,6 +759,23 @@ window.RitimOkuma = (function () {
       notayiMaskele(desifreAcikMi() && !aktifTur);
     }
 
+    /* Cikis zinciri: kazanc -> kompresor -> hoparlor. Kompresor kirpma
+       korumasi: olcu basinda rehber kligi ile ritim sesi AYNI ANDA calar
+       (0,5 + 0,58 = 1,08 > 1,0) ve telefon hoparlorunde catirti duyulur.
+       Yumusak dizli kompresor cakisma tepelerini toplar, tiniya dokunmaz. */
+    function cikisKur() {
+      var komp = ctx.createDynamicsCompressor();
+      komp.threshold.value = -10;
+      komp.knee.value = 12;
+      komp.ratio.value = 5;
+      komp.attack.value = 0.002;
+      komp.release.value = 0.08;
+      komp.connect(ctx.destination);
+      cikis = ctx.createGain();
+      cikis.gain.value = 0.82;
+      cikis.connect(komp);
+    }
+
     function audioHazirla() {
       if (!ctx) {
         var AudioCtor = window.AudioContext || window.webkitAudioContext;
@@ -766,11 +783,7 @@ window.RitimOkuma = (function () {
         catch (e) { ctx = new AudioCtor(); }
       }
       if (ctx.state === 'suspended') { ctx.resume(); }
-      if (!cikis) {
-        cikis = ctx.createGain();
-        cikis.gain.value = 0.82;
-        cikis.connect(ctx.destination);
-      }
+      if (!cikis) { cikisKur(); }
     }
 
     function klik(zaman, aksan, kisik) {
@@ -863,9 +876,7 @@ window.RitimOkuma = (function () {
     function sesiKes() {
       if (!ctx || !cikis) { return; }
       try { cikis.disconnect(); } catch (e) { /* zaten kopuk */ }
-      cikis = ctx.createGain();
-      cikis.gain.value = 0.82;
-      cikis.connect(ctx.destination);
+      cikisKur();   // zincir kompresorle birlikte AYNI bicimde geri kurulur
     }
 
     function durdur(metin) {
@@ -1062,8 +1073,8 @@ window.RitimOkuma = (function () {
       sonucEl.hidden = true;
       taplar = [];
       beklenen = [];
-      kok.querySelectorAll('.ro-dogru, .ro-kacirildi').forEach(function (x) {
-        x.classList.remove('ro-dogru', 'ro-kacirildi');
+      kok.querySelectorAll('.ro-dogru, .ro-kacirildi, .ro-tam, .ro-erken, .ro-gec').forEach(function (x) {
+        x.classList.remove('ro-dogru', 'ro-kacirildi', 'ro-tam', 'ro-erken', 'ro-gec');
       });
       var t0 = ctx.currentTime + 0.3;
       /* İlk görüş modu: nota TAM burada açılır — öğrencinin tarama süresi
@@ -1107,16 +1118,18 @@ window.RitimOkuma = (function () {
       });
       var kullanilanB = {};
       var kullanilanT = {};
+      var sapmaB = {};   // hedef indeksi -> imzali sapma (erken/gec boyamasi icin)
       var eslesen = sonuc.eslesenler.map(function (a) {
         kullanilanB[a.hedefIdx] = true;
         kullanilanT[a.tapIdx] = true;
+        sapmaB[a.hedefIdx] = a.sapmaMs;
         return {
           beklenen: a.hedef,
           sapmaMs: a.sapmaMs,
           hamSapmaMs: a.hamSapmaMs
         };
       });
-      return { eslesen: eslesen, kullanilanB: kullanilanB, kullanilanT: kullanilanT };
+      return { eslesen: eslesen, kullanilanB: kullanilanB, kullanilanT: kullanilanT, sapmaB: sapmaB };
     }
 
     function uygulamaBitir() {
@@ -1159,8 +1172,13 @@ window.RitimOkuma = (function () {
 
       var tipSonuclari = {};
       beklenen.forEach(function (b, i) {
-        if (b.el) { b.el.classList.add(es.kullanilanB[i] ? 'ro-dogru' : 'ro-kacirildi'); }
-        if (b.hece) { b.hece.classList.add(es.kullanilanB[i] ? 'ro-dogru' : 'ro-kacirildi'); }
+        /* Yonlu geri bildirim: nota yalniz "dogru/kacik" degil, ERKEN mi GEC mi
+           vuruldugunu da soyler. Renk tek basina yeterli degildir (1.4.1):
+           heceye CSS ile ▲/▼ isareti de eklenir, sonuc panelinde aciklamasi var. */
+        var siniflar = ['ro-' + sapmaSinifi(es.kullanilanB[i] ? es.sapmaB[i] : null, pencere.tamMs)];
+        if (es.kullanilanB[i]) { siniflar.push('ro-dogru'); }
+        if (b.el) { b.el.classList.add.apply(b.el.classList, siniflar); }
+        if (b.hece) { b.hece.classList.add.apply(b.hece.classList, siniflar); }
         var kod = mevcut().kodlar[b.hucre];
         if (!tipSonuclari[kod]) { tipSonuclari[kod] = { toplam: 0, dogru: 0 }; }
         tipSonuclari[kod].toplam++;
@@ -1198,6 +1216,10 @@ window.RitimOkuma = (function () {
         '<span><b>' + (degerlendirmeAyari.kalibrasyon.telafiMs > 0 ? '+' : '')
           + Math.round(degerlendirmeAyari.kalibrasyon.telafiMs) + ' ms</b> telafi</span>' +
         '</div>' +
+        '<p class="ro-efsane">Notada: <b class="ro-efsane-tam">●</b> tam' +
+        ' · <b class="ro-efsane-erken">▲</b> erken' +
+        ' · <b class="ro-efsane-gec">▼</b> geç' +
+        ' · <b class="ro-efsane-kacik">●</b> kaçırılan</p>' +
         '<div class="ro-ustalik-sonuc"><strong>Örnek ustalığı %' + ustalikKaydi.ustalik + '</strong><span>'
           + (skor < 70
             ? 'Bu örnek iki çalışma sonra tekrar kuyruğuna girecek.'
@@ -1396,8 +1418,20 @@ window.RitimOkuma = (function () {
     ciz();
   }
 
+  /**
+   * Sapmayi geri bildirim sinifina cevirir. SAF fonksiyon: birim dogrulamasi
+   * tarayici konsolundan yapilabilsin diye modul API'sinde disa acilir.
+   * tamMs = "tam" sayilan mutlak sapma esigi (pencere profiline gore).
+   */
+  function sapmaSinifi(sapmaMs, tamMs) {
+    if (sapmaMs === null || sapmaMs === undefined) { return 'kacirildi'; }
+    if (Math.abs(sapmaMs) <= tamMs) { return 'tam'; }
+    return sapmaMs < 0 ? 'erken' : 'gec';
+  }
+
   return {
     baslat: baslat,
+    sapmaSinifi: sapmaSinifi,
     katalogBoyutu: function (seviye) {
       seviye = [1, 2, 3].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
       return katalogOlustur(seviye).length;

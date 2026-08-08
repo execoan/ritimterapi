@@ -127,15 +127,15 @@ require APP_DIR . '/includes/view/header.php';
       <div class="m-sayac" id="mSayac" aria-hidden="true">–</div>
       <svg class="m-metronom" viewBox="0 0 64 64" aria-hidden="true">
         <defs><linearGradient id="mg2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#fbbf24"/><stop offset="1" stop-color="#d97706"/>
+          <stop offset="0" style="stop-color:rgb(var(--vurgu-acik, 251 191 36))"/><stop offset="1" style="stop-color:rgb(var(--vurgu-koyu, 217 119 6))"/>
         </linearGradient></defs>
         <path d="M25 5 H39 L52.5 53.5 Q53.8 58 49.2 58 H14.8 Q10.2 58 11.5 53.5 Z" fill="url(#mg2)"/>
         <path d="M29.2 12 H34.8 L40.6 51 H23.4 Z" fill="#1e293b"/>
         <g id="mSarkac" class="m-sarkac">
           <line x1="32" y1="49" x2="32" y2="11.5" stroke="#f8fafc" stroke-width="2.5" stroke-linecap="round"/>
-          <rect x="28.3" y="23" width="7.4" height="5.2" rx="1.2" fill="#f59e0b" stroke="#92400e" stroke-width="1"/>
+          <rect x="28.3" y="23" width="7.4" height="5.2" rx="1.2" fill="rgb(var(--vurgu, 245 158 11))" stroke="rgb(var(--vurgu-kahve, 146 64 14))" stroke-width="1"/>
         </g>
-        <circle cx="32" cy="49" r="3" fill="#f8fafc"/><circle cx="32" cy="49" r="1.4" fill="#b45309"/>
+        <circle cx="32" cy="49" r="3" fill="#f8fafc"/><circle cx="32" cy="49" r="1.4" fill="rgb(var(--vurgu-derin, 180 83 9))"/>
         <rect x="9" y="58" width="46" height="3.2" rx="1.6" fill="#78350f"/>
       </svg>
     </div>
