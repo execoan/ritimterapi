@@ -14,7 +14,10 @@ RedirectMatch 403 (?i)^/?(storage|includes|test|docs|node_modules)(/|$)
 RedirectMatch 403 (?i)(^|/)\.
 
 # Veri ve yapılandırma uzantıları — dizin kuralı delinse bile son emniyet
-<FilesMatch "(?i)\.(sqlite|sqlite-wal|sqlite-shm|db|sql|bak|ini|log|bat|cmd|ps1)$">
+# Uzantı listesi router.php'deki listeyle AYNI olmalı. Denetimde ayrışmıştı:
+# router (php -S) .md/.yml'i engelliyordu ama Apache engellemiyordu — yani
+# XAMPP ile yayında CLAUDE.md herkese açıktı (varsayılan şifre ve iç yapı).
+<FilesMatch "(?i)\.(sqlite|sqlite-wal|sqlite-shm|db|sql|bak|ini|log|bat|cmd|ps1|md|yml|yaml)$">
   <IfModule mod_authz_core.c>
     Require all denied
   </IfModule>

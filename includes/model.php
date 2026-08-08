@@ -1450,11 +1450,15 @@ function pre_registration_save(array $d): array
     $kayitMesaji = 'Ders tercihi: ' . ON_KAYIT_DERS_TURU_LABELS[$dersTuru]
         . ($ziyaretciMesaji !== '' ? ' · ' . $ziyaretciMesaji : '');
 
-    // Oturum başına saatlik sınır: aynı ziyaretçi formu doldurup durmasın
-    $simdi = time();
-    $gecmis = array_values(array_filter((array)($_SESSION['on_kayit_gecmis'] ?? []),
-        fn($t) => $simdi - (int)$t < 3600));
-    if (count($gecmis) >= 3) {
+    /*
+     * SUNUCU TARAFLI saatlik sınır (IP başına, veritabanında).
+     * Önceden sayaç $_SESSION'daydı: çerez göndermeyen ya da her istekte
+     * çerezini atan bir bot sınırsız satır yazabiliyordu — ve bu tablo
+     * KİŞİSEL VERİ tutuyor (ad, telefon/e-posta). Giriş ve ev kodu için
+     * kullanılan aynı mekanizmaya taşındı; çerez silinerek atlatılamaz.
+     */
+    $hs = hiz_siniri_dene('onkayit', 3, 3600);
+    if (!$hs['izin']) {
         return ['ok' => false, 'error' => 'Kısa sürede birden çok talep aldık. Bir saat sonra tekrar deneyin.'];
     }
 
@@ -1469,8 +1473,6 @@ function pre_registration_save(array $d): array
             'yeni',
             now_str(),
         ]);
-    $gecmis[] = $simdi;
-    $_SESSION['on_kayit_gecmis'] = $gecmis;
     return ['ok' => true, 'error' => null];
 }
 

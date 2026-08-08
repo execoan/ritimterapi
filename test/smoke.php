@@ -1051,7 +1051,35 @@ dogrula($ht !== false && !preg_match('/^\s*<Directory/mi', $ht),
 dogrula(is_file(dirname(__DIR__) . '/assets/img/galeri/.htaccess'),
     'galeri klasöründe yüklenen dosyayı çalıştırmayı engelleyen .htaccess var');
 
-/* 8) Yeni güvenlik başlıkları */
+/* 8) Video metinleri PANELDEN düzenlenebilmeli — index.php okuyordu ama
+      site.php'de alan yoktu, yani kaydetmenin hiçbir yolu yoktu. */
+$t = csrf_al('site.php', $jar);
+$panel = git_('site.php', $jar)['govde'];
+dogrula(str_contains($panel, 'metin[video_baslik]') && str_contains($panel, 'metin[video_ustbaslik]'),
+    'video bölümü metinleri panelde düzenlenebiliyor');
+
+/* 9) Önbellek güvencesi php.ini'ye BAĞIMLI OLMAMALI. PHP'nin oturum modülü
+      varsayılanda no-store yolluyor, ama session.cache_limiter sunucuda
+      'public' yapılabilir; o durumda ortak bir vekil öğrenci adlarını ve
+      veli notlarını başka ziyaretçiye servis edebilirdi. 'private' yalnız
+      bizim açık başlığımızdan gelir — onu arıyoruz. */
+dogrula(str_contains(git_('ogrenciler.php', $jar)['basliklar'], 'private'),
+    'kimlikli sayfada açık Cache-Control (private) — ayara bağımlı değil');
+
+/* 10) Ön kayıt hız sınırı SUNUCUDA: çerez atan bot sınırsız kişisel veri
+       satırı yazabiliyordu (tablo ad + telefon/e-posta tutuyor). */
+$mCode = @file_get_contents(dirname(__DIR__) . '/includes/model.php');
+dogrula($mCode !== false && str_contains($mCode, "hiz_siniri_dene('onkayit'")
+     && !str_contains($mCode, 'on_kayit_gecmis'),
+    'ön kayıt hız sınırı oturumdan veritabanına taşındı');
+
+/* 11) Uzantı kara listeleri AYRIŞMAMALI: router (php -S) .md engelliyordu
+       ama Apache engellemiyordu → XAMPP yayınında CLAUDE.md herkese açıktı. */
+$htx = @file_get_contents(dirname(__DIR__) . '/.htaccess');
+dogrula($htx !== false && str_contains($htx, '|md|yml|yaml'),
+    '.htaccess uzantı listesi router.php ile aynı (.md sızmıyor)');
+
+/* 12) Yeni güvenlik başlıkları */
 $anonJar2 = [];
 $bas = git_('giris.php', $anonJar2)['basliklar'];
 dogrula(str_contains($bas, 'frame-src') && str_contains($bas, 'youtube-nocookie.com'),

@@ -146,6 +146,13 @@ if (!headers_sent()) {
     header('Cross-Origin-Opener-Policy: same-origin');
     header('Cross-Origin-Resource-Policy: same-origin');
     header('X-Permitted-Cross-Domain-Policies: none');
+    /* Önbellek: sayfalar tarayıcıda ya da paylaşılan vekilde KALMAMALI.
+       PHP'nin oturum modülü zaten benzerini yolluyor (session.cache_limiter
+       varsayılanı 'nocache') — ama o bir php.ini ayarı ve sunucuda 'public'
+       yapılmış olabilir. Garantiyi ayara bırakmıyoruz; 'private' de ekleniyor
+       ki ortak vekil bir eğitmenin sayfasını başkasına servis etmesin. */
+    header('Cache-Control: no-store, no-cache, must-revalidate, private');
+    header('Pragma: no-cache');
     /* HSTS yalnız gerçekten HTTPS'teyken: HTTP üzerinden yollamak anlamsız,
        yanlış kurulumda siteyi erişilemez kılabilir. */
     if (guvenli_baglanti_mi()) {
@@ -163,7 +170,15 @@ if (session_status() === PHP_SESSION_NONE) {
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
+    /* Oturum modülü kendi Cache-Control'ünü basar ve YUKARIDA kurduğumuz
+       başlığın ÜZERİNE YAZAR (ölçüldü: 'private' kayboluyordu). Kendi
+       sınırlayıcısı kapatılır, garanti bizim açık başlığımızda kalır. */
+    session_cache_limiter('');
     session_start();
+    if (!headers_sent()) {
+        header('Cache-Control: no-store, no-cache, must-revalidate, private');
+        header('Pragma: no-cache');
+    }
 
     /*
      * OTURUM ÖMRÜ — iki ayrı sınır:

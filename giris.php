@@ -78,7 +78,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     padding: 1.5rem; position: relative; overflow: hidden;
     background:
       radial-gradient(900px 460px at 70% -10%, rgb(var(--vurgu) / .16), transparent 60%),
-      radial-gradient(600px 380px at 8% 108%, rgb(var(--vurgu-koyu) / .12), transparent 60%),
+      radial-gradient(600px 380px at 8% 108%, rgb(var(--ikincil) / .13), transparent 60%),
       var(--t-zemin);
   }
   .giris-kart {

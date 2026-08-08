@@ -14,6 +14,13 @@ $METIN_ALANLARI = [
         'hero_aciklama'  => ['Açıklama paragrafı', 'coksatir'],
         'serit_metin'    => ['Kayan şerit metni (madde aralarına · koyun)', 'girdi'],
     ],
+    /* Video bölümünün metinleri index.php'de okunuyordu ama hiçbir yerden
+       yazılamıyordu — denetimde çıktı. Bağlantının kendisi Görünüm panelinde. */
+    'Tanıtım videosu' => [
+        'video_ustbaslik' => ['Üst başlık (küçük şerit yazı)', 'girdi'],
+        'video_baslik'    => ['Bölüm başlığı', 'girdi'],
+        'video_aciklama'  => ['Açıklama (boş bırakılırsa hiç gösterilmez)', 'coksatir'],
+    ],
     'Sayı kartları' => [
         'sayi_1_deger' => ['1. değer', 'girdi'], 'sayi_1_etiket' => ['1. etiket', 'girdi'],
         'sayi_2_deger' => ['2. değer', 'girdi'], 'sayi_2_etiket' => ['2. etiket', 'girdi'],
