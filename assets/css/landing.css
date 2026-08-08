@@ -406,7 +406,12 @@ h2 { font-size: clamp(1.5rem, 3.5vw, 2.2rem); }
 /* ---------- Kayan şerit ---------- */
 .t-serit {
   overflow: hidden; background: linear-gradient(90deg, rgb(var(--vurgu-koyu)), rgb(var(--vurgu-derin)));
-  padding: .65rem 0; transform: rotate(-.6deg) scale(1.01); margin: -.6rem 0;
+  padding: .65rem 0; margin: -.6rem 0;
+  /* scale(1.01) KALDIRILDI: belgeyi görünümden geniş yapıyordu ve sayfa her
+     genişlikte yana kayıyordu (390px→2px, 768px→4px, 1280px→7px ölçüldü).
+     Ölçek yalnızca eğimin uçlarındaki ~4px üçgenleri örtmek içindi; koyu
+     zeminde görünmeyen bu ayrıntı, kayan sayfaya değmez. Dönüş korundu. */
+  transform: rotate(-.6deg);
   border-top: 1px solid rgba(255,255,255,.2); border-bottom: 1px solid rgba(0,0,0,.3);
 }
 .t-serit-ic {
@@ -1524,4 +1529,54 @@ html.tema-sakin .t-isik { display: none; }
 @media (min-width: 721px) and (max-width: 1024px) {
   .t-kadran-sar { right: -34%; opacity: .35; }
   .t-hero h1 { font-size: clamp(2.2rem, 5.4vw, 3.2rem); }
+}
+
+/* ---------- Telefon: tanıtım sayfası dokunma hedefleri ---------- */
+/* 390px ölçümü: nav bağlantıları ve .t-btn 35px, ızgaralar 40-61px göz. */
+@media (max-width: 1024px) {
+  .t-btn { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .t-nav-linkler a { min-height: 44px; display: inline-flex; align-items: center; }
+  .t-tempo-secenek { min-height: 48px; }
+  /* Beş sütunlu "ritim yolu" telefonda 40px'lik gözlere düşüyordu */
+  .t-ritim-yol { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  .t-tek-deney-ust, .t-ders-turu { grid-template-columns: 1fr !important; }
+  .t-bolum-ustbaslik { font-size: 13px; }
+}
+
+/* Nav markası ve animasyon anahtarı telefonda 34-38px kalıyordu */
+@media (max-width: 1024px) {
+  .t-marka { min-height: 44px; }
+  .t-hareket-anahtari { width: 44px; height: 44px; }
+}
+
+/* Kart içi bağlantılar ("ders türü" kartları) 19px yüksekliğindeydi */
+@media (max-width: 1024px) {
+  .t-ders-turu-link { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* ================================================================
+   DOKUNMATİKTE İÇERİK KAYBI (denetim bulgusu, ölçümle doğrulandı)
+   ================================================================
+   Program haritasındaki dört evre kartının açıklaması (277 karakter)
+   yalnız :hover / :focus-within ile açılıyordu. Dokunmatikte hover
+   YOKTUR ve iOS Safari tabindex'li bir <div>'e dokununca odak vermez —
+   yani telefonda ve tablette bu metin HİÇ görünmüyordu. Ölçüldü:
+   max-height 0px, opacity 0, yükseklik 0.
+   İşaretçi kaba olan cihazlarda detay baştan açık gelir.
+   ================================================================ */
+@media (hover: none) {
+  .t-evre-detay { max-height: none; opacity: 1; margin-top: .55rem; }
+}
+
+/* ----------------------------------------------------------------
+   .gorsel-gizli — yalnız ekran okuyucu için metin.
+   ev.php ve index.php app.css YÜKLEMEZ (landing/metronom/ev.css);
+   sınıf tanımsız kalınca "— yapıldı / — yapılmadı, bugün" gibi
+   yardımcı metinler 30px'lik gün yuvarlaklarının içine GÖRÜNÜR
+   basılıyor ve komşu yuvarlakların üstüne taşıyordu.
+   ---------------------------------------------------------------- */
+.gorsel-gizli {
+  position: absolute; width: 1px; height: 1px; margin: -1px;
+  padding: 0; border: 0; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
 }

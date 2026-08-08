@@ -1104,6 +1104,47 @@ $mCss = git_('assets/css/metronom.css', $cssJar)['govde'];
 dogrula((bool)preg_match('/\.m-sekmeler\s*\{[^}]*overflow-x:\s*auto/', $mCss),
     'metronom sekme şeridi telefonda kaydırılabilir');
 
+/* Dokunma kuralları TABLETİ de kapsamalı. İlk sürüm 760px'te bitiyordu ve
+   768px'lik tablette hiçbiri uygulanmıyordu — ölçümle bulundu (tablette 62
+   denetim 44px altında kalıyordu). */
+foreach ([['assets/css/app.css', $lCss = null], ['assets/css/metronom.css', null]] as [$sf, $_]) {
+    $c = git_($sf, $cssJar)['govde'];
+    dogrula(str_contains($c, '@media (max-width: 1024px)'),
+        basename($sf) . ' dokunma kuralları tableti de kapsıyor');
+}
+$aCss = git_('assets/css/app.css', $cssJar)['govde'];
+/* Girdilerde 16px: iOS Safari altındaki değerlerde odaklanınca sayfayı
+   zorla yakınlaştırır ve kullanıcı elle geri uzaklaştırmak zorunda kalır. */
+dogrula((bool)preg_match('/font-size:\s*16px/', $aCss),
+    'telefonda girdi yazı boyu 16px (iOS zorla yakınlaştırma yok)');
+/* WCAG 2.5.8 AA = 24x24. Onay kutuları yerelde 13x13 gelir. */
+dogrula((bool)preg_match('/input\[type="checkbox"\][^{]*\{[^}]*(width|min-width):\s*2[4-9]px/s', $aCss),
+    'onay kutuları dokunmatikte en az 24px');
+
+/* Kayan şeridin scale(1.01)\'i belgeyi görünümden geniş yapıyor ve sayfa
+   HER genişlikte yana kayıyordu (1280px\'te 7px ölçüldü). */
+$lCssTam = git_('assets/css/landing.css', $cssJar)['govde'];
+dogrula(!str_contains($lCssTam, 'rotate(-.6deg) scale('),
+    'kayan şerit sayfayı yana kaydırmıyor (scale kaldırıldı)');
+
+/* Dokunmatikte İÇERİK KAYBI: program evre kartlarının açıklaması yalnız
+   :hover ile açılıyordu; telefonda/tablette 277 karakter hiç görünmüyordu
+   (ölçüldü: max-height 0, opacity 0, yükseklik 0). */
+dogrula(str_contains($lCssTam, '@media (hover: none)') && str_contains($lCssTam, '.t-evre-detay'),
+    'hover olmayan cihazda program açıklamaları görünür');
+
+/* .gorsel-gizli yalnız app.css'te tanımlıydı; ev.php ve index.php onu
+   YÜKLEMEZ, yani ekran okuyucuya özel metinler gözle görünür basılıyordu
+   ("— yapılmadı, bugün" 30px'lik gün yuvarlağının içine taşıyordu). */
+dogrula((bool)preg_match('/\.gorsel-gizli\s*\{[^}]*clip-path/s', $lCssTam),
+    'ekran okuyucu metni herkese açık sayfalarda da gizli (landing.css)');
+
+/* Koyu sahnede koyu mürekkep: BPM oyunu kartında başlık ve etiketler
+   rgb(28,25,23) idi — parlaklık 25, okunmuyordu. */
+$mCssTam = git_('assets/css/metronom.css', $cssJar)['govde'];
+dogrula(str_contains($mCssTam, '.oyun-kart h3') || str_contains($mCssTam, '.m-sahne h3'),
+    'koyu sahnedeki başlık ve etiketler açık renge çekildi');
+
 bolum('Marka ayrımı (panel içi / herkese açık)');
 /* ÇIKIŞLI çerezle bakılır: girişli oturumda giris.php panele yönlenir ve
    denetim panelin HTML'ini ölçer — kontrol boşa çıkar. */

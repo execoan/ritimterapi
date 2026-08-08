@@ -568,3 +568,11 @@
  * (390px görünümde belge genişliği 490px ölçüldü). Kırpma eklendi.
  */
 .ev-giris { position: relative; overflow: hidden; }
+
+/* Katılımcı portalı telefondan kullanılıyor; kart içi tek bağlantılar
+   ("← Ana sayfa") 22px yüksekliğindeydi. */
+@media (max-width: 1024px) {
+  .ev-giris-kart a, .ev-kart a:not(.btn) {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+}

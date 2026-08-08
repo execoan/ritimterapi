@@ -99,7 +99,7 @@ h3 { font-size: .95rem; margin: 0 0 .4rem; color: var(--murekkep); }
 .nav-cikis-form { margin: 0; }
 .nav-cikis strong { color: #fca5a5; }
 
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .nav-hamburger { display: block; }
   .ust-nav { display: none; width: 100%; flex-direction: column; align-items: stretch; padding-bottom: .6rem; }
   .ust-nav.mobil-acik { display: flex; }
@@ -412,3 +412,67 @@ textarea.girdi { resize: vertical; min-height: 64px; }
 .tema-renk + .tema-renk { margin-left: -8px; }
 .tema-renk-girdi { padding: .15rem; height: 42px; cursor: pointer; }
 .gorunum-form .form-grid { margin: .8rem 0; }
+
+/* ================================================================
+   TELEFON: DOKUNMA VE OKUNABİLİRLİK (Ağu 2026)
+   ================================================================
+   390px'te ölçüldü: düğmeler 37px, girdi/seçim 38px, onay kutuları
+   13x13px çıkıyordu. WCAG 2.5.5 en az 44x44 ister; 13px'lik bir kutu
+   parmakla ıskalanır — üstelik yedek.php'de YIKICI bir işlemin (geri
+   yükleme) onayı o kutuya bağlı.
+
+   Girdilerde font-size 16px KRİTİK: iOS Safari 16px'in ALTINDAKİ bir
+   alana odaklanınca sayfayı zorla yakınlaştırır ve kullanıcı elle geri
+   uzaklaştırmak zorunda kalır. 0.93rem (~14,9px) tam o eşiğin altındaydı.
+   ================================================================ */
+@media (max-width: 1024px) {
+  .btn, .btn-kucuk {
+    min-height: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .btn-kucuk { padding: .4rem .75rem; font-size: .86rem; }
+
+  .girdi, .secim, textarea.girdi {
+    min-height: 44px;
+    font-size: 16px;          /* iOS'ta odaklanınca yakınlaştırmayı önler */
+  }
+  textarea.girdi { min-height: 88px; }
+
+  /* Yerel onay kutusu/radyo 13x13 gelir; ölçek büyütür ama tıklama
+     alanını da büyütmek için dolgu şart. */
+  input[type="checkbox"], input[type="radio"] {
+    width: 22px; height: 22px; min-width: 22px; accent-color: var(--amber-koyu);
+  }
+  label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) {
+    min-height: 44px; display: flex; align-items: center; gap: .55rem;
+  }
+
+  .nav-hamburger { min-width: 44px; min-height: 44px; }
+
+  /* İpucu metinleri 12px idi — telefonda küçük. */
+  .alan-ipucu, .tablo small, .kart small { font-size: 13px; }
+
+  /* Satır içi eylem düğmeleri (tablo sonu Sil/Düzenle) alt alta sıkışmasın */
+  td.sag .btn-kucuk, td .btn-kucuk { margin: .12rem 0; }
+}
+
+/* Görünüm panelindeki hazır tema düğmeleri 35px kalıyordu */
+@media (max-width: 1024px) {
+  .tema-hazir-btn { min-height: 44px; }
+  .tema-renk-girdi { min-height: 48px; }
+}
+
+/* ---------- Dokunma: ölçümle bulunan son kusurlar ---------- */
+@media (max-width: 1024px) {
+  /* Onay kutuları 22px ile WCAG AA'nın (24x24) 2px altında kalıyordu —
+     kendi düzeltmem eksik çıkmıştı, ölçüm yakaladı. */
+  input[type="checkbox"], input[type="radio"] {
+    width: 26px; height: 26px; min-width: 26px; min-height: 26px;
+    flex: 0 0 auto;          /* esnek satırda ezilmesin (17px'e iniyordu) */
+  }
+  /* Kart/boş durum içindeki tek başına bağlantılar (paragraf içi DEĞİL)
+     dokunulabilir olmalı: "Oturum planlayın", "← Ana sayfa" 20px idi. */
+  .bos-durum a, .kart > a:not(.btn), .kart-baslik a:not(.btn) {
+    display: inline-flex; align-items: center; min-height: 44px;
+  }
+}

@@ -48,7 +48,7 @@
 }
 .m-ust { display: grid; grid-template-columns: minmax(210px, 300px) 1fr; gap: 2rem; align-items: center; }
 .m-ust > *, .m-kontrol { min-width: 0; }
-@media (max-width: 760px) { .m-ust { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .m-ust { grid-template-columns: 1fr; } }
 
 .m-gorsel { position: relative; display: flex; align-items: center; justify-content: center; min-height: 260px; }
 .m-metronom { width: min(230px, 60vw); position: relative; z-index: 2; filter: drop-shadow(0 14px 34px rgba(245, 158, 11, .35)); }
@@ -371,7 +371,7 @@
 .akis-liste li.aktif::before { content: "▶"; color: var(--amber); }
 .akis-liste li.tamam { opacity: .55; }
 .akis-liste li.tamam::before { content: "✔"; color: var(--yesil); }
-@media (max-width: 760px) { .akis-sahne { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .akis-sahne { grid-template-columns: 1fr; } }
 
 /* ---------- Çalışma merkezi: setlist + otomatik günlük ---------- */
 .m-cm-baslik { align-items: flex-start; }
@@ -595,4 +595,59 @@
     opacity: 0 !important; transition: none !important;
   }
   html { scroll-behavior: auto; }
+}
+
+/* ================================================================
+   TELEFON: metronom denetimleri (Ağu 2026 ölçümü)
+   ================================================================
+   390px'te 61 denetim 40px'in altındaydı; mini düğmeler 40x32 ve
+   BPM satırı beş öğeyi tek satıra sıkıştırıyordu. Metronom telefondan
+   çok kullanılıyor (atölyede tablet/telefon elde) — burada dokunma
+   isabeti doğrudan ölçümün kalitesini etkiler.
+   ================================================================ */
+@media (max-width: 1024px) {
+  .m-mini-btn { min-height: 44px; min-width: 48px; padding: .5rem .8rem; }
+  .m-bpm-satir { flex-wrap: wrap; gap: .45rem; }
+  .m-bpm-goster { flex: 1 0 100%; order: -1; }   /* sayı üstte, düğmeler altta */
+  .m-sekme { min-height: 44px; display: inline-flex; align-items: center; }
+  .m-nokta { min-width: 34px; min-height: 34px; }
+  .m-tur-chip { min-height: 40px; display: inline-flex; align-items: center; }
+}
+
+/* Sürgü (tempo/ses) telefonda 6px yüksekliğindeydi — parmakla tutulmuyor.
+   Yol kalınlaştırılır, tutamak büyütülür; ikisi de dokunma hedefi. */
+@media (max-width: 1024px) {
+  .m-surgu { height: 30px; }
+  .m-surgu::-webkit-slider-runnable-track { height: 10px; border-radius: 999px; }
+  .m-surgu::-webkit-slider-thumb { width: 30px; height: 30px; margin-top: -10px; }
+  .m-surgu::-moz-range-track { height: 10px; }
+  .m-surgu::-moz-range-thumb { width: 30px; height: 30px; }
+}
+
+/* Ayar onay kutuları esnek satırda 22x17'ye eziliyordu */
+@media (max-width: 1024px) {
+  .m-ayar-onay { min-height: 44px; align-items: center; }
+  .m-ayar-onay input[type="checkbox"] { width: 26px; height: 26px; flex: 0 0 auto; }
+}
+
+/* ================================================================
+   KOYU SAHNEDE METİN KONTRASTI (denetim bulgusu)
+   ================================================================
+   .m-sahne koyu zeminlidir ama app.css'in genel kuralları başlık ve
+   form etiketlerine koyu mürekkep (#1c1917) veriyor. Ölçüldü: BPM
+   Tahmin Oyunu kartında h3 ve .form-alan rgb(28,25,23) — parlaklık 25,
+   koyu zeminde okunmuyor. metronom.css'te .secim ve .alan-ipucu için
+   zaten böyle geçersiz kılmalar vardı; başlık ve etiket unutulmuş.
+   Renkler tema değişkeninden okunur ki Görünüm paneli burayı da giydirsin.
+   ================================================================ */
+.m-sahne h3, .m-sahne .form-alan, .oyun-kart h3, .oyun-kart .form-alan { color: #f5f5f4; }
+.m-sahne .m-faz-etiket, .oyun-kart .m-faz-etiket { color: rgb(var(--vurgu-acik, 251 191 36)); }
+.m-sahne .m-tur-goster { color: #d6d3d1; }
+.m-sahne .tablo th, .oyun-kart .tablo th { color: #a8a29e; }
+.m-sahne .tablo td, .oyun-kart .tablo td { border-bottom-color: rgba(255, 255, 255, .12); }
+
+/* Aksan noktaları: 12/8 ölçüde 12 nokta tek satıra sığmaz. min-width
+   büzülmeyi engelliyor ama sarma olmadan satır taşardı. */
+@media (max-width: 1024px) {
+  .m-nokta-dizi { flex-wrap: wrap; gap: .4rem; }
 }
