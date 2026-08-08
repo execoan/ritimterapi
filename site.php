@@ -129,7 +129,21 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 
         $vurgu = strtolower(trim((string)($_POST['tema_vurgu'] ?? '')));
         $ikincil = strtolower(trim((string)($_POST['tema_ikincil'] ?? '')));
-        if (hex_gecerli($vurgu)) { site_text_set('tema_vurgu', $vurgu); }
+        $kontrastNotu = '';
+        if (hex_gecerli($vurgu)) {
+            /* Renk seçici serbest; site zemini koyu (#0c0a09). Çok koyu bir
+               ana renk marka yazısını, bağlantıları ve dolu düğmeleri
+               okunamaz yapar (#000000 → türevler #141414). Sessizce kabul
+               edip siteyi bozmak yerine WCAG AA eşiğine açıyoruz ve
+               DEĞİŞTİRDİĞİMİZİ söylüyoruz — kullanıcı ne olduğunu bilsin. */
+            $okunur = tema_okunur_vurgu($vurgu);
+            site_text_set('tema_vurgu', $okunur['renk']);
+            if ($okunur['duzeltildi']) {
+                $kontrastNotu = ' Not: seçtiğiniz ana renk koyu zeminde okunmuyordu ('
+                    . number_format(kontrast_orani($vurgu, TEMA_ZEMIN), 1, ',', '') . ':1); '
+                    . 'tonu korunarak ' . $okunur['renk'] . ' değerine açıldı.';
+            }
+        }
         else { $hatalar[] = 'ana renk (#rrggbb biçiminde olmalı)'; }
         if (hex_gecerli($ikincil)) { site_text_set('tema_ikincil', $ikincil); }
         else { $hatalar[] = 'karşı ışık rengi'; }
@@ -148,9 +162,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 . ' assets/ altında .mp4 yolu olmalı)';
         }
 
-        flash_set($hatalar ? 'hata' : 'basari', $hatalar
+        flash_set($hatalar ? 'hata' : 'basari', ($hatalar
             ? 'Şunlar kaydedilemedi: ' . implode(' · ', $hatalar) . '. Kalanlar kaydedildi.'
-            : 'Görünüm kaydedildi. Tanıtım sayfası, giriş ve katılımcı portalı güncellendi.');
+            : 'Görünüm kaydedildi. Tanıtım sayfası, giriş ve katılımcı portalı güncellendi.')
+            . $kontrastNotu);
         redirect('site.php#gorunum');
     }
 
@@ -180,10 +195,13 @@ require APP_DIR . '/includes/view/header.php';
     </div>
   </div>
 
-  <form method="post" action="<?= e(url('site.php')) ?>" class="gorunum-form">
+  <?php /* Hazır temalar AYRI bir form. Aynı formdayken metin alanında Enter'a
+           basmak, tarayıcı kuralı gereği formun İLK gönder düğmesini tetikliyordu:
+           yazılan video bağlantısı çöpe gidiyor, tema sessizce "Amber Sahne"ye
+           dönüyordu. Ayırınca Enter her zaman "Görünümü Kaydet"i çalıştırır. */ ?>
+  <form method="post" action="<?= e(url('site.php')) ?>" class="tema-hazir-form">
     <?= csrf_field() ?>
     <input type="hidden" name="islem" value="gorunum">
-
     <div class="form-alan"><span>Hazır temalar</span>
       <div class="tema-hazirlar">
         <?php foreach (TEMA_HAZIR as $anahtar => $h): ?>
@@ -195,7 +213,14 @@ require APP_DIR . '/includes/view/header.php';
         </button>
         <?php endforeach; ?>
       </div>
+      <small class="alan-ipucu">Hazır tema yalnız iki rengi değiştirir; animasyon ve
+        video ayarları aşağıdaki formda, ayrıca kaydedilir.</small>
     </div>
+  </form>
+
+  <form method="post" action="<?= e(url('site.php')) ?>" class="gorunum-form">
+    <?= csrf_field() ?>
+    <input type="hidden" name="islem" value="gorunum">
 
     <div class="form-grid">
       <label class="form-alan">Ana renk

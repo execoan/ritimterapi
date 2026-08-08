@@ -499,3 +499,57 @@ function video_embed_bilgisi(string $url): ?array
     }
     return null;
 }
+
+/* -----------------------------------------------------------------
+   KONTRAST KORUMASI
+   -----------------------------------------------------------------
+   Görünüm panelinde renk seçici serbest: eğitmen #000000 seçebilir.
+   Ölçüldü — o durumda türevler #212121/#141414 çıkıyor ve site zemini
+   #0c0a09 olduğu için marka yazısı, bağlantılar ve dolu düğmeler
+   okunamaz hale geliyordu. Renk sessizce kabul edilip site bozulmasın:
+   aydınlık ekseni WCAG AA eşiğine (4,5:1) çıkana dek yükseltilir ve
+   düzeltme kullanıcıya AÇIKÇA bildirilir.
+   ----------------------------------------------------------------- */
+
+/** WCAG bağıl parlaklık (0-1). */
+function bagil_parlaklik(string $hex): float
+{
+    $kanal = function (int $s): float {
+        $o = $s / 255;
+        return $o <= 0.03928 ? $o / 12.92 : (($o + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * $kanal((int)hexdec(substr($hex, 1, 2)))
+         + 0.7152 * $kanal((int)hexdec(substr($hex, 3, 2)))
+         + 0.0722 * $kanal((int)hexdec(substr($hex, 5, 2)));
+}
+
+/** İki renk arasındaki WCAG kontrast oranı (1:1 – 21:1). */
+function kontrast_orani(string $a, string $b): float
+{
+    $x = bagil_parlaklik($a);
+    $y = bagil_parlaklik($b);
+    return (max($x, $y) + 0.05) / (min($x, $y) + 0.05);
+}
+
+const TEMA_ZEMIN = '#0c0a09';      // body.tanitim arka planı
+const TEMA_KONTRAST_ESIK = 4.5;    // WCAG AA, normal metin
+
+/**
+ * Vurgu rengini koyu zeminde okunur olana dek açar.
+ * @return array{renk:string, duzeltildi:bool, oran:float}
+ */
+function tema_okunur_vurgu(string $hex): array
+{
+    $oran = kontrast_orani($hex, TEMA_ZEMIN);
+    if ($oran >= TEMA_KONTRAST_ESIK) {
+        return ['renk' => $hex, 'duzeltildi' => false, 'oran' => $oran];
+    }
+    /* Aydınlığı adım adım yükselt; ton ve doygunluk KORUNUR ki eğitmenin
+       seçtiği renk kimliği kaybolmasın — yalnız okunur hale gelsin. */
+    $son = $hex;
+    for ($adim = 1; $adim <= 60; $adim++) {
+        $son = tema_ton($hex, $adim * 0.015);
+        if (kontrast_orani($son, TEMA_ZEMIN) >= TEMA_KONTRAST_ESIK) { break; }
+    }
+    return ['renk' => $son, 'duzeltildi' => true, 'oran' => kontrast_orani($son, TEMA_ZEMIN)];
+}

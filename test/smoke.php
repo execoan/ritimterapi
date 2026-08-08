@@ -1018,7 +1018,40 @@ dogrula(!str_contains($g, 'id="video"') && !str_contains($g, 'data-embed'),
     'video bağlantısı silinince bölüm kayboldu');
 dogrula(!preg_match('/<html[^>]*class=/', $g), 'tam animasyonda <html> sınıfsız');
 
-/* 5) Yeni güvenlik başlıkları */
+/* 5) KONTRAST KORUMASI — renk seçici serbest, zemin koyu (#0c0a09).
+      Çok koyu bir ana renk marka yazısını ve dolu düğmeleri okunamaz yapardı
+      (#000000 → türevler #141414). Sessizce kabul etmek yerine açılır. */
+$t = csrf_al('site.php', $jar);
+gonder('site.php', ['csrf_token' => $t, 'islem' => 'gorunum',
+    'tema_vurgu' => '#000000', 'tema_ikincil' => '#7c3aed',
+    'tema_animasyon' => 'tam', 'video_url' => ''], $jar);
+$panel = git_('site.php', $jar)['govde'];
+dogrula(str_contains($panel, 'koyu zeminde okunmuyordu'),
+    'okunmaz renk düzeltildi ve kullanıcıya bildirildi');
+preg_match('/--vurgu:(\d+) (\d+) (\d+)/', git_('index.php', $jar)['govde'], $mv);
+$parlaklik = $mv ? (0.2126 * (int)$mv[1] + 0.7152 * (int)$mv[2] + 0.0722 * (int)$mv[3]) : 0;
+dogrula($parlaklik > 90, 'kaydedilen renk gerçekten açıldı (siyah kalmadı)',
+    'parlaklık: ' . round($parlaklik));
+
+/* 6) Tema TÜM dış yüzeylere işlemeli — mesajda öyle deniyor.
+      Denetimde giris.php ve ev.css amber'ı sabit taşıyordu. */
+$cssJar2 = [];
+$evC = git_('assets/css/ev.css', $cssJar2)['govde'];
+dogrula(!preg_match('/#fbbf24|#f59e0b|#d97706|rgba\(245, ?158, ?11/', $evC),
+    'katılımcı portalı CSS\'i sabit marka rengi taşımıyor');
+$grsC = git_('giris.php', $cssJar2)['govde'];
+dogrula(!preg_match('/#fbbf24|#f59e0b|#d97706|rgba\(245, ?158, ?11/', $grsC),
+    'giriş sayfası sabit marka rengi taşımıyor');
+
+/* 7) .htaccess: <Directory> yönergesi .htaccess bağlamında YASAK — Apache
+      "Directory not allowed here" der ve site TÜMÜYLE 500 döner. */
+$ht = @file_get_contents(dirname(__DIR__) . '/.htaccess');
+dogrula($ht !== false && !preg_match('/^\s*<Directory/mi', $ht),
+    'kök .htaccess Apache\'yi kıracak <Directory> yönergesi içermiyor');
+dogrula(is_file(dirname(__DIR__) . '/assets/img/galeri/.htaccess'),
+    'galeri klasöründe yüklenen dosyayı çalıştırmayı engelleyen .htaccess var');
+
+/* 8) Yeni güvenlik başlıkları */
 $anonJar2 = [];
 $bas = git_('giris.php', $anonJar2)['basliklar'];
 dogrula(str_contains($bas, 'frame-src') && str_contains($bas, 'youtube-nocookie.com'),

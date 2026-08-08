@@ -77,8 +77,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
     padding: 1.5rem; position: relative; overflow: hidden;
     background:
-      radial-gradient(900px 460px at 70% -10%, rgba(245,158,11,.16), transparent 60%),
-      radial-gradient(600px 380px at 8% 108%, rgba(217,119,6,.12), transparent 60%),
+      radial-gradient(900px 460px at 70% -10%, rgb(var(--vurgu) / .16), transparent 60%),
+      radial-gradient(600px 380px at 8% 108%, rgb(var(--vurgu-koyu) / .12), transparent 60%),
       var(--t-zemin);
   }
   .giris-kart {
@@ -98,7 +98,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     border: 1px solid rgba(255,255,255,.18); background: rgba(12,10,9,.7);
     color: var(--t-metin); font-size: 1rem; font-family: inherit;
   }
-  .giris-girdi:focus { outline: 2px solid rgba(245,158,11,.5); border-color: var(--t-amber); }
+  .giris-girdi:focus { outline: 2px solid rgb(var(--vurgu) / .5); border-color: var(--t-amber); }
   .giris-hata {
     background: rgba(185,28,28,.18); border: 1px solid rgba(248,113,113,.4); color: #fca5a5;
     padding: .6rem .9rem; border-radius: 12px; font-size: .88rem; margin-bottom: 1rem;
@@ -119,7 +119,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
   }
   .giris-girdi-kucuk { letter-spacing: normal; text-transform: none; font-size: 1rem; text-align: left; }
   .giris-ipucu { color: var(--t-soluk); font-size: .76rem; margin: 1rem 0 0; text-align: center; }
-  .giris-ipucu code { color: #fbbf24; }
+  .giris-ipucu code { color: rgb(var(--vurgu-acik)); }
 </style>
 <?php /* Giris sayfasi da herkese acik bir yuzey: buradan da kurulabilsin. */ ?>
 <link rel="manifest" href="<?= e(url('manifest.json')) ?>">
@@ -141,9 +141,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
       <path d="M29.2 12 H34.8 L40.6 51 H23.4 Z" fill="#1e293b"/>
       <g class="t-sarkac">
         <line x1="32" y1="49" x2="32" y2="12.5" stroke="#f8fafc" stroke-width="2.6" stroke-linecap="round"/>
-        <rect x="28.3" y="24.2" width="7.4" height="5" rx="1.2" fill="#f59e0b" stroke="#92400e" stroke-width="1"/>
+        <rect x="28.3" y="24.2" width="7.4" height="5" rx="1.2" fill="rgb(var(--vurgu))" stroke="rgb(var(--vurgu-kahve))" stroke-width="1"/>
       </g>
-      <circle cx="32" cy="49" r="3" fill="#f8fafc"/><circle cx="32" cy="49" r="1.4" fill="#b45309"/>
+      <circle cx="32" cy="49" r="3" fill="#f8fafc"/><circle cx="32" cy="49" r="1.4" fill="rgb(var(--vurgu-derin))"/>
       <rect x="9" y="58" width="46" height="3.2" rx="1.6" fill="#78350f"/>
     </svg>
     <h1>Eğitmen Girişi</h1>

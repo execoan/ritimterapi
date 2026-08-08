@@ -24,13 +24,10 @@ RedirectMatch 403 (?i)(^|/)\.
   </IfModule>
 </FilesMatch>
 
-# Yüklenen görsellerin çalıştırılabilir olarak yorumlanmasını engelle
-<Directory "assets/img/galeri">
-  <IfModule mod_php.c>
-    php_flag engine off
-  </IfModule>
-  AddType text/plain .php .phtml .phar
-</Directory>
+# NOT: Yüklenen görsellerin çalıştırılmasını engelleyen kurallar
+# assets/img/galeri/.htaccess dosyasındadır. Buraya <Directory> YAZILAMAZ —
+# Apache o yönergeyi .htaccess bağlamında reddeder ("Directory not allowed
+# here") ve site TÜMÜYLE 500 döner. Bir denetimde bu şekilde bulundu.
 
 # router.php ile aynı güvenlik başlıkları (bootstrap zaten yolluyor;
 # statik dosyalar için de geçerli olsun)

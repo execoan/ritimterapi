@@ -236,15 +236,38 @@ if (!is_file($gizliDosya)) {
        Varsayılan 'ritim' şifresiyle kurulmuş bir uygulama internete açılırsa
        ilk denenecek şey odur. */
     $ilkSifre = bin2hex(random_bytes(6));
+    /*
+     * DAĞITIM KİPİ İLK KURULUMDA NASIL SEÇİLİR — güvenlik açısından kritik.
+     *
+     * Eskiden burada 'yerel' + HIZLI_GIRIS=true SABİT yazılıyordu. Sonucu:
+     * uygulama nginx/PHP-FPM arkasında yayına alındığında ilk istek bu
+     * dosyayı üretiyor, REMOTE_ADDR vekil yüzünden 127.0.0.1 göründüğü için
+     * yerel_istek_mi() TRUE dönüyor ve giriş sayfası ŞİFRESİZ TEK TIK panel
+     * düğmelerini TÜM İNTERNETE gösteriyordu.
+     *
+     * Ayrım tek başına REMOTE_ADDR'den yapılamaz (vekil de döngü görünür).
+     * Ayırt edici sinyal SAPI: start.bat `php -S` çalıştırır → 'cli-server'.
+     * Apache/FPM ile yayınlanan bir kurulum asla 'cli-server' olmaz. Şüpheli
+     * her durumda GÜVENLİ taraf ('yayin') seçilir; eğitmen isterse dosyadan
+     * 'yerel' yapar — kolaylık geri alınabilir, sızan panel geri alınamaz.
+     */
+    $yerelKurulum = PHP_SAPI === 'cli-server'
+        && in_array((string)($_SERVER['REMOTE_ADDR'] ?? ''), ['127.0.0.1', '::1'], true);
     gizli_dosyayi_yaz($gizliDosya, [
         'admin'   => password_hash($ilkSifre, PASSWORD_DEFAULT),
         'egitmen' => password_hash($ilkSifre, PASSWORD_DEFAULT),
-    ], 'yerel', true);
+    ], $yerelKurulum ? 'yerel' : 'yayin', $yerelKurulum);
     @file_put_contents(STORAGE_DIR . '/ILK-SIFRE.txt',
         "RitimTerapi ilk giriş şifresi: {$ilkSifre}\n\n"
         . "Kullanıcı adları: admin, egitmen\n"
         . "Şifreyi değiştirmek için storage/gizli.php dosyasında ilgili satıra düz metin\n"
-        . "yeni şifreyi yazın; uygulama ilk açılışta özete çevirir.\n"
+        . "yeni şifreyi yazın; uygulama ilk açılışta özete çevirir.\n\n"
+        . "Dağıtım kipi: " . ($yerelKurulum ? 'yerel' : 'yayin') . "\n"
+        . ($yerelKurulum
+            ? "Tek tıkla giriş açık (yalnız bu bilgisayardan).\n"
+            : "Tek tıkla giriş KAPALI. Bu uygulamayı yalnız kendi bilgisayarınızda\n"
+              . "kullanacaksanız storage/gizli.php içinde DAGITIM'i 'yerel',\n"
+              . "HIZLI_GIRIS'i true yapabilirsiniz. İNTERNETE AÇIK sunucuda ASLA yapmayın.\n")
         . "BU DOSYAYI OKUDUKTAN SONRA SİLİN.\n");
 }
 if (is_file($gizliDosya)) { require $gizliDosya; }
