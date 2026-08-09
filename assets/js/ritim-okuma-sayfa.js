@@ -11,6 +11,16 @@
 (function () {
   'use strict';
 
+  /* Ritim Yolu derin bağlantısı: ?seviye=2&ders=5 → o derse konumlan.
+     Seviye kutusu da URL'ye uydurulur ki widget doğru katalogla açılsın. */
+  var yolParam = new URLSearchParams(location.search);
+  var yolDersi = parseInt(yolParam.get('ders') || '', 10) || undefined;
+  var yolSeviyesi = parseInt(yolParam.get('seviye') || '', 10);
+  if ([1, 2, 3].indexOf(yolSeviyesi) >= 0) {
+    var sevKutu = document.getElementById('roSeviye');
+    if (sevKutu) { sevKutu.value = String(yolSeviyesi); }
+  }
+
   var zaman = window.RitimZamanlama;
   var kok = document.getElementById('roKok');
   if (!zaman || !kok || !window.RitimOkuma) { return; }
@@ -45,6 +55,7 @@
     byId('roKaydetSatir').hidden = true;
     window.RitimOkuma.baslat(kok, {
       seviye: parseInt(byId('roSeviye').value, 10),
+      ders: yolDersi,
       bpm: parseInt(byId('roBpm').value, 10),
       rehber: byId('roRehber').value,
       onBitti: function (sonuc) {

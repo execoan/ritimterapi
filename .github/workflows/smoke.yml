@@ -33,6 +33,7 @@ jobs:
           node test/grup-atolyesi.test.js
           node test/poliritim.test.js
           node test/tini.test.js
+          node test/yol.test.js
 
       - name: Duman testini çalıştır
         run: |

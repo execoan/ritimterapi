@@ -1,0 +1,146 @@
+/* ================================================================
+   YOL GÖRÜNÜMÜ — Ritim Yolu ve Kulak Yolu'nun ortak dili.
+   ================================================================
+   İlerlemeli yol: bölüm kartları içinde adım düğümleri. Düğüm durumları:
+   kilitli (soluk + 🔒), açık (çerçeveli), sıradaki (nabız halkası),
+   yıldızlı (1-3 ★). Yarışmasız dil: sıralama/lig yok, yalnız kişinin
+   kendi yolu. Tema değişkenleri geri dönüşlü okunur; koyu sahne.
+   ================================================================ */
+
+.yol-sahne {
+  background: linear-gradient(180deg, #1c1917, #292524);
+  border-radius: 18px; padding: 1.4rem 1.2rem 1.8rem;
+  color: #f5f5f4; position: relative; overflow: hidden;
+}
+.yol-sahne::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(560px 260px at 85% -8%, rgb(var(--vurgu, 245 158 11) / .16), transparent 65%),
+    radial-gradient(420px 240px at 4% 108%, rgb(var(--ikincil, 124 58 237) / .12), transparent 65%);
+}
+.yol-ust {
+  position: relative; display: flex; flex-wrap: wrap; gap: .8rem;
+  align-items: center; justify-content: space-between; margin-bottom: 1rem;
+}
+.yol-ust h2 { margin: 0; font-size: 1.25rem; color: #f5f5f4; }
+.yol-ilerleme {
+  font-variant-numeric: tabular-nums; font-weight: 800;
+  color: rgb(var(--vurgu-acik, 251 191 36)); font-size: 1.05rem;
+}
+.yol-ilerleme small { display: block; color: #a8a29e; font-weight: 400; font-size: .74rem; }
+
+/* Bölüm kartı */
+.yol-bolum {
+  position: relative; border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: 14px; padding: 1rem; margin-bottom: 1rem;
+  background: rgba(12, 10, 9, .35);
+}
+.yol-bolum-baslik { display: flex; gap: .7rem; align-items: baseline; flex-wrap: wrap; }
+.yol-bolum-no {
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgb(var(--vurgu, 245 158 11) / .18);
+  color: rgb(var(--vurgu-acik, 251 191 36)); font-weight: 800;
+  align-self: center;
+}
+.yol-bolum-baslik h3 { margin: 0; font-size: 1.02rem; color: #f5f5f4; }
+.yol-bolum-ozet { margin-left: auto; color: #a8a29e; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.yol-bolum-aciklama { margin: .35rem 0 .8rem; color: #a8a29e; font-size: .85rem; }
+
+/* Adım düğümleri — bağlayıcı çizgili yatay dizi, telefonda sarar */
+.yol-adimlar { display: flex; flex-wrap: wrap; gap: .55rem .8rem; position: relative; }
+.yol-adim {
+  position: relative; flex: 0 0 auto; min-width: 118px; max-width: 164px;
+  min-height: 74px; border-radius: 13px; cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .05);
+  color: #e7e5e4; font-family: inherit; text-align: left;
+  padding: .5rem .65rem; display: flex; flex-direction: column; gap: .2rem;
+  transition: transform .18s ease, border-color .18s ease, background .18s ease;
+  text-decoration: none;
+}
+.yol-adim:hover:not(.kilitli), .yol-adim:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgb(var(--vurgu, 245 158 11) / .7);
+  background: rgb(var(--vurgu, 245 158 11) / .1);
+}
+.yol-adim:focus-visible { outline: 3px solid rgb(var(--vurgu, 245 158 11) / .7); outline-offset: 2px; }
+.yol-adim-no { font-size: .68rem; letter-spacing: .06em; color: #a8a29e; font-weight: 700; }
+.yol-adim-ad { font-size: .84rem; font-weight: 700; line-height: 1.25; }
+.yol-adim-yildiz { margin-top: auto; font-size: .8rem; letter-spacing: 1px; color: rgb(var(--vurgu-acik, 251 191 36)); }
+.yol-adim-yildiz .bos { color: rgba(255, 255, 255, .22); }
+
+.yol-adim.kilitli {
+  cursor: not-allowed; opacity: .48; border-style: dashed;
+}
+.yol-adim.kilitli .yol-adim-no::after { content: " · 🔒"; }
+
+/* Sıradaki adım: yumuşak nabız halkası (azaltılmış harekette durur) */
+.yol-adim.siradaki { border-color: rgb(var(--vurgu, 245 158 11) / .85); }
+.yol-adim.siradaki::after {
+  content: "BURADASIN"; position: absolute; top: -9px; right: 8px;
+  background: linear-gradient(135deg, rgb(var(--vurgu-acik, 251 191 36)), rgb(var(--vurgu-koyu, 217 119 6)));
+  color: #1c1917; font-size: .56rem; font-weight: 800; letter-spacing: .08em;
+  border-radius: 999px; padding: .12rem .45rem;
+}
+.yol-adim.siradaki { animation: yol-nabiz 2.6s ease-in-out infinite; }
+@keyframes yol-nabiz {
+  50% { box-shadow: 0 0 0 6px rgb(var(--vurgu, 245 158 11) / .14); }
+}
+
+/* ================================================================
+   KULAK SAHNESİ — soru ekranı
+   ================================================================ */
+.kulak-sahne { text-align: center; position: relative; }
+.kulak-soru-ust {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: .8rem; margin-bottom: .8rem; flex-wrap: wrap;
+}
+.kulak-soru-no { color: #a8a29e; font-size: .85rem; font-variant-numeric: tabular-nums; }
+.kulak-can {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 130px; height: 130px; margin: .6rem auto 1rem; border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, rgb(var(--vurgu-acik, 251 191 36) / .25), rgba(255, 255, 255, .05) 70%);
+  border: 1px solid rgb(var(--vurgu, 245 158 11) / .4);
+  font-size: 2.6rem;
+}
+.kulak-can.caliyor { animation: kulak-dalga 1s ease-in-out infinite; }
+@keyframes kulak-dalga {
+  50% { box-shadow: 0 0 0 14px rgb(var(--vurgu, 245 158 11) / .10); transform: scale(1.04); }
+}
+.kulak-secenekler {
+  display: flex; flex-wrap: wrap; gap: .6rem; justify-content: center; margin: .6rem 0;
+}
+.kulak-secenek {
+  min-width: 128px; min-height: 52px; border-radius: 13px; cursor: pointer;
+  font: 700 1rem/1.2 inherit; padding: .6rem 1rem; color: #f5f5f4;
+  background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .2);
+  transition: transform .15s, border-color .15s, background .15s;
+}
+.kulak-secenek:hover:enabled { transform: translateY(-2px); border-color: rgb(var(--vurgu, 245 158 11) / .8); }
+.kulak-secenek:focus-visible { outline: 3px solid rgb(var(--vurgu, 245 158 11) / .7); outline-offset: 2px; }
+.kulak-secenek:disabled { cursor: default; opacity: .8; }
+.kulak-secenek.dogru { background: rgba(74, 222, 128, .2); border-color: #4ade80; }
+.kulak-secenek.yanlis { background: rgba(251, 113, 133, .18); border-color: #fb7185; }
+.kulak-geri-bildirim { min-height: 1.5em; color: #a8a29e; font-size: .9rem; margin: .3rem 0 .6rem; }
+.kulak-ilerleme-cubugu {
+  height: 7px; border-radius: 999px; background: rgba(255, 255, 255, .1);
+  overflow: hidden; margin: .8rem auto 0; max-width: 420px;
+}
+.kulak-ilerleme-dolu {
+  height: 100%; width: 0; border-radius: 999px;
+  background: linear-gradient(90deg, rgb(var(--vurgu-acik, 251 191 36)), rgb(var(--vurgu-koyu, 217 119 6)));
+  transition: width .3s ease;
+}
+.kulak-sonuc-yildiz { font-size: 2rem; letter-spacing: .2em; color: rgb(var(--vurgu-acik, 251 191 36)); }
+.kulak-sonuc-yildiz .bos { color: rgba(255, 255, 255, .22); }
+
+/* Hareket kısıtları: sayfa panel içi — sistem tercihi esas */
+@media (prefers-reduced-motion: reduce) {
+  .yol-adim.siradaki, .kulak-can.caliyor { animation: none !important; }
+  .yol-adim, .kulak-secenek { transition: none; }
+}
+@media (max-width: 720px) {
+  .yol-adim { min-width: calc(50% - .5rem); max-width: none; }
+  .kulak-secenek { min-width: calc(50% - .4rem); }
+}

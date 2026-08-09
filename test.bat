@@ -20,6 +20,8 @@ node "%~dp0test\poliritim.test.js"
 if errorlevel 1 goto :son
 node "%~dp0test\tini.test.js"
 if errorlevel 1 goto :son
+node "%~dp0test\yol.test.js"
+if errorlevel 1 goto :son
 echo.
 "%PHP%" "%~dp0test\statik.php"
 if errorlevel 1 goto :son

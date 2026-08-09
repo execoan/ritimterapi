@@ -7,7 +7,7 @@
    Not: CACHE_ADI değişince aktivasyonda eski cache silinir.
    ======================================================= */
 
-var CACHE_ADI   = 'ritim-v47';
+var CACHE_ADI   = 'ritim-v48';
 /* Çevrimdışı sayfası SW'nin kendi konumuna göre çözülür (alt dizin kurulumunda da doğru). */
 var OFFLINE_URL = new URL('offline.html', self.location).pathname;
 
@@ -24,6 +24,11 @@ var KABUK = [
   'assets/css/tini.css',
   'assets/js/app.js',
   'assets/js/uygulama-yukle.js',
+  'assets/js/yol-cekirdegi.js',
+  'assets/js/kulak-cekirdegi.js',
+  'assets/js/kulak.js',
+  'assets/js/ritim-yolu.js',
+  'assets/css/yol.css',
   'assets/js/landing.js',
   'assets/js/metronom.js',
   'assets/js/ev.js',

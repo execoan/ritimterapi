@@ -248,6 +248,13 @@ window.RitimOkuma = (function () {
     var ustalikAnahtari = 'ritim_okuma_ustalik_v1_' + seviye;
     var akilliAnahtari = 'ritim_okuma_akilli_v1';
     var indeks = Math.max(0, Math.min(katalog.length - 1, Number(guvenliOku(indeksAnahtari, 0)) || 0));
+    /* Ritim Yolu'ndan derin bağlantı: ?ders=N o dersin başına konumlanır
+       (ders başına 16 alıştırma). Kayıtlı indeks EZİLİR — kullanıcı yoldan
+       bilinçli olarak o düğüme tıkladı. */
+    var istenenDers = Number(opts.ders);
+    if (istenenDers >= 1 && istenenDers <= 8) {
+      indeks = Math.min(katalog.length - 1, (istenenDers - 1) * 16);
+    }
     var tamamlanan = guvenliOku(tamamAnahtari, []);
     if (!Array.isArray(tamamlanan)) { tamamlanan = []; }
     var ogrenmeDurumu = ogrenme.tamamlananlariAktar(
@@ -1429,9 +1436,18 @@ window.RitimOkuma = (function () {
     return sapmaMs < 0 ? 'erken' : 'gec';
   }
 
+  /** Yol sayfası için ders listesi: her seviyede 8 ders, ders başına 16 örnek. */
+  function dersListesi(seviye) {
+    seviye = [1, 2, 3].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
+    return DERSLER[seviye].map(function (d, i) {
+      return { no: i + 1, ad: d.ad, ornekSayisi: 16 };
+    });
+  }
+
   return {
     baslat: baslat,
     sapmaSinifi: sapmaSinifi,
+    dersListesi: dersListesi,
     katalogBoyutu: function (seviye) {
       seviye = [1, 2, 3].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
       return katalogOlustur(seviye).length;

@@ -1145,6 +1145,35 @@ $mCssTam = git_('assets/css/metronom.css', $cssJar)['govde'];
 dogrula(str_contains($mCssTam, '.oyun-kart h3') || str_contains($mCssTam, '.m-sahne h3'),
     'koyu sahnedeki başlık ve etiketler açık renge çekildi');
 
+/* -------- Yol modülleri (Ritim Yolu + Kulak Yolu) -------- */
+bolum('Yol modülleri');
+$ry = git_('ritim-yolu.php', $jar);
+dogrula($ry['durum'] === 200 && str_contains($ry['govde'], 'id="yolBolumler"')
+     && str_contains($ry['govde'], 'yol-cekirdegi.js') && str_contains($ry['govde'], 'ritim-yolu.js'),
+    'Ritim Yolu sayfası ve betikleri yükleniyor');
+dogrula(str_contains($ry['govde'], 'ritim-okuma.php'),
+    'Ritim Yolu laboratuvara bağlantı veriyor');
+$ku = git_('kulak.php', $jar);
+dogrula($ku['durum'] === 200 && str_contains($ku['govde'], 'id="kulakBolumler"')
+     && str_contains($ku['govde'], 'kulak-cekirdegi.js'),
+    'Kulak Yolu sayfası ve betikleri yükleniyor');
+dogrula(str_contains($ku['govde'], 'şans payı') || str_contains($ku['govde'], 'Şans payı')
+     || str_contains($ku['govde'], 'şans'),
+    'Kulak Yolu şans düzeltmesini kullanıcıya açıklıyor');
+$nav = git_('panel.php', $jar)['govde'];
+dogrula(str_contains($nav, 'ritim-yolu.php') && str_contains($nav, 'kulak.php'),
+    'iki yol da üst menüde');
+/* Derin bağlantı: yol → laboratuvar ders parametresi */
+$rl = git_('ritim-okuma.php?seviye=2&ders=3', $jar);
+dogrula($rl['durum'] === 200 && str_contains($rl['govde'], 'ritim-okuma-sayfa.js'),
+    'laboratuvar ders derin bağlantısını kabul ediyor');
+/* Kilitli dil: yeni sayfalar yarışmasız/§2 uyumlu olmalı.
+   Panel markası "RitimTerapi" bu sayfada serbesttir (§3) — ayıklanarak bakılır. */
+$kuTemiz = str_replace('RitimTerapi', '', $ku['govde']);
+dogrula(!preg_match('/terapi|tedavi|semptom|geliştirir|iyileş/iu', $kuTemiz)
+     && !preg_match('/sıralama|liderlik|rekabet/iu', $kuTemiz),
+    'Kulak Yolu dili kilitli kurallara uygun (yarışmasız)');
+
 /* -------- Metronom/nota gelistirmeleri (Agu 2026) -------- */
 bolum('Metronom ve nota gerilemeleri');
 $mg2 = git_('metronom.php', $jar)['govde'];
