@@ -7,6 +7,7 @@
  */
 define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/view/ikon-seti.php';
 
 /* Ön kayıt formu — herkese açık uç: CSRF + bal küpü + model tarafında hız sınırı */
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['islem'] ?? '') === 'on_kayit') {
@@ -153,9 +154,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
            kartın içinde gerçek zamanlı nabız (zıplayan ikon + vuruş noktaları). -->
       <div class="t-tempo-oyun" id="tempoOyun" data-tilt>
         <div class="t-tempo-isik" aria-hidden="true"></div>
-        <p class="t-tempo-oyun-ust"><span class="emoji-sus" aria-hidden="true">🎯</span> TEMPOYU YAKALA</p>
+        <p class="t-tempo-oyun-ust"><?= ikon('hedef', 't-ikon-satir') ?> TEMPOYU YAKALA</p>
         <div class="t-tempo-gorsel" id="tempoGorsel" aria-hidden="true">
-          <span class="t-tempo-ikon" id="tempoIkon">🎵</span>
+          <span class="t-tempo-ikon" id="tempoIkon"><?= ikon('nota', 't-ikon-cizim') ?></span>
           <span class="t-tempo-noktalar" id="tempoNoktalar"></span>
         </div>
         <p class="t-tempo-oyun-durum" id="tempoDurum">
@@ -186,14 +187,14 @@ function metronom_svg(string $sinif, string $gradyanId): string
         </svg>
       </div>
       <div class="t-vurus-halkasi" id="vurusHalkasi"></div>
-      <div class="t-yorunge" aria-hidden="true"><b>🥁</b><b>🪘</b><b>🎵</b></div>
+      <div class="t-yorunge" aria-hidden="true"><b><?= ikon('davul', 't-ikon-cizim') ?></b><b><?= ikon('tumbek', 't-ikon-cizim') ?></b><b><?= ikon('nota', 't-ikon-cizim') ?></b></div>
       <?= metronom_svg('t-buyuk-metronom t-sarkacli', 'hg') ?>
     </div>
   </div>
 
   <div class="t-kapsayici t-sayilar kayarak">
     <?php for ($i = 1; $i <= 4; $i++): ?>
-    <div class="t-sayi-kart" data-tilt>
+    <div class="t-sayi-kart">
       <span class="t-sayi" data-hedef="<?= e(site_text('sayi_' . $i . '_deger', '0')) ?>">0</span>
       <span class="t-sayi-etiket"><?= e(site_text('sayi_' . $i . '_etiket')) ?></span>
     </div>
@@ -269,8 +270,8 @@ function metronom_svg(string $sinif, string $gradyanId): string
       </div>
 
       <div class="t-tek-deney-alt">
-        <span><span class="emoji-sus" aria-hidden="true">🎧</span> Ses tarayıcında üretilir</span>
-        <span><span class="emoji-sus" aria-hidden="true">🔒</span> Otomatik kaydedilmez</span>
+        <span><?= ikon('kulaklik', 't-ikon-satir') ?> Ses tarayıcında üretilir</span>
+        <span><?= ikon('kilit', 't-ikon-satir') ?> Otomatik kaydedilmez</span>
         <span><span class="emoji-sus" aria-hidden="true">◎</span> Bu bir değerlendirme değildir</span>
       </div>
     </article>
@@ -307,12 +308,12 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <?php
       /* Her kart KENDİ temposunda atar: --sure = 60/bpm saniye. Tıklayınca o tempo çalar. */
       $nabizlar = [
-        ['bpm' => 60,  'ikon' => '🌙', 'ad' => 'Ninni',            'not' => 'Uyku öncesi şarkılar bu civarda gezinir'],
-        ['bpm' => 72,  'ikon' => '❤️', 'ad' => 'Dinlenik kalp',    'not' => 'Yetişkin istirahat nabzı ortalaması'],
-        ['bpm' => 100, 'ikon' => '🚶', 'ad' => 'Rahat yürüyüş',    'not' => 'Adımlar da bir metronomdur'],
-        ['bpm' => 120, 'ikon' => '🪩', 'ad' => 'Dans müziği',      'not' => 'İnsanların kendiliğinden seçtiği tempoya yakın'],
-        ['bpm' => 140, 'ikon' => '🏃', 'ad' => 'Koşu adımı',       'not' => 'Kondisyon müziklerinin klasik aralığı'],
-        ['bpm' => 176, 'ikon' => '🥁', 'ad' => 'Hızlı davul',      'not' => 'Saniyede yaklaşık üç vuruş'],
+        ['bpm' => 60,  'ikon' => 'ay', 'ad' => 'Ninni',            'not' => 'Uyku öncesi şarkılar bu civarda gezinir'],
+        ['bpm' => 72,  'ikon' => 'kalp', 'ad' => 'Dinlenik kalp',    'not' => 'Yetişkin istirahat nabzı ortalaması'],
+        ['bpm' => 100, 'ikon' => 'ayakizi', 'ad' => 'Rahat yürüyüş',    'not' => 'Adımlar da bir metronomdur'],
+        ['bpm' => 120, 'ikon' => 'kure', 'ad' => 'Dans müziği',      'not' => 'İnsanların kendiliğinden seçtiği tempoya yakın'],
+        ['bpm' => 140, 'ikon' => 'kronometre', 'ad' => 'Koşu adımı',       'not' => 'Kondisyon müziklerinin klasik aralığı'],
+        ['bpm' => 176, 'ikon' => 'davul', 'ad' => 'Hızlı davul',      'not' => 'Saniyede yaklaşık üç vuruş'],
       ];
       foreach ($nabizlar as $i => $n): ?>
       <button type="button" class="t-nabiz" data-bpm="<?= (int)$n['bpm'] ?>"
@@ -320,7 +321,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
               aria-pressed="false"
               aria-label="<?= (int)$n['bpm'] ?> BPM — <?= e($n['ad']) ?> temposunu dinle">
         <span class="t-nabiz-halka" aria-hidden="true"></span>
-        <span class="t-nabiz-ikon" aria-hidden="true"><?= $n['ikon'] ?></span>
+        <span class="t-nabiz-ikon" aria-hidden="true"><?= ikon($n['ikon'], 't-ikon-cizim') ?></span>
         <span class="t-nabiz-bpm"><?= (int)$n['bpm'] ?><small>BPM</small></span>
         <span class="t-nabiz-ad"><?= e($n['ad']) ?></span>
         <span class="t-nabiz-not"><?= e($n['not']) ?></span>
@@ -338,26 +339,26 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <p class="t-bolum-ustbaslik kayarak">YÖNTEM</p>
     <h2 class="kayarak"><?= e($bolum['baslik']) ?></h2>
     <div class="t-kart-dizi">
-      <article class="t-kart kayarak" data-tilt>
-        <div class="t-kart-ikon">🥁</div>
+      <article class="t-kart kayarak">
+        <div class="t-kart-ikon"><?= ikon('davul', 't-ikon-cizim') ?></div>
         <h3>Özel ders veya küçük grup</h3>
         <p>Bire bir çalışmada kişisel tempo ve hedefler; küçük grupta ortak nabız, sıra alma ve
            birlikte üretme öne çıkar. İki biçim de planlı bir oturum akışını izler.</p>
       </article>
-      <article class="t-kart kayarak" data-tilt>
-        <div class="t-kart-ikon">📚</div>
+      <article class="t-kart kayarak">
+        <div class="t-kart-ikon"><?= ikon('kitap', 't-ikon-cizim') ?></div>
         <h3>Kanıt etiketli teknik kütüphanesi</h3>
         <p>Metronoma eşlikten daire senkronisine 18 teknik. Her tekniğin hedef becerisi,
            kaynağı ve <strong>güçlü / orta / zayıf / kanıt yok</strong> etiketi açıkça yazılıdır.</p>
       </article>
-      <article class="t-kart kayarak" data-tilt>
-        <div class="t-kart-ikon">📝</div>
+      <article class="t-kart kayarak">
+        <div class="t-kart-ikon"><?= ikon('not', 't-ikon-cizim') ?></div>
         <h3>Oturum kaydı ve gözlem</h3>
         <p>Her oturumda yoklama, işlenen teknikler ve kısa gözlem notları tutulur.
            Gözlemler ne yapıldığını anlatır; etiketlemez, yorumlamaz.</p>
       </article>
-      <article class="t-kart kayarak" data-tilt>
-        <div class="t-kart-ikon">📊</div>
+      <article class="t-kart kayarak">
+        <div class="t-kart-ikon"><?= ikon('grafik', 't-ikon-cizim') ?></div>
         <h3>Şeffaf raporlama</h3>
         <p>Haftalık ve dönemlik özetler; veli raporu çalışılan teknikleri, katılımı ve
            gözlemleri aktarır. <strong>Sonuç iddiası içermez</strong> — bu bir tasarım kararıdır.</p>
@@ -383,7 +384,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
     <h3 class="t-program-baslik kayarak"><span>1</span> Ders biçimini seçin</h3>
     <div class="t-ders-turu-dizi">
       <article class="t-ders-turu t-ders-turu-grup kayarak">
-        <div class="t-ders-turu-ikon" aria-hidden="true">🥁</div>
+        <div class="t-ders-turu-ikon" aria-hidden="true"><?= ikon('davul', 't-ikon-cizim') ?></div>
         <div>
           <p class="t-ders-turu-ust">BİRLİKTE ÜRETİM</p>
           <h3>Grup Dersi</h3>
@@ -397,7 +398,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
         </div>
       </article>
       <article class="t-ders-turu t-ders-turu-ozel kayarak">
-        <div class="t-ders-turu-ikon" aria-hidden="true">🎧</div>
+        <div class="t-ders-turu-ikon" aria-hidden="true"><?= ikon('kulaklik', 't-ikon-cizim') ?></div>
         <div>
           <p class="t-ders-turu-ust">KİŞİSEL TEMPO</p>
           <h3>Özel Ders</h3>
@@ -414,9 +415,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
     <h3 class="t-program-baslik kayarak"><span>2</span> Katılımcıya uygun program izini seçin</h3>
     <div class="t-iz-dizi">
-      <article class="t-iz kayarak" data-tilt>
+      <article class="t-iz kayarak">
         <div class="t-iz-bas">
-          <span class="t-iz-ikon">🧒</span>
+          <span class="t-iz-ikon"><?= ikon('cocuk', 't-ikon-cizim') ?></span>
           <div><h3>Çocuk &amp; Genç</h3><p class="t-iz-alt">8–15 yaş · RitimOdak-Ö izi</p></div>
         </div>
         <ul class="t-iz-liste">
@@ -429,9 +430,9 @@ function metronom_svg(string $sinif, string $gradyanId): string
           <span>başla–dur</span><span>sıra bekleme</span><span>kural koruma</span><span>hata sonrası dönüş</span>
         </div>
       </article>
-      <article class="t-iz kayarak" data-tilt>
+      <article class="t-iz kayarak">
         <div class="t-iz-bas">
-          <span class="t-iz-ikon">🧑‍💼</span>
+          <span class="t-iz-ikon"><?= ikon('yetiskin', 't-ikon-cizim') ?></span>
           <div><h3>Yetişkin</h3><p class="t-iz-alt">18+ · RitimOdak-Y izi</p></div>
         </div>
         <ul class="t-iz-liste">
@@ -499,7 +500,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
     </p>
     <div class="t-makale-dizi">
       <?php foreach (site_articles(true) as $mk): ?>
-      <article class="t-makale kayarak" data-tilt>
+      <article class="t-makale kayarak">
         <span class="t-rozet t-rozet-<?= e($mk['rozet']) ?>"><?= e(KANIT_LABELS[$mk['rozet']] ?? $mk['rozet']) ?></span>
         <h3><?= e($mk['baslik']) ?></h3>
         <p class="t-kunye"><?= e($mk['kunye']) ?></p>
@@ -533,20 +534,20 @@ function metronom_svg(string $sinif, string $gradyanId): string
       Hepsi aynı gelişmiş metronom motoru üzerinde çalışır; müzik yaparken de, protokollerde de.
     </p>
     <div class="t-kart-dizi t-kart-dizi-3">
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">🎯</div>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('hedef', 't-ikon-cizim') ?></div>
         <h3>Vuruş Tutturma</h3>
         <p>Metronomla birlikte vur; sonra metronom susar, sen devam edersin.
            Her vuruşun milisaniye sapması ölçülür, 0–100 skorla haftalık izlenir.</p>
       </article>
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">🔇</div>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('sessiz', 't-ikon-cizim') ?></div>
         <h3>Sessiz Aralık</h3>
         <p>Ölçüler sesli–sessiz döngüsünde akar: içinden saymayı sürdür,
            metronom geri döndüğünde neredesin?</p>
       </article>
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">🎧</div>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('kulaklik', 't-ikon-cizim') ?></div>
         <h3>BPM Bulma</h3>
         <p>Gizli tempoda çalan vuruşu dinle, tempoyu sen sürdür.
            Tahminin gerçek BPM ile karşılaştırılır.</p>
@@ -583,7 +584,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
               <p>Aynı koşullarda tekrar; ön–son karşılaştırması uzman tarafından raporlanır.</p></div>
           </div>
         </div>
-        <p class="t-yansima kayarak" style="margin-top:1rem"><strong><span class="emoji-sus" aria-hidden="true">🧠</span> Uygulayıcı:</strong>
+        <p class="t-yansima kayarak" style="margin-top:1rem"><strong><?= ikon('yetiskin', 't-ikon-satir') ?> Uygulayıcı:</strong>
           <?= e(site_text('moxo_uygulayici')) ?></p>
         <div class="t-iz-etiketler kayarak" style="margin-top:.8rem">
           <span>pakete isteğe bağlı eklenir</span><span>standart test koşulları</span><span>yazılı uzman raporu</span>
@@ -593,10 +594,10 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <div class="t-moxo-kart kayarak" data-tilt>
         <div class="t-moxo-kart-bas">MOXO d-CPT</div>
         <p class="t-moxo-kart-alt">Dört başlıkta nesnel performans indeksi</p>
-        <div class="t-moxo-indeks"><i>👁</i><span>Dikkat</span></div>
-        <div class="t-moxo-indeks"><i>⏱</i><span>Zamanlama</span></div>
-        <div class="t-moxo-indeks"><i>⚡</i><span>Dürtüsellik</span></div>
-        <div class="t-moxo-indeks"><i>🌀</i><span>Hiperaktivite</span></div>
+        <div class="t-moxo-indeks"><i><?= ikon('goz', 't-ikon-cizim') ?></i><span>Dikkat</span></div>
+        <div class="t-moxo-indeks"><i><?= ikon('kronometre', 't-ikon-cizim') ?></i><span>Zamanlama</span></div>
+        <div class="t-moxo-indeks"><i><?= ikon('simsek', 't-ikon-cizim') ?></i><span>Dürtüsellik</span></div>
+        <div class="t-moxo-indeks"><i><?= ikon('girdap', 't-ikon-cizim') ?></i><span>Hiperaktivite</span></div>
         <div class="t-moxo-onson"><span>ÖN ÖLÇÜM</span> ⟶ <span>SON ÖLÇÜM</span></div>
       </div>
     </div>
@@ -695,23 +696,23 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <?php elseif ($bolum['anahtar'] === 'iletisim'): ?>
 <section class="t-bolum t-bolum-koyu" id="iletisim">
   <div class="t-kapsayici">
-    <p class="t-bolum-ustbaslik kayarak">İLETİŞİM</p>
+    <p class="t-bolum-ustbaslik kayarak">BİZE ULAŞIN</p>
     <h2 class="kayarak"><?= e($bolum['baslik']) ?></h2>
     <div class="t-kart-dizi">
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">📞</div><h3>Telefon</h3>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('telefon', 't-ikon-cizim') ?></div><h3>Telefon</h3>
         <p><?= e(site_text('iletisim_telefon', '—')) ?></p>
       </article>
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">✉️</div><h3>E-posta</h3>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('zarf', 't-ikon-cizim') ?></div><h3>E-posta</h3>
         <p><?= e(site_text('iletisim_eposta', '—')) ?></p>
       </article>
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">📸</div><h3>Instagram</h3>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('kamera', 't-ikon-cizim') ?></div><h3>Instagram</h3>
         <p><?= e(site_text('iletisim_instagram', '—')) ?></p>
       </article>
-      <article class="t-kart t-kart-koyu kayarak" data-tilt>
-        <div class="t-kart-ikon">📍</div><h3>Atölye</h3>
+      <article class="t-kart t-kart-koyu kayarak">
+        <div class="t-kart-ikon"><?= ikon('konum', 't-ikon-cizim') ?></div><h3>Atölye</h3>
         <p><?= e(site_text('iletisim_adres', '—')) ?></p>
       </article>
     </div>
@@ -726,7 +727,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
   <div class="t-kayit-fon" aria-hidden="true"></div>
   <div class="t-kapsayici t-kayit-ic">
     <div class="kayarak">
-      <p class="t-bolum-ustbaslik">İLETİŞİM</p>
+      <p class="t-bolum-ustbaslik">TALEP FORMU</p>
       <h2>Merak ettiklerinizi sorun</h2>
       <p class="t-bolum-aciklama">
         Adınızı ve size ulaşabileceğimiz bir yolu bırakın; özel ders veya grup programı,
@@ -738,7 +739,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <li>Programı ve teknikleri sorularınıza göre birebir anlatırız.</li>
       </ul>
       <p class="t-kayit-gizlilik">
-        🔒 Bıraktığınız iletişim bilgisi <strong>yalnız size dönmek için</strong> kullanılır;
+        <?= ikon('kilit', 't-ikon-satir') ?> Bıraktığınız iletişim bilgisi <strong>yalnız size dönmek için</strong> kullanılır;
         bu bilgisayarda saklanır, üçüncü kişilerle paylaşılmaz, pazarlama listesine eklenmez.
       </p>
     </div>
@@ -790,11 +791,11 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <div class="t-ders-secim-grid">
           <label>
             <input type="radio" name="ders_turu" value="grup" required>
-            <span><b><span class="emoji-sus" aria-hidden="true">🥁</span> Grup dersi</b><small>Birlikte çalma ve grup senkronisi</small></span>
+            <span><b><?= ikon('davul', 't-ikon-satir') ?> Grup dersi</b><small>Birlikte çalma ve grup senkronisi</small></span>
           </label>
           <label>
             <input type="radio" name="ders_turu" value="ozel" required>
-            <span><b><span class="emoji-sus" aria-hidden="true">🎧</span> Özel ders</b><small>Kişiye göre tempo ve çalışma planı</small></span>
+            <span><b><?= ikon('kulaklik', 't-ikon-satir') ?> Özel ders</b><small>Kişiye göre tempo ve çalışma planı</small></span>
           </label>
           <label>
             <input type="radio" name="ders_turu" value="kararsiz" required>
@@ -807,7 +808,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
         <textarea name="mesaj" rows="3" maxlength="600" placeholder="Uygun gün/saatiniz, merak ettikleriniz…"></textarea>
       </label>
       <div class="t-profil-eklendi" id="profilEklendi" hidden>
-        🎧 Canlı deneme sonucunuz talebe eklenecek: <span id="profilEklendiMetin"></span>
+        <?= ikon('kulaklik', 't-ikon-satir') ?> Canlı deneme sonucunuz talebe eklenecek: <span id="profilEklendiMetin"></span>
       </div>
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk t-tam-genislik">Mesajımı Gönder →</button>
       <p class="t-kayit-alt">Formu göndermek sizi hiçbir şeye bağlamaz.</p>
