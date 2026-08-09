@@ -354,6 +354,19 @@ dogrula($y['durum'] >= 300 && str_contains($y['yer'], 'giris.php'),
 $y = git_('giris.php', $vekilJar);
 dogrula(!str_contains($y['govde'], 'name="hizli"'),
     'DAGITIM=yayin iken tek tık butonları HTML\'de hiç yok');
+/* ÜYE hızlı girişi de aynı kilidin arkasında olmalı. Ayrı bir dal olduğu
+   için ayrı sınanır: panel dalı kapanırken bunun açık kalması, kod
+   doğrulamasını atlayan bir kapı bırakırdı. */
+$t = csrf_al('giris.php', $vekilJar);
+gonder('giris.php', ['csrf_token' => $t, 'hizli' => 'uye'], $vekilJar);
+$y = git_('ev.php', $vekilJar);
+dogrula(str_contains($y['govde'], 'Erişim kodun'),
+    'DAGITIM=yayin iken hızlı ÜYE girişi reddediliyor (kod ekranı duruyor)');
+$t = csrf_al('ev.php', $vekilJar);
+gonder('ev.php', ['csrf_token' => $t, 'islem' => 'hizli'], $vekilJar);
+$y = git_('ev.php', $vekilJar);
+dogrula(str_contains($y['govde'], 'Erişim kodun'),
+    'DAGITIM=yayin iken ev.php hızlı giriş ucu da reddediliyor');
 
 // Aynı yapılandırma yerel dağıtımda ÇALIŞMALI (kolaylık kaybolmasın)
 file_put_contents($gizliYol,

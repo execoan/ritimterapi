@@ -2,6 +2,7 @@
 /** Eğitmen girişi — tanıtım sitesinden panele geçiş kapısı. */
 define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/view/ikon-seti.php';
 
 $hedef = (string)($_GET['hedef'] ?? $_POST['hedef'] ?? '');
 // Yalnız uygulama içi dosya adları kabul edilir (açık yönlendirme koruması)
@@ -36,6 +37,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
          * (gizli.php'de HIZLI_GIRIS=false ile tamamen kapatılabilir.)
          */
         $hizli = (string)($_POST['hizli'] ?? '');
+        /*
+         * Üye (katılımcı) hızlı girişi — geliştirme kolaylığı.
+         * ÖNEMLİ: burada $_SESSION['egitmen'] KURULMAZ. Katılımcı oturumu
+         * ayrı bir anahtardır ($_SESSION['ev_ogrenci_id']); yani bu düğme
+         * ev sayfasını açar, panele giriş vermez. Aynı iki kilidin
+         * (HIZLI_GIRIS + yerel_istek_mi) arkasındadır.
+         */
+        if (HIZLI_GIRIS && yerel_istek_mi() && $hizli === 'uye') {
+            $ornekler = students_list(null, 1);
+            if ($ornekler) {
+                hiz_siniri_sifirla('giris');
+                session_regenerate_id(true);
+                unset($_SESSION['egitmen'], $_SESSION['rol']);
+                $_SESSION['ev_ogrenci_id'] = (int)$ornekler[0]['id'];
+                redirect('ev.php');
+            }
+            $hataVar = true;
+            $hataMesaji = 'Hızlı üye girişi için aktif katılımcı yok — önce bir katılımcı ekleyin.';
+        }
         if (HIZLI_GIRIS && yerel_istek_mi() && $hizli !== '' && array_key_exists($hizli, PANEL_HESAPLAR)) {
             hiz_siniri_sifirla('giris');
             session_regenerate_id(true);
@@ -108,8 +128,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
   .giris-btn { width: 100%; text-align: center; }
   .giris-geri { display: block; text-align: center; margin-top: 1.1rem; color: var(--t-soluk); font-size: .88rem; }
   .giris-geri:hover { color: var(--t-amber); }
-  .giris-hizli { display: flex; gap: .7rem; margin-bottom: .4rem; }
-  .giris-hizli-btn { flex: 1; text-align: center; padding: .7rem 0; }
+  /* Üç düğme dar telefonda tek satıra sığmaz; sarmaya izin veriyoruz. */
+  .giris-hizli { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: .4rem; }
+  .giris-hizli-btn {
+    flex: 1 1 6.5rem; text-align: center; padding: .7rem .4rem; font-size: .92rem;
+    display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  }
   .giris-ayrac {
     display: flex; align-items: center; gap: .8rem; color: var(--t-soluk);
     font-size: .8rem; margin: .9rem 0;
@@ -156,8 +180,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     <form method="post" action="<?= e(url('giris.php')) ?>" class="giris-hizli">
       <?= csrf_field() ?>
       <input type="hidden" name="hedef" value="<?= e($hedef) ?>">
-      <button type="submit" name="hizli" value="admin" class="t-btn t-btn-dolu giris-hizli-btn"><span class="emoji-sus" aria-hidden="true">⚡</span> Admin</button>
-      <button type="submit" name="hizli" value="egitmen" class="t-btn t-btn-dolu giris-hizli-btn"><span class="emoji-sus" aria-hidden="true">⚡</span> Eğitmen</button>
+      <button type="submit" name="hizli" value="admin" class="t-btn t-btn-dolu giris-hizli-btn"><?= ikon('simsek', 't-ikon-satir') ?> Admin</button>
+      <button type="submit" name="hizli" value="egitmen" class="t-btn t-btn-dolu giris-hizli-btn"><?= ikon('simsek', 't-ikon-satir') ?> Eğitmen</button>
+      <?php /* Üye düğmesi panele değil ev sayfasına götürür; çerçeveli biçim
+               bunu görsel olarak da ayırır. */ ?>
+      <button type="submit" name="hizli" value="uye" class="t-btn t-btn-cerceve giris-hizli-btn"><?= ikon('cocuk', 't-ikon-satir') ?> Üye</button>
     </form>
     <div class="giris-ayrac"><span>veya</span></div>
     <?php endif; ?>
@@ -176,8 +203,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk giris-btn">Giriş Yap</button>
     </form>
     <?php if (HIZLI_GIRIS && yerel_istek_mi()): ?>
-    <p class="giris-ipucu">Hızlı giriş geliştirme kolaylığıdır; yayına alırken
-       <code>storage/gizli.php</code> içinde kapatın ve şifreleri değiştirin.</p>
+    <p class="giris-ipucu"><b>Admin/Eğitmen</b> panele, <b>Üye</b> ev sayfasına girer.
+       Hızlı giriş geliştirme kolaylığıdır; yayına alırken
+       <code>storage/gizli.php</code> içinde <code>HIZLI_GIRIS</code>'i
+       <code>false</code> yapın ve şifreleri değiştirin.</p>
     <?php endif; ?>
     <a class="giris-geri" href="<?= e(url('index.php')) ?>"><span class="emoji-sus" aria-hidden="true">←</span> Tanıtım sayfasına dön</a>
   </div>

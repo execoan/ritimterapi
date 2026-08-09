@@ -7,6 +7,7 @@
  */
 define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
+require __DIR__ . '/includes/view/ikon-seti.php';
 
 $onizle = educator_logged_in() && isset($_GET['onizle']) ? (int)$_GET['onizle'] : 0;
 
@@ -34,6 +35,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
             flash_set('basari', 'Hoş geldin ' . $ogrenci['kod'] . '! 🥁');
         } else {
             flash_set('hata', 'Kod bulunamadı. Eğitmeninden aldığın 6 haneli kodu kontrol et.');
+        }
+        redirect('ev.php');
+    }
+    /*
+     * Hızlı üye girişi — geliştirme kolaylığı. giris.php'deki düğmenin
+     * eşi; aynı iki kilidin (HIZLI_GIRIS + yerel_istek_mi) arkasında.
+     * Kod doğrulamasını atlar, o yüzden ağdan gelen istekte ÇALIŞMAZ.
+     */
+    if ($islem === 'hizli' && HIZLI_GIRIS && yerel_istek_mi()) {
+        $ornekler = students_list(null, 1);
+        if ($ornekler) {
+            session_regenerate_id(true);
+            $_SESSION['ev_ogrenci_id'] = (int)$ornekler[0]['id'];
+            flash_set('basari', 'Hızlı giriş: ' . $ornekler[0]['kod']);
+        } else {
+            flash_set('hata', 'Aktif katılımcı yok.');
         }
         redirect('ev.php');
     }
@@ -157,6 +174,15 @@ $flashlar = flash_get();
              autocomplete="off" inputmode="text" spellcheck="false" placeholder="ABC123">
       <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk" style="width:100%;margin-top:1rem">Giriş</button>
     </form>
+    <?php if (HIZLI_GIRIS && yerel_istek_mi()): ?>
+    <form method="post" action="<?= e(url('ev.php')) ?>" style="margin-top:.7rem">
+      <?= csrf_field() ?>
+      <input type="hidden" name="islem" value="hizli">
+      <button type="submit" class="t-btn t-btn-cerceve" style="width:100%">
+        <?= ikon('simsek', 't-ikon-satir') ?> Hızlı üye girişi (yalnız yerelde)
+      </button>
+    </form>
+    <?php endif; ?>
     <a href="<?= e(url('index.php')) ?>" style="display:block;margin-top:1rem;color:var(--t-soluk);font-size:.85rem"><span class="emoji-sus" aria-hidden="true">←</span> Ana sayfa</a>
   </div>
 </div>
