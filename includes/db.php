@@ -570,6 +570,36 @@ function run_migrations(): void
              WHERE anahtar IN ('bizkimiz_metin', 'alt_uyari')
                AND deger LIKE 'RitimTerapi%';
         ",
+
+        // v19 — MOXO ÖLÇÜM KAYDI (dış rapor arşivi).
+        //   MOXO d-CPT'yi UYGULAYAN ve YORUMLAYAN yetkili uzmandır; uygulama
+        //   yalnız gelen raporun sayılarını arşivler. Bu yüzden:
+        //     • indeksler NUMERIC ve NULL olabilir — rapor hangi indeksleri
+        //       veriyorsa o girilir, eksik alan uydurulmaz
+        //     • 0-100 gibi bir aralık DAYATILMAZ: MOXO'nun ölçeğini uygulama
+        //       bilmez; ölçek adı 'olcek' alanına raporda yazdığı gibi girilir
+        //     • normalize grafik/yüzdelik ÜRETİLMEZ — bilinmeyen ölçekte
+        //       çizilen çubuk uydurma bir yorumdur
+        //   asama: 'on' | 'son' | 'ara'. Veli raporuna ve katılım belgesine
+        //   ASLA girmez (CLAUDE.md §2/§3); eğitmenin iç arşividir.
+        19 => "
+            CREATE TABLE moxo_olcumleri (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                ogrenci_id    INTEGER NOT NULL REFERENCES ogrenciler(id) ON DELETE CASCADE,
+                tarih         TEXT    NOT NULL,
+                asama         TEXT    NOT NULL DEFAULT 'on',
+                dikkat        NUMERIC,
+                zamanlama     NUMERIC,
+                durtusellik   NUMERIC,
+                hiperaktivite NUMERIC,
+                olcek         TEXT    NOT NULL DEFAULT '',
+                uygulayan     TEXT    NOT NULL DEFAULT '',
+                rapor_no      TEXT    NOT NULL DEFAULT '',
+                notlar        TEXT    NOT NULL DEFAULT '',
+                created_at    TEXT    NOT NULL
+            );
+            CREATE INDEX ix_moxo_ogrenci ON moxo_olcumleri(ogrenci_id, tarih);
+        ",
     ];
 
     foreach ($gocler as $no => $sql) {

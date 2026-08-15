@@ -2243,3 +2243,146 @@ function motor_sonuclari_son(string $kullanici, int $limit = 20): array
     }
     return $sonuc;
 }
+
+/* =================================================================
+   MOXO ÖLÇÜM ARŞİVİ (dış rapor)
+   =================================================================
+   SINIR — bu bölüm bilerek "aptal"dır: veri girer, veri çıkarır.
+   Yorum yapmaz, eşik uygulamaz, normalize etmez, grafik için ölçek
+   varsaymaz. Nedeni CLAUDE.md §2: uygulama bir eğitim aracıdır;
+   MOXO d-CPT'yi uygulama ve yorumlama yetkisi eğitmende değildir.
+   Sayılar raporda ne yazıyorsa odur.
+
+   Veli raporu (rapor-veli.php) ve katılım belgesi (sertifika.php)
+   bu tabloyu HİÇ OKUMAZ. Duman testi bunu ayrıca sınar.
+   ================================================================= */
+
+const MOXO_ASAMALARI = ['on' => 'Ön ölçüm', 'son' => 'Son ölçüm', 'ara' => 'Ara ölçüm'];
+const MOXO_INDEKSLERI = [
+    'dikkat'        => 'Dikkat',
+    'zamanlama'     => 'Zamanlama',
+    'durtusellik'   => 'Dürtüsellik',
+    'hiperaktivite' => 'Hiperaktivite',
+];
+
+/** Bir öğrencinin ölçümleri, eskiden yeniye (ön → son okunsun diye). */
+function moxo_results_for_student(int $ogrenciId): array
+{
+    $st = db()->prepare('SELECT * FROM moxo_olcumleri WHERE ogrenci_id = ? ORDER BY tarih ASC, id ASC');
+    $st->execute([$ogrenciId]);
+    return $st->fetchAll();
+}
+
+function moxo_get(int $id): ?array
+{
+    $st = db()->prepare('SELECT * FROM moxo_olcumleri WHERE id = ?');
+    $st->execute([$id]);
+    return $st->fetch() ?: null;
+}
+
+/**
+ * Ölçüm kaydeder.
+ * İndeksler İSTEĞE BAĞLIDIR: rapor hangilerini veriyorsa o girilir, boş
+ * bırakılan alan NULL kalır — sıfır yazmak "ölçüldü ve 0 çıktı" demek olurdu.
+ */
+function moxo_save(array $d, ?int $id = null): array
+{
+    $ogrenciId = (int)($d['ogrenci_id'] ?? 0);
+    if (!student_get($ogrenciId)) { return ['ok' => false, 'error' => 'Öğrenci bulunamadı.', 'id' => null]; }
+
+    $tarih = trim((string)($d['tarih'] ?? ''));
+    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $tarih) || !strtotime($tarih)) {
+        return ['ok' => false, 'error' => 'Geçerli bir ölçüm tarihi girin.', 'id' => null];
+    }
+    /* Gelecek tarihli ölçüm bir veri giriş hatasıdır: rapor henüz yok. */
+    if ($tarih > today()) {
+        return ['ok' => false, 'error' => 'Ölçüm tarihi gelecekte olamaz.', 'id' => null];
+    }
+
+    $asama = (string)($d['asama'] ?? 'on');
+    if (!isset(MOXO_ASAMALARI[$asama])) { $asama = 'on'; }
+
+    /* Sayılar: boş → NULL. Virgüllü giriş (Türkçe klavye) noktaya çevrilir.
+       Üst sınır dayatılmaz, yalnız akıl dışı değer elenir; ölçeği uygulama
+       bilmiyor, bilmediği bir aralığa göre "geçersiz" demeye hakkı yok. */
+    $sayilar = [];
+    foreach (array_keys(MOXO_INDEKSLERI) as $alan) {
+        $ham = trim((string)($d[$alan] ?? ''));
+        if ($ham === '') { $sayilar[$alan] = null; continue; }
+        $ham = str_replace(',', '.', $ham);
+        if (!is_numeric($ham)) {
+            return ['ok' => false, 'error' => MOXO_INDEKSLERI[$alan] . ' alanına sayı girin (ya da boş bırakın).', 'id' => null];
+        }
+        $deger = (float)$ham;
+        if ($deger < -999 || $deger > 9999) {
+            return ['ok' => false, 'error' => MOXO_INDEKSLERI[$alan] . ' değeri beklenen aralığın dışında.', 'id' => null];
+        }
+        $sayilar[$alan] = $deger;
+    }
+
+    $vals = [$ogrenciId, $tarih, $asama,
+             $sayilar['dikkat'], $sayilar['zamanlama'], $sayilar['durtusellik'], $sayilar['hiperaktivite'],
+             mb_substr(trim((string)($d['olcek'] ?? '')), 0, 80),
+             mb_substr(trim((string)($d['uygulayan'] ?? '')), 0, 120),
+             mb_substr(trim((string)($d['rapor_no'] ?? '')), 0, 60),
+             mb_substr(trim((string)($d['notlar'] ?? '')), 0, 600)];
+
+    if ($id === null) {
+        $vals[] = now_str();
+        db()->prepare('INSERT INTO moxo_olcumleri
+                (ogrenci_id, tarih, asama, dikkat, zamanlama, durtusellik, hiperaktivite,
+                 olcek, uygulayan, rapor_no, notlar, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')->execute($vals);
+        return ['ok' => true, 'error' => null, 'id' => (int)db()->lastInsertId()];
+    }
+    $vals[] = $id;
+    db()->prepare('UPDATE moxo_olcumleri SET ogrenci_id = ?, tarih = ?, asama = ?, dikkat = ?, zamanlama = ?,
+                durtusellik = ?, hiperaktivite = ?, olcek = ?, uygulayan = ?, rapor_no = ?, notlar = ?
+             WHERE id = ?')->execute($vals);
+    return ['ok' => true, 'error' => null, 'id' => $id];
+}
+
+function moxo_delete(int $id): bool
+{
+    $st = db()->prepare('DELETE FROM moxo_olcumleri WHERE id = ?');
+    $st->execute([$id]);
+    return $st->rowCount() > 0;
+}
+
+/**
+ * Ön ve son ölçümü YAN YANA koyar — yorum üretmez.
+ *
+ * NEDEN FARK HESAPLANMIYOR: MOXO indekslerinde yönün ne anlama geldiği
+ * (yüksek mi iyi, düşük mü) ölçeğe bağlıdır ve uygulama bunu bilmez.
+ * "+12" yazmak nötr görünür ama okuyan onu iyileşme diye okur — bu bir
+ * sonuç iddiasıdır (CLAUDE.md §2). İki sayı gösterilir, yorum raporundur.
+ *
+ * @return array<string, array{on: ?float, son: ?float}>
+ */
+function moxo_on_son(array $olcumler): array
+{
+    $ilk = null; $sonuncu = null;
+    foreach ($olcumler as $o) {
+        if ($o['asama'] === 'on'  && $ilk === null)  { $ilk = $o; }
+        if ($o['asama'] === 'son')                   { $sonuncu = $o; }
+    }
+    if (!$ilk || !$sonuncu) { return []; }
+
+    $cikti = [];
+    foreach (MOXO_INDEKSLERI as $alan => $etiket) {
+        if ($ilk[$alan] === null && $sonuncu[$alan] === null) { continue; }
+        $cikti[$etiket] = [
+            'on'  => $ilk[$alan] === null ? null : (float)$ilk[$alan],
+            'son' => $sonuncu[$alan] === null ? null : (float)$sonuncu[$alan],
+        ];
+    }
+    return $cikti;
+}
+
+/** Sayıyı olduğu gibi gösterir: 12.0 → "12", 12.50 → "12,5" (TR ondalık). */
+function moxo_sayi(?float $d): string
+{
+    if ($d === null) { return '—'; }
+    $s = rtrim(rtrim(number_format($d, 2, ',', ''), '0'), ',');
+    return $s === '' ? '0' : $s;
+}

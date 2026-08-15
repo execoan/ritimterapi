@@ -470,7 +470,7 @@ try {
     $teknikAdet = (int)$pdo->query('SELECT COUNT(*) FROM teknikler')->fetchColumn();
     $pdo = null;
 } catch (Throwable $e) { $surum = -1; $teknikAdet = -1; }
-dogrula($surum === 18, 'göçler uygulanmış (user_version=18)', 'bulunan: ' . $surum);
+dogrula($surum === 19, 'göçler uygulanmış (user_version=19)', 'bulunan: ' . $surum);
 dogrula($teknikAdet >= 18, 'teknik kütüphanesi seed edilmiş', 'adet: ' . $teknikAdet);
 dogrula(str_contains(git_('teknikler.php', $jar)['govde'], 'Metronoma eşlik'), 'seed içeriği sayfada görünüyor');
 $grupAtolyesi = git_('grup-atolyesi.php', $jar)['govde'];
@@ -977,6 +977,51 @@ $bulunan = array_values(array_filter($yasakli, fn($k) => mb_stripos($veliBelge, 
 dogrula($veliBelge !== '' && !$bulunan, 'veli raporu belgesinde kilitli dil temiz', implode(', ', $bulunan));
 dogrula(git_('rapor-haftalik.php', $jar)['durum'] === 200
      && git_('rapor-donemlik.php?grup_id=' . $grupId, $jar)['durum'] === 200, 'haftalık ve dönemlik raporlar açılıyor');
+
+/* -------- MOXO ÖLÇÜM ARŞİVİ --------
+   Dış uzman raporunun sayıları eğitmenin iç arşividir. İki şey sınanır:
+   (1) kayıt/doğrulama zinciri çalışıyor mu, (2) değerler VELİYE GİDEN
+   hiçbir çıktıya sızmıyor mu. İkincisi asıl denetimdir: MOXO sağlıkla
+   ilgili bir ölçümdür ve veli raporunda yeri yoktur (CLAUDE.md §2). */
+bolum('MOXO ölçüm arşivi');
+$moxoUrl = 'ogrenci.php?id=' . $ogrenciId;
+$t = csrf_al($moxoUrl, $jar);
+gonder($moxoUrl, ['csrf_token' => $t, 'id' => $ogrenciId, 'islem' => 'moxo_ekle',
+    'tarih' => '2026-03-02', 'asama' => 'on', 'dikkat' => '88', 'zamanlama' => '71,5',
+    'durtusellik' => '', 'hiperaktivite' => '64', 'olcek' => 'standart puan',
+    'uygulayan' => 'Dış uzman', 'rapor_no' => 'RPR-9001', 'notlar' => 'Dönem başı'], $jar);
+$y = git_($moxoUrl, $jar)['govde'];
+dogrula(str_contains($y, 'RPR-9001') && str_contains($y, '71,5'),
+    'MOXO ölçümü kaydedildi (virgüllü ondalık korundu)');
+/* Boş bırakılan indeks NULL kalmalı: 0 yazmak "ölçüldü ve sıfır çıktı" demektir */
+dogrula(substr_count($y, '<td class="sayi">—</td>') >= 1,
+    'boş bırakılan indeks 0 değil, boş (—) olarak duruyor');
+
+$t = csrf_al($moxoUrl, $jar);
+gonder($moxoUrl, ['csrf_token' => $t, 'id' => $ogrenciId, 'islem' => 'moxo_ekle',
+    'tarih' => '2099-01-01', 'asama' => 'on', 'dikkat' => '50'], $jar);
+$t = csrf_al($moxoUrl, $jar);
+gonder($moxoUrl, ['csrf_token' => $t, 'id' => $ogrenciId, 'islem' => 'moxo_ekle',
+    'tarih' => '2026-05-05', 'asama' => 'on', 'dikkat' => 'abc'], $jar);
+$y = git_($moxoUrl, $jar)['govde'];
+dogrula(!str_contains($y, '2099'), 'gelecek tarihli ölçüm reddedildi');
+dogrula(str_contains($y, '1 ölçüm'), 'sayısal olmayan indeks reddedildi (kayıt sayısı artmadı)');
+
+/* ASIL DENETİM: veliye giden hiçbir yüzeyde görünmemeli */
+$izler = ['MOXO', 'RPR-9001', 'Dış uzman', 'standart puan', 'Hiperaktivite'];
+foreach ([['rapor-veli.php?ogrenci_id=' . $ogrenciId, 'veli raporu'],
+          ['sertifika.php?ogrenci_id=' . $ogrenciId . '&olcumler=1', 'katılım belgesi']] as [$yol, $ad]) {
+    $govde = git_($yol, $jar)['govde'];
+    $sizan = array_values(array_filter($izler, fn($k) => str_contains($govde, $k)));
+    dogrula(!$sizan, "MOXO değerleri şuraya sızmıyor: {$ad}", implode(', ', $sizan));
+}
+
+$t = csrf_al($moxoUrl, $jar);
+$moxoId = 0;
+if (preg_match('/name="moxo_id" value="(\d+)"/', git_($moxoUrl, $jar)['govde'], $mM)) { $moxoId = (int)$mM[1]; }
+gonder($moxoUrl, ['csrf_token' => $t, 'id' => $ogrenciId, 'islem' => 'moxo_sil', 'moxo_id' => $moxoId], $jar);
+dogrula(str_contains(git_($moxoUrl, $jar)['govde'], 'Henüz ölçüm girilmemiş'),
+    'MOXO ölçümü silinebiliyor (yanlış girilen sayı düzeltilebilir)');
 
 /* -------- Marka: iki ad, iki kitle (CLAUDE.md §3) --------
    Panel içi ad "RitimTerapi" kalır; DIŞ yüzeylerin hiçbirinde geçmez.

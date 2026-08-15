@@ -28,6 +28,18 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } elseif ($islem === 'paket_kapat') {
         package_close((int)($_POST['paket_id'] ?? 0));
         flash_set('basari', 'Paket kapatıldı.');
+    } elseif ($islem === 'moxo_ekle') {
+        $res = moxo_save($_POST + ['ogrenci_id' => $id]);
+        flash_set($res['ok'] ? 'basari' : 'hata',
+            $res['ok'] ? 'MOXO ölçümü arşive eklendi.' : $res['error']);
+        if (!$res['ok']) { set_old($_POST); }
+    } elseif ($islem === 'moxo_sil') {
+        /* Ölçüm KAYDI silinir; kaydın ait olduğu rapor eğitmende kalır.
+           Yanlış girilen bir sayı düzeltilebilsin diye silme serbest. */
+        $kayit = moxo_get((int)($_POST['moxo_id'] ?? 0));
+        $tamam = $kayit && (int)$kayit['ogrenci_id'] === $id && moxo_delete((int)$kayit['id']);
+        flash_set($tamam ? 'basari' : 'hata',
+            $tamam ? 'Ölçüm kaydı silindi.' : 'Ölçüm kaydı bulunamadı.');
     } elseif ($islem === 'grup_ekle') {
         $res = group_member_add((int)($_POST['grup_id'] ?? 0), $id);
         flash_set($res['ok'] ? 'basari' : 'hata',
@@ -56,6 +68,8 @@ $eklenebilirGruplar = array_values(array_filter($gruplar, static function (array
     return ($g['tur'] ?? 'grup') !== 'ozel' || (int)$g['uyelik_sayisi'] === 0;
 }));
 $protokolSonuclari = protocol_results_for_student($id);
+$moxoOlcumleri = moxo_results_for_student($id);
+$moxoOnSon = moxo_on_son($moxoOlcumleri);
 $evOdevleri = assignments_active_for_student($id);
 [$haftaPzt, $haftaPaz] = week_bounds();
 $evHarita = completions_map(array_map(fn($o) => (int)$o['id'], $evOdevleri), $haftaPzt, $haftaPaz);
@@ -354,6 +368,126 @@ require APP_DIR . '/includes/view/header.php';
   </div>
   <p class="alan-ipucu">Skorlar eğitmenin iç izleme aracıdır; veli raporuna yansıtılmaz.</p>
   <?php endif; ?>
+</div>
+
+<?php /* ================= MOXO ÖLÇÜM ARŞİVİ =================
+     Bu kart bir TEST EKRANI DEĞİLDİR: MOXO d-CPT'yi yetkili uzman uygular
+     ve yorumlar; buraya yalnız gelen raporun sayıları geçirilir.
+     Bilerek yapılmayanlar (CLAUDE.md §2):
+       • eşik/kesme noktası yok        • normalize grafik yok
+       • ön-son farkı hesaplanmıyor    • "iyileşme/gerileme" etiketi yok
+     Veli raporu ve katılım belgesi bu tabloyu hiç okumaz. ======== */ ?>
+<div class="kart">
+  <div class="kart-baslik">
+    <h2>MOXO ölçüm arşivi</h2>
+    <span class="rozet rozet-acik"><?= count($moxoOlcumleri) ?> ölçüm</span>
+  </div>
+  <p class="alan-ipucu">
+    <strong>Bu bir değerlendirme aracı değildir.</strong> MOXO d-CPT'yi yetkili uzman uygular ve
+    <strong>yorumu rapora aittir</strong>; burası yalnız rapordaki sayıların arşividir. Değerler
+    <strong>veli raporuna ve katılım belgesine yansıtılmaz</strong>. Ölçüm sağlıkla ilgili bir
+    kayıt sayılabileceği için yalnız velinin açık onayıyla girilmeli ve gerekmediğinde silinmelidir.
+  </p>
+
+  <?php if ($moxoOnSon): ?>
+  <h3 style="margin-top:.8rem">Ön ve son ölçüm</h3>
+  <div class="tablo-sar">
+    <table class="tablo">
+      <thead><tr><th scope="col">İndeks</th><th scope="col" class="sayi">Ön</th><th scope="col" class="sayi">Son</th></tr></thead>
+      <tbody>
+        <?php foreach ($moxoOnSon as $etiket => $ciftler): ?>
+        <tr>
+          <td><?= e($etiket) ?></td>
+          <td class="sayi"><?= e(moxo_sayi($ciftler['on'])) ?></td>
+          <td class="sayi"><?= e(moxo_sayi($ciftler['son'])) ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <p class="alan-ipucu">İki sayı yan yana gösterilir; fark hesaplanmaz. İndekslerde yönün ne anlama
+     geldiği ölçeğe bağlıdır ve bunu yalnız raporu düzenleyen uzman söyleyebilir.</p>
+  <?php endif; ?>
+
+  <?php if ($moxoOlcumleri): ?>
+  <div class="tablo-sar">
+    <table class="tablo">
+      <thead><tr>
+        <th scope="col">Tarih</th><th scope="col">Aşama</th>
+        <?php foreach (MOXO_INDEKSLERI as $etiket): ?><th scope="col" class="sayi"><?= e($etiket) ?></th><?php endforeach; ?>
+        <th scope="col">Ölçek</th><th scope="col">Uygulayan</th><th scope="col">Not</th><th scope="col"></th>
+      </tr></thead>
+      <tbody>
+        <?php foreach (array_reverse($moxoOlcumleri) as $m): ?>
+        <tr>
+          <td><?= e(format_date_tr($m['tarih'], false)) ?></td>
+          <td><?= e(MOXO_ASAMALARI[$m['asama']] ?? $m['asama']) ?></td>
+          <?php foreach (array_keys(MOXO_INDEKSLERI) as $alan): ?>
+          <td class="sayi"><?= e(moxo_sayi($m[$alan] === null ? null : (float)$m[$alan])) ?></td>
+          <?php endforeach; ?>
+          <td><?= e($m['olcek'] !== '' ? $m['olcek'] : '—') ?></td>
+          <td><?= e($m['uygulayan'] !== '' ? $m['uygulayan'] : '—') ?>
+              <?= $m['rapor_no'] !== '' ? '<br><small>' . e($m['rapor_no']) . '</small>' : '' ?></td>
+          <td><?= e(mb_strimwidth((string)$m['notlar'], 0, 60, '…')) ?></td>
+          <td>
+            <form method="post" action="<?= e(url('ogrenci.php')) ?>" style="margin:0"
+                  data-onay="<?= e(format_date_tr($m['tarih'], false)) ?> tarihli MOXO ölçüm kaydı silinecek. Emin misiniz?">
+              <?= csrf_field() ?>
+              <input type="hidden" name="id" value="<?= $id ?>">
+              <input type="hidden" name="islem" value="moxo_sil">
+              <input type="hidden" name="moxo_id" value="<?= (int)$m['id'] ?>">
+              <button type="submit" class="btn btn-kucuk btn-tehlike">Sil</button>
+            </form>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
+    </table>
+  </div>
+  <?php else: ?>
+    <div class="bos-durum">Henüz ölçüm girilmemiş. Uzmandan gelen raporun sayılarını aşağıdan ekleyebilirsiniz.</div>
+  <?php endif; ?>
+
+  <form method="post" action="<?= e(url('ogrenci.php')) ?>" class="form-satir" style="margin-top:1rem">
+    <?= csrf_field() ?>
+    <input type="hidden" name="id" value="<?= $id ?>">
+    <input type="hidden" name="islem" value="moxo_ekle">
+    <label class="form-alan">Ölçüm tarihi
+      <input type="date" name="tarih" class="girdi" value="<?= e(old('tarih', today())) ?>" max="<?= e(today()) ?>" required>
+    </label>
+    <label class="form-alan">Aşama
+      <select name="asama" class="secim">
+        <?php foreach (MOXO_ASAMALARI as $kod => $etiket): ?>
+        <option value="<?= e($kod) ?>" <?= old('asama') === $kod ? 'selected' : '' ?>><?= e($etiket) ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label>
+    <?php /* inputmode=decimal: telefonda ondalık tuş takımı açılsın. Alanlar
+             İSTEĞE BAĞLI — rapor hangi indeksi veriyorsa o girilir. */ ?>
+    <?php foreach (MOXO_INDEKSLERI as $alan => $etiket): ?>
+    <label class="form-alan" style="min-width:110px"><?= e($etiket) ?>
+      <input type="text" name="<?= e($alan) ?>" class="girdi" inputmode="decimal" maxlength="8"
+             value="<?= e(old($alan)) ?>" placeholder="—">
+    </label>
+    <?php endforeach; ?>
+    <label class="form-alan" style="min-width:150px">Ölçek
+      <input type="text" name="olcek" class="girdi" maxlength="80" value="<?= e(old('olcek')) ?>"
+             placeholder="raporda yazdığı gibi">
+    </label>
+    <label class="form-alan" style="min-width:170px">Uygulayan uzman / kurum
+      <input type="text" name="uygulayan" class="girdi" maxlength="120" value="<?= e(old('uygulayan')) ?>">
+    </label>
+    <label class="form-alan" style="min-width:120px">Rapor no
+      <input type="text" name="rapor_no" class="girdi" maxlength="60" value="<?= e(old('rapor_no')) ?>">
+    </label>
+    <label class="form-alan form-genis">Not
+      <input type="text" name="notlar" class="girdi" maxlength="600" value="<?= e(old('notlar')) ?>"
+             placeholder="Ölçüm koşulu, raporun teslim tarihi gibi nesnel bilgiler">
+    </label>
+    <button type="submit" class="btn btn-birincil">Ölçümü Ekle</button>
+  </form>
+  <p class="alan-ipucu">Boş bıraktığınız indeks kaydedilmez (sıfır yazılmaz). Ölçek alanına raporda
+     hangi birim yazıyorsa onu geçirin — uygulama bir ölçek varsaymaz.</p>
 </div>
 
 <div class="kart">
