@@ -160,6 +160,213 @@ function seed_technique_rows(): array
          'Göreve geçiş, sürdürme', 'zayif',
          'RitimOdak kılavuzu Etkinlik 10; transfer kanıtı sınırlı',
          'Davul/pad, yaşa uygun sessiz görev, kronometre'],
+
+        /* ==============================================================
+           RİTMOTERAPİ® SERTİFİKA KURSU KAYNAKLI ETKİNLİKLER
+           ==============================================================
+           Kaynak: 26 uygulama modülü (1.-RITIM-ILE-TINI … 26.-RITIM-ILE-
+           LOKALIZASYON) + 15 kuram belgesi. Her modül standart bir ders
+           planı tablosudur: Uygulama / Süre / Gelişim / Kazanımlar /
+           Yöntem / Araç-Gereç / BAŞLANGIÇ–SUNUM–UYGULAMA adımları.
+
+           KANIT DURUMU — TÜM BU SATIRLAR İÇİN ORTAK:
+           Kurs materyalinde KAYNAKÇA YOK; hiçbir modülde tek bir atıf,
+           künye veya DOI geçmiyor. MEB kurs programının "PROGRAMIN
+           DAYANAĞI" başlığı yalnız MEVZUAT sayıyor (1739 sayılı Millî
+           Eğitim Temel Kanunu, Hayat Boyu Öğrenme Yönetmeliği, Talim ve
+           Terbiye Kurulu'nun müzik ve beden eğitimi öğretim programı
+           kararları) — yani program idari olarak onaylıdır, bilimsel
+           olarak SINANMIŞ DEĞİLDİR. Bu ikisi aynı şey değil.
+
+           Bu yüzden aşağıdaki hiçbir satırda "kurs böyle diyor" gerekçe
+           sayılmadı. Kanıt düzeyi yalnız iki soruya bakılarak verildi:
+             1) Etkinlikte ÇALIŞILAN şey ile ÖLÇÜLEN şey aynı mı
+                (yakın-alan)? → en fazla "orta"
+             2) Bağımsız literatürde doğrudan dayanak var mı? → yoksa
+                "zayif" ya da "yok"
+
+           UYGULAMAYA ALINMAYANLAR (bilerek): kurs materyalinin
+           "Ritmoterapi'nin İnsan Bedeni Üzerindeki Etkileri" belgesi
+           serotonin/dopamin/kortizol/testosteron salgısı, HPA ekseni
+           aktivasyonu, psikotik belirtilerin azalması, ağrı toleransı,
+           "titreşim yoğunluğunun sinir uyarılabilirliğini değiştirmesi"
+           ve mizaç/fıtrat sınıflaması gibi iddialar taşıyor. Bunların
+           HİÇBİRİ künyeli değil ve hepsi CLAUDE.md §2'nin kırmızı
+           çizgilerine giriyor. Etkinliklerin YAPISI alındı, İDDİALARI
+           alınmadı. Kazanım listelerindeki "sosyalleşme düzeyini
+           artırır", "öz-güven geliştirir" gibi ifadeler de aynı nedenle
+           hedef_beceri alanına taşınmadı.
+           ============================================================== */
+
+        ['Düzenli mi, Düzensiz mi?', 'Metronoma eşlik', 'Metronom + çevredeki cisimler', 1, 8,
+         'Eğitmen önce metronomu tanıtır ve ne işe yaradığını gösterir. Sonra çevredeki cisimlere (masa, kitap, sandalye) '
+         . 'kâh metronomla eşzamanlı, kâh bilerek düzensiz vurur. Katılımcı her dizi için yalnız "düzenli" veya "düzensiz" der. '
+         . 'İlerletme: düzensizlik payı büyükten küçüğe indirilir (belirgin aksama → hafif erken/geç vuruş).',
+         'Vuruş düzenliliğini işitsel ayırt etme', 'orta',
+         'Ritmoterapi® sertifika kursu, 2. modül "Ritim ile Salınım" (METRONOM). Kurs künye vermiyor. '
+         . 'ORTA etiketinin gerekçesi kurs değil, görevin kendisi: düzenli/düzensiz ayrımı doğrudan ölçülebilir bir '
+         . 'algı becerisidir ve uygulamanın kendi "Aksak Vuruş Algısı" protokolü tam bunu ölçer. Yani çalışılan şey ile '
+         . 'ölçülen şey aynı. Dikkat/öğrenme gibi başka alanlara transfer İDDİA EDİLMEZ.',
+         'Metronom, çevredeki cisimler'],
+
+        ['Cisimden Enstrüman', 'Cisimden enstrüman', 'Çevredeki cisimler', 1, 20,
+         'Tencere kapağı, kova, kaşık, pet şişe, boncuk gibi gündelik cisimler masaya serilir. Katılımcılar her cismi deneyip '
+         . 'tınısını inceler, kendi "enstrümanını" seçer ve neden seçtiğini anlatır. Ardından seçilen cisimlerle grup birlikte '
+         . 'sabit bir nabız çalar. İlerletme: cisimler kalın–ince diye iki yana ayrılıp iki gruplu bir düzen kurulur.',
+         'Malzeme keşfi, grup içinde seçim yapma ve anlatma', 'yok',
+         'Ritmoterapi® sertifika kursu, 4. modül "Ritim ile Katılım" (İNOVATİON). Kurs künye vermiyor. '
+         . 'Bulunan-nesne enstrümanı pedagojik bir gelenektir (Orff yaklaşımıyla aynı aile); keyifli ve derse girişi '
+         . 'kolaylaştırır. ANCAK bu etkinliğin ölçülebilir bir beceri kazandırdığını gösteren çalışma YOK — '
+         . '"yok" etiketi bilinçlidir, etkinliği değersizleştirmez.',
+         'Tencere kapağı, kova, kaşık, pet şişe, boncuk; baget (2 adet)'],
+
+        ['Metronomlu Yürüyüş', 'Ritimli hareket', 'Metronom', 1, 12,
+         'Metronom rahat bir tempoda (60–90 BPM) çalar. Katılımcılar önce yerinde, sonra salonda serbest yürürken her adımı '
+         . 'bir vuruşa denk getirir. Eğitmen adım sesini duyabileceği bir konumda durur. İlerletme: tempo bir seferde '
+         . '4–6 BPM değiştirilir; ayrıca vuruşun bir bölümü susturulup adımın kaymadan sürmesi istenir.',
+         'Adımın dış vuruşa eşzamanlanması', 'orta',
+         'Ritmoterapi® sertifika kursu, 6. modül "Ritim ile Adım" (STEP BY STEP). Kurs künye vermiyor. '
+         . 'ORTA etiketi yakın-alan gerekçesiyle: çalışılan şey adımın vuruşa kilitlenmesinin KENDİSİdir, '
+         . '"Metronoma eşlik" ile aynı mantık. Yürüyüşe dair klinik/rehabilitasyon literatürüne BİLEREK '
+         . 'dayanılmadı — o alan bir sağlık müdahalesi bağlamıdır, buradaki atölye bağlamına taşınamaz.',
+         'Metronom, açık yürüme alanı'],
+
+        ['Yön Komutlu Yürüyüş', 'Ritimli hareket', 'Metronom + davul', 2, 12,
+         'Metronomlu yürüyüş kurulduktan sonra eğitmen belirli aralıklarla sağ/sol yön komutu verir; katılımcı adım temposunu '
+         . 'bozmadan yön değiştirir. Komut önce sözel, sonra tek bir davul vuruşuyla (kalın = sol, ince = sağ) verilir. '
+         . 'İlerletme: komut sıklığı artırılır, sözel destek kaldırılır.',
+         'Tempoyu koruyarak yön değiştirme, komut takibi', 'zayif',
+         'Ritmoterapi® sertifika kursu, 7. modül "Ritim ile Yönelim" (ORİENTATİON). Kurs künye vermiyor. '
+         . 'Kursun bu modüle bağladığı "dikkat ve yön duyarlılığı kazanır" iddiası ölçülmemiş bir kazanım listesidir. '
+         . 'Bağımsız dayanak bulunamadı: yön komutu eklemenin eşzamanlanma ya da dikkat üzerinde ayrı bir etkisi '
+         . 'olduğunu gösteren çalışma YOK. Etkinlik yapı olarak makul, iddia olarak boştur.',
+         'Metronom, bir davul; açık alan'],
+
+        ['Adım–Alkış Çift Görevi', 'Ritimli hareket', 'Metronom', 2, 10,
+         'Katılımcı metronomla yürürken aynı anda kalın/ince komuta göre alkış ekler: ayaklar nabzı sürdürür, eller ayrı bir '
+         . 'olayı işaretler. Önce alkış her 4 vuruşta bir, sonra her 2 vuruşta bir yapılır. İlerletme: ayak ve el farklı '
+         . 'periyotlara ayrılır (ayak her vuruş, el her 3 vuruş).',
+         'İki hareketi eşzamanlı sürdürme, motor koordinasyon', 'orta',
+         'Ritmoterapi® sertifika kursu, 8. modül "Ritim ile Hareket" (POLİ). Kurs künye vermiyor. '
+         . 'ORTA etiketi yakın-alan gerekçesiyle: uygulamadaki "Vücut perküsyonu" ve "Çift Hat" ile aynı aile — '
+         . 'çalışılan şey koordinasyonun kendisidir. Genel motor yetiye ya da dikkate kalıcı transfer İDDİA EDİLMEZ.',
+         'Metronom, açık alan'],
+
+        ['Adım–Dönüş–Alkış', 'Ritimli hareket', 'Metronom', 3, 12,
+         'Önceki iki basamağın birleşimi: metronomla yürüme, komutla yön değiştirme ve belirli vuruşlarda dönüp alkışlama. '
+         . 'Dizi önce eğitmenle birlikte, sonra tek başına yapılır. İlerletme: dönüş açısı (çeyrek → yarım) ve dizi uzunluğu '
+         . 'artırılır; ikisi aynı anda değil.',
+         'Çok adımlı hareket dizisini tempoda sürdürme', 'zayif',
+         'Ritmoterapi® sertifika kursu, 10. modül "Ritim ile Devinim" (ORBİT) ve 9. modül "Ritim ile Konumlanma" '
+         . '(LOCOMOTİON). Kurs künye vermiyor. Zorluk basamağı olarak anlamlı, ancak bu birleşik kurgunun ayrı bir '
+         . 'kazanım ürettiğine dair bağımsız dayanak bulunamadı.',
+         'Metronom, geniş açık alan'],
+
+        ['Bağımsız Uzuv', 'Vücut perküsyonu', 'Beden', 3, 12,
+         'Eller havada zıt yönlerde daire çizerek başlanır (sol saat yönü, sağ tersi). Oturunca her uzuv ayrı bir tını üretir: '
+         . 'sağ el göğüs (kalın), sol el diz (ince), ayak zemin. Metronomla her uzuv kendi periyodunu korur. '
+         . 'İlerletme: iki uzuvla başlanır, üçüncü ancak ilk ikisi bozulmadan sürdürülünce eklenir.',
+         'Uzuv bağımsızlığı, eşzamanlı iki motor akış', 'zayif',
+         'Ritmoterapi® sertifika kursu, 11. modül "Ritim ile Uylaşım" (POLİMETRİC). Kurs künye vermiyor. '
+         . 'Uzuv bağımsızlığı gerçek ve ölçülebilir bir motor beceridir, ama bu ETKİNLİĞİN onu geliştirdiğini ölçen '
+         . 'çalışma bulunamadı; kursun listelediği "konsantrasyon duyarlılığı" iddiasının dayanağı yok. '
+         . 'Uygulamadaki poliritim modülüyle akrabadır.',
+         'Malzeme gerekmez; isteğe bağlı metronom'],
+
+        ['Kâğıt Hedefler', 'Hedefli vuruş', 'Baget + A4 kâğıt', 2, 12,
+         'Masaya ya da yere 4 adet A4 kâğıt aralarında 10 cm boşluk bırakılarak dizilir. Katılımcı bagetle metronom '
+         . 'temposunda sırayla kâğıtlara dokunur; hedefi ıskalamak da geç kalmak da sayılır. '
+         . 'İlerletme: hedef sırası karıştırılır, sonra hedefler arası mesafe artırılır.',
+         'Zamanlama ile hedefe yönelme, göz–el eşgüdümü', 'zayif',
+         'Ritmoterapi® sertifika kursu, 12. modül "Ritim ile İzlenim" (STİCK / CLAMP). Kurs künye vermiyor. '
+         . 'Görev yapı olarak nişan alma + zamanlama birleşimidir; her ikisi de ölçülebilir. ANCAK bu düzenlemenin '
+         . 'ölçülmüş bir kazanımı YOK. Kursun "konsantrasyon duyarlılığı kazanır" ifadesi ölçülmemiş bir iddiadır.',
+         'Baget (2 adet), A4 kâğıt (4 adet), metronom'],
+
+        ['Bırak–Al', 'Hedefli vuruş', 'Baget', 2, 10,
+         'Metronom sayarken katılımcı belirlenen vuruşta bagetleri masaya bırakır, belirlenen vuruşta yeniden alır ve çalmaya '
+         . 'devam eder. Bırakma ve alma tempoyu bozmamalıdır. İlerletme: bırakma–alma arası kısaltılır; sonra sağ ve sol el '
+         . 'farklı vuruşlarda bırakır.',
+         'Nesne bırakıp almayı tempoda sürdürme', 'zayif',
+         'Ritmoterapi® sertifika kursu, 13. modül "Ritim ile Koordinasyon" (CROSS / GET). Kurs künye vermiyor. '
+         . 'Etkinlik hoş bir zorluk basamağı; bağımsız dayanak bulunamadı.',
+         'Baget (2 adet), metronom, masa'],
+
+        ['Simge–Ses Eşleme', 'Ritim okuma', 'Simge tablosu + davul', 1, 15,
+         'Duvara iki simgeli bir tablo asılır (dikdörtgen = kalın vuruş, daire = ince vuruş). Eğitmen tabloda soldan sağa '
+         . 'ilerleyerek gösterir, grup gördüğü simgeyi çalar. Notaya hiç girilmez; simge ile ses arasındaki bağ kurulur. '
+         . 'İlerletme: satır 2 simgeden 4 simgeye uzar, sonra gösterme hızlanır.',
+         'Görsel simgeyi sese çevirme, soldan sağa takip', 'zayif',
+         'Ritmoterapi® sertifika kursu, 14. modül "Ritim ile Simgelem" (STYL-R / Graphy). Kurs künye vermiyor. '
+         . 'Simge–ses eşlemesi notasyon öğretiminin standart ilk adımıdır (pedagojik gelenek). Bu tablonun '
+         . 'okuma/dikkat gibi alanlara etkisi ÖLÇÜLMEMİŞTİR; kursun "sayısal ve görsel hafızasını geliştirir" '
+         . 'ifadesi künyesizdir.',
+         'İki simgeli tablo, davul/pad'],
+
+        ['Nota Değeri Okuma', 'Ritim okuma', 'Nota tablosu + davul', 2, 15,
+         'Nota değerleri tablosu (birlik, ikilik, dörtlük, sekizlik) asılır. Önce her değer tek başına sayılarak çalınır, '
+         . 'sonra 4/4 lük tek satırlık kısa yazılar okunur. Okuma önce sesli sayarak, sonra sessiz yapılır. '
+         . 'İlerletme: satırda iki farklı değer karıştırılır; tempo sabit tutulur.',
+         'Nota değerlerini süreye çevirme, ölçü içinde okuma', 'zayif',
+         'Ritmoterapi® sertifika kursu, 17. modül "Ritim ile Notasyon" (MOTTO); 19. ve 20. modüller (STYL-R Body / Handly) '
+         . 'aynı içeriğin beden ve el sürümleridir. Kurs künye vermiyor. Nota okuma öğretimi köklü bir müzik pedagojisi '
+         . 'geleneğidir; buradaki ETKİNLİĞİN ölçülmüş bir kazanımı yok. Uygulamanın "Ritim Okuma" modülü aynı beceriyi '
+         . 'ekranda çalıştırır.',
+         'Nota değerleri tablosu, davul/pad, metronom'],
+
+        ['Sus Payı', 'Ritim okuma', 'Davul / pad', 2, 10,
+         'Kalıba sus (es) eklenir: dört vuruşluk bir satırda bir vuruş bilerek boş bırakılır ve o vuruşta hiç ses çıkarılmaz. '
+         . 'Önce es duyulur şekilde sayılır, sonra içten sayılır. İlerletme: es sayısı artırılır ve yeri değiştirilir; '
+         . 'grup ikiye ayrılıp bir yan çalarken öteki susar.',
+         'Sessizliği süre olarak tutma, boş vuruşta tepki vermeme', 'zayif',
+         'Ritmoterapi® sertifika kursu, 22. modül "Ritim ile Aranjman" (ENTERTAİMENT). Kurs künye vermiyor. '
+         . 'Yapı olarak uygulamadaki "Dur–devam" ailesine yakındır (tepki tutma), ancak es okuma ile dürtü kontrolünün '
+         . 'aynı şey olduğunu gösteren çalışma bulunamadı — o yüzden "orta" değil "zayif".',
+         'Davul/pad, es simgeli kısa satırlar, metronom'],
+
+        ['Piano–Forte', 'Gürlük (nüans)', 'Davul / pad', 2, 10,
+         'Aynı kalıp önce yumuşak (piano), sonra güçlü (forte) çalınır; ardından satır içinde gürlük değiştirilir '
+         . '(iki vuruş yumuşak, iki vuruş güçlü). Gürlük simgeyle gösterilir. Tempo hiç değişmez — değişen yalnız güçtür. '
+         . 'İlerletme: kademeli geçiş (gitgide güçlenme) eklenir.',
+         'Aynı tempoda gürlüğü ayrı ayrı denetleme', 'zayif',
+         'Ritmoterapi® sertifika kursu, 21. modül "Ritim ile Dinamik" (NÜANS). Kurs künye vermiyor. '
+         . 'Gürlük denetimi çalgı eğitiminin temel bileşenidir (pedagojik gelenek); bu etkinliğin ayrı bir kazanım '
+         . 'ürettiğine dair ölçüm yok. UYGULAMA NOTU: "forte" gürültü değildir — kulak sağlığı için oturum boyunca '
+         . 'sürekli yüksek gürlükte çalışılmaz.',
+         'Davul/pad, gürlük simgeleri'],
+
+        ['Ayna Kalıp', 'Ritmik dizi tekrarı', 'Davul / pad', 3, 10,
+         'Eğitmen kısa bir kalıp çalar; katılımcı onu TERSTEN çalar (son olay ilk sırada). Önce 2 olaylı, sonra 3 ve 4 olaylı '
+         . 'kalıplar. Ardından simetri görselleştirilir: kalıp kâğıda çizilip katlanarak aynası bulunur. '
+         . 'İlerletme: kalıp uzar; ters çevirmeye gürlük değişimi eklenir.',
+         'Diziyi bellekte tutup ters sırayla üretme', 'yok',
+         'Ritmoterapi® sertifika kursu, 23. modül "Ritim ile Üretim" (ECHO / REFLEX). Kurs künye vermiyor. '
+         . 'Ters sıralama çalışma belleğinin bilinen bir görev biçimidir (ör. ters sayı dizisi), ama BU etkinliğin '
+         . 'belleği geliştirdiğine dair kanıt YOK ve işitsel ters sıralamanın standart bir ölçümü de kullanılmadı. '
+         . 'İddiasız tutuldu.',
+         'Davul/pad, kâğıt ve kalem'],
+
+        ['Sıra Devri', 'Katmanlı grup ritmi', 'Beden / davul', 2, 12,
+         'Grup daire olur. Bir katılımcı 4/4 lük kısa bir beden ritmi (göğüs–bacak–alkış) başlatır; sekiz vuruş sonra sıradaki '
+         . 'kişi aynı kalıbı kesintisiz devralır ve dilerse tek bir öğesini değiştirir. Kalıp hiç durmadan daireyi dolaşır. '
+         . 'İlerletme: devir süresi kısaltılır; iki kalıp aynı anda zıt yönde dolaştırılır.',
+         'Kesintisiz devralma, grup içinde sıra alma', 'yok',
+         'Ritmoterapi® sertifika kursu, 16. modül "Ritim ile Rotasyon" (REACTİON). Kurs künye vermiyor. '
+         . 'Kursun bağladığı "sosyalleşme düzeyini artırır" ve "kendini ifade eder" kazanımları ölçülmemiştir; '
+         . 'uygulamanın kendi "Daire Senkroni" tekniğiyle akrabadır ve orada da grup etkisi için doğrudan kanıt yok.',
+         'Malzeme gerekmez; isteğe bağlı davul'],
+
+        ['Nabızla Nefes', 'Nefes ve tempo', 'Metronom', 1, 8,
+         'Oturumun açılış veya kapanış rutini. Metronom 60 BPM te çalar. Dört vuruşta burundan alma, dört vuruşta ağızdan '
+         . 'verme; eğitmen önce kendisi gösterir. Katılımcılar dik ve rahat oturur, göğüs kafesinin hareketini izler. '
+         . 'İlerletme: sayı dörtten altıya çıkarılır. Baş dönmesi olursa hemen normal nefese dönülür.',
+         'Nefesi sabit bir tempoya eşleme', 'yok',
+         'Ritmoterapi® sertifika kursu, 5. modül "Ritim ile Nefes" (OTONOM) ve 26. modül "Ritim ile Lokalizasyon" (EQUAT). '
+         . 'ÖNEMLİ AYRIM: kurs bu etkinliğe otonom sinir sistemi, HPA ekseni ve hormon salgısı (serotonin, kortizol vb.) '
+         . 'üzerinden etkiler atfediyor. Bu iddiaların HİÇBİRİ künyeli değil ve hepsi CLAUDE.md §2 kırmızı çizgisine '
+         . 'giriyor — UYGULAMAYA ALINMADI. Etkinlik burada yalnız bir sıraya geçiş rutini olarak tutulmuştur: '
+         . 'sakinleşme, rahatlama veya sağlık etkisi İDDİA EDİLMEZ. Bu nedenle kanıt düzeyi "yok".',
+         'Metronom (60 BPM); mum/çiçek gibi görsel destek isteğe bağlı ve gereksizdir'],
     ];
 }
 
@@ -1335,4 +1542,53 @@ function seed_template_home_tasks(): void
         }
     }
     site_text_set('sistem_sablon_ev_seed', '1');
+}
+
+/**
+ * RİTMOTERAPİ® SERTİFİKA KURSU ETKİNLİKLERİ — tek seferlik yerleştirme.
+ *
+ * NEDEN AYRI FONKSİYON: seed_techniques() yalnız kütüphane BOŞKEN çalışır
+ * (eğitmenin sildiği kayıt dirilmesin diye). Kurulu bir veritabanına yeni
+ * teknik eklemenin tek doğru yolu budur.
+ *
+ * TEK SEFERLİK: site_icerik'teki bayrak konunca bir daha çalışmaz. Eğitmen
+ * bu tekniklerden birini silerse geri gelmez — bu bilinçli bir tercihtir.
+ *
+ * Kanıt düzeyleri ve gerekçeleri seed_technique_rows() içinde yazılıdır;
+ * burada kopyalanmaz (iki yere yazılan içerik ayrışır).
+ */
+const RITMOTERAPI_TEKNIKLERI = [
+    'Düzenli mi, Düzensiz mi?', 'Cisimden Enstrüman', 'Metronomlu Yürüyüş',
+    'Yön Komutlu Yürüyüş', 'Adım–Alkış Çift Görevi', 'Adım–Dönüş–Alkış',
+    'Bağımsız Uzuv', 'Kâğıt Hedefler', 'Bırak–Al', 'Simge–Ses Eşleme',
+    'Nota Değeri Okuma', 'Sus Payı', 'Piano–Forte', 'Ayna Kalıp',
+    'Sıra Devri', 'Nabızla Nefes',
+];
+
+function seed_ritmoterapi_techniques(): void
+{
+    if (site_text('sistem_ritmoterapi_teknikleri') === '1') { return; }
+    $pdo = db();
+
+    /* INSERT OR IGNORE: ad alanı UNIQUE — eğitmen aynı adla kendi tekniğini
+       eklediyse onunki korunur, üzerine yazılmaz. */
+    $ins = $pdo->prepare(
+        'INSERT OR IGNORE INTO teknikler
+            (ad, kategori, enstruman, seviye, sure_dk, aciklama, hedef_beceri, kanit_duzeyi, kaynak, malzeme, aktif, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)'
+    );
+    $yeni = array_flip(RITMOTERAPI_TEKNIKLERI);
+
+    $pdo->exec('BEGIN');
+    try {
+        foreach (seed_technique_rows() as $satir) {
+            if (!isset($yeni[$satir[0]])) { continue; }
+            $ins->execute([...$satir, now_str()]);
+        }
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+    site_text_set('sistem_ritmoterapi_teknikleri', '1');
 }

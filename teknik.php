@@ -95,8 +95,11 @@ require APP_DIR . '/includes/view/header.php';
       <label class="form-alan form-genis">Açıklama (nasıl uygulanır)
         <textarea name="aciklama" class="girdi" maxlength="1500" rows="4"><?= e(old('aciklama', $teknik['aciklama'])) ?></textarea>
       </label>
-      <label class="form-alan form-genis">Kaynak
-        <input type="text" name="kaynak" class="girdi" value="<?= e(old('kaynak', $teknik['kaynak'])) ?>" maxlength="300">
+      <?php /* Bkz. teknikler.php: gerekçe metinleri 300 karakteri aşıyor;
+               tek satırlık input hem okunmuyor hem düzenlemede kırpıyordu. */ ?>
+      <label class="form-alan form-genis">Kaynak ve kanıt gerekçesi
+        <textarea name="kaynak" class="girdi" maxlength="1500" rows="4"><?= e(old('kaynak', $teknik['kaynak'])) ?></textarea>
+        <span class="alan-ipucu">Kanıt yoksa bunu yazmak da bir bilgidir — boş bırakmaktan iyidir.</span>
       </label>
     </div>
     <div class="form-butonlar">

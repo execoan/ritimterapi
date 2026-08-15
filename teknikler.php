@@ -154,9 +154,13 @@ require APP_DIR . '/includes/view/header.php';
       <label class="form-alan form-genis">Açıklama (nasıl uygulanır)
         <textarea name="aciklama" class="girdi" maxlength="1500"><?= e(old('aciklama')) ?></textarea>
       </label>
-      <label class="form-alan form-genis">Kaynak
-        <input type="text" name="kaynak" class="girdi" value="<?= e(old('kaynak')) ?>" maxlength="300"
-               placeholder='Makale künyesi veya "pedagojik gelenek"'>
+      <?php /* Tek satırlık input DEĞİL: kanıt gerekçesi çoğu zaman birkaç
+               cümledir ("şu ölçüldü, şu ölçülmedi, transfer iddiası yok").
+               300 karakterlik sınır bu gerekçeleri kırpıyordu. */ ?>
+      <label class="form-alan form-genis">Kaynak ve kanıt gerekçesi
+        <textarea name="kaynak" class="girdi" maxlength="1500" rows="3"
+                  placeholder='Makale künyesi, "pedagojik gelenek" ya da neden kanıt bulunmadığı'><?= e(old('kaynak')) ?></textarea>
+        <span class="alan-ipucu">Kanıt yoksa bunu yazmak da bir bilgidir — boş bırakmaktan iyidir.</span>
       </label>
     </div>
     <div class="form-butonlar">
