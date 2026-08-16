@@ -7,6 +7,13 @@
    kendi yolu. Tema değişkenleri geri dönüşlü okunur; koyu sahne.
    ================================================================ */
 
+/* Yol sayfası panel kapsayıcısından (1100 px) daha geniş çalışır: sekiz
+   derslik bir bölüm geniş ekranda tek satıra yaklaşsın diye sahne iki yana
+   taşar. Dar ekranda taşma sıfırlanır. */
+.yol-genis { max-width: 1360px; margin-left: auto; margin-right: auto; }
+@media (min-width: 1180px) {
+  .yol-genis { width: calc(100vw - 3rem); max-width: 1360px; margin-left: calc(50% - min(50vw - 1.5rem, 680px)); }
+}
 .yol-sahne {
   background: linear-gradient(180deg, #1c1917, #292524);
   border-radius: 18px; padding: 1.4rem 1.2rem 1.8rem;
@@ -47,11 +54,27 @@
 .yol-bolum-ozet { margin-left: auto; color: #a8a29e; font-size: .82rem; font-variant-numeric: tabular-nums; }
 .yol-bolum-aciklama { margin: .35rem 0 .8rem; color: #a8a29e; font-size: .85rem; }
 
-/* Adım düğümleri — bağlayıcı çizgili yatay dizi, telefonda sarar */
-.yol-adimlar { display: flex; flex-wrap: wrap; gap: .55rem .8rem; position: relative; }
+/* Adım düğümleri — EŞİT IZGARA.
+   Önce esnek sarma (flex-wrap) kullanılıyordu: kartlar sabit genişlikteydi,
+   satıra kaç tane sığarsa sığıyor, kalanlar alta düşüyordu. Sonuç 1088 px'de
+   5 + 3'lük kırık bir dizilim ve sağda geniş bir boşluktu — sayfa dar bir
+   sütuna sıkışmış görünüyordu. Izgara kartları satır boyunca eşit böler,
+   boşluk kalmaz; sütun sayısı ekran genişliğine göre kendiliğinden artar. */
+.yol-adimlar {
+  display: grid; gap: .6rem; position: relative;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+/* Bölümlerde 8 adım var; sütun sayısı 8'i bölmezse son satır yarım kalıyor
+   (auto-fit 1088 px'de 6 sütun seçiyor → 6+2). Ara bantta 4'e sabitleyince
+   dizilim 4+4 oluyor, geniş ekranda ise sekizi tek satır alıyor. */
+@media (min-width: 760px) and (max-width: 1179px) {
+  .yol-adimlar { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 1180px) {
+  .yol-adimlar { grid-template-columns: repeat(8, minmax(0, 1fr)); }
+}
 .yol-adim {
-  position: relative; flex: 0 0 auto; min-width: 118px; max-width: 164px;
-  min-height: 74px; border-radius: 13px; cursor: pointer;
+  position: relative; min-height: 84px; border-radius: 13px; cursor: pointer;
   border: 1px solid rgba(255, 255, 255, .16);
   background: rgba(255, 255, 255, .05);
   color: #e7e5e4; font-family: inherit; text-align: left;
@@ -141,6 +164,6 @@
   .yol-adim, .kulak-secenek { transition: none; }
 }
 @media (max-width: 720px) {
-  .yol-adim { min-width: calc(50% - .5rem); max-width: none; }
+  .yol-adimlar { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
   .kulak-secenek { min-width: calc(50% - .4rem); }
 }

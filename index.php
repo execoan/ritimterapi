@@ -106,7 +106,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
   </div>
 </nav>
 
-<header class="t-hero" id="ust">
+<header class="t-hero t-koyu-sahne" id="ust">
   <!-- Premium sahne katmanları: iki renkli aurora + dev metronom kadranı.
        Tümü süs (aria-hidden); paralaks hedefleri data-derinlik taşır ve
        dönüş İÇ öğededir ki paralaksın inline transform'u dönüşü ezmesin. -->
@@ -211,7 +211,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 
 <?php foreach ($bolumler as $bolum): ?>
 <?php if ($bolum['anahtar'] === 'deney'): ?>
-<section class="t-bolum t-deney-bolum" id="deney">
+<section class="t-bolum t-deney-bolum t-koyu-sahne" id="deney">
   <div class="t-deney-fon" aria-hidden="true"></div>
   <div class="t-kapsayici">
     <p class="t-bolum-ustbaslik kayarak">10 SANİYELİK CANLI DENEY</p>
@@ -272,7 +272,7 @@ function metronom_svg(string $sinif, string $gradyanId): string
 </section>
 
 <!-- ===================== ZAMAN ÖLÇEĞİ (scroll anlatısı) ===================== -->
-<section class="t-olcek" id="olcek" aria-label="Zaman ölçeği">
+<section class="t-olcek t-koyu-sahne" id="olcek" aria-label="Zaman ölçeği">
   <div class="t-olcek-sabit">
     <div class="t-olcek-halka" aria-hidden="true"><span></span><span></span><span></span></div>
     <div class="t-olcek-icerik">

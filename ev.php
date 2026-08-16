@@ -139,7 +139,7 @@ $flashlar = flash_get();
 <link rel="stylesheet" href="<?= e(asset('css/metronom.css')) ?>">
 <link rel="stylesheet" href="<?= e(asset('css/ev.css')) ?>">
 </head>
-<body class="tanitim">
+<body class="tanitim t-koyu-sahne">
 
 <?php require APP_DIR . '/includes/view/uygulama-serit.php'; ?>
 

@@ -29,7 +29,7 @@ require APP_DIR . '/includes/view/header.php';
   <a class="btn btn-golge" href="<?= e(url('ritim-okuma.php')) ?>">Laboratuvarı serbest aç →</a>
 </div>
 
-<div class="kart yol-sahne">
+<div class="kart yol-sahne yol-genis">
   <div class="yol-ust">
     <h2>Deşifre Yolculuğu</h2>
     <div class="yol-ilerleme" id="yolOzet" aria-live="polite">–<small>ders tamamlandı</small></div>

@@ -150,7 +150,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
 <link rel="apple-touch-icon" href="<?= e(asset('img/apple-touch-icon.png')) ?>">
 <meta name="apple-mobile-web-app-title" content="<?= e(PUBLIC_BRAND) ?>">
 </head>
-<body class="tanitim">
+<body class="tanitim t-koyu-sahne">
 
 <?php require APP_DIR . '/includes/view/uygulama-serit.php'; ?>
 <div class="giris-sahne">
