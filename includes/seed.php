@@ -359,6 +359,33 @@ function seed_technique_rows(): array
          . 'uygulamanın kendi "Daire Senkroni" tekniğiyle akrabadır ve orada da grup etkisi için doğrudan kanıt yok.',
          'Malzeme gerekmez; isteğe bağlı davul'],
 
+        /* ==============================================================
+           RAMSR TEMELLİ ETKİNLİKLER (Rhythm and Movement for Self-Regulation)
+           ==============================================================
+           Kütüphanedeki tek "iki bağımsız RCT ile tekrarlanmış" aile.
+           Kaynak metinleri bulguları TAM aktarır: ne çıktı, ne ÇIKMADI.
+           Programın kendisi müzik geçmişi olmayan eğitmenlerin uygulaması
+           için tasarlanmıştır; buradaki iki teknik onun çekirdek desenidir.
+           ============================================================== */
+
+        ['Sekiz Aç – Sekiz Kapa', 'Dur–devam', 'Davul / pad', 1, 10,
+         'Grup sekiz vuruş boyunca çalar, sekiz vuruş boyunca susar; kalıp kesintisiz döner. '
+         . 'Susma süresinde nabız içten sayılır — eğitmen saymaz. Oturunca açık ve kapalı bölümlerin '
+         . 'uzunluğu eşit kalmak koşuluyla dörde iner ya da on altıya çıkar. '
+         . 'İlerletme: açık ve kapalı bölümler farklı uzunlukta olur (sekiz aç, dört kapa).',
+         'Başlatma ve durdurmayı sırayla yönetme, sessizlikte nabzı sürdürme', 'orta',
+         'İki bağımsız kümelenmiş RCT: Williams ve ark., Avustralya, 8 anaokulu / 213 çocuk, 8 haftada 16–20 oturum (Early Childhood Research Quarterly, 2023) ve Hong Kong tekrarı, n=286, 8 haftada 16 oturum (Child Development, 2026).' . "\n" . 'NE BULUNDU: öğretmen bildirimli öz-düzenleme bileşiğinde anlamlı ama KÜÇÜK etki (ηp²=0,019; p=0,008); alt ölçekler davranışsal 0,035 · duygusal 0,032 · bilişsel 0,029. Kör değerlendiricili Head–Toes–Knees–Shoulders görevinde de anlamlı ve küçük (ηp²=0,034; p=0,007) — öğretmen bildirimine dayanmayan tek olumlu ölçüm bu.' . "\n" . 'NE BULUNMADI: yürütücü işlev bileşiğinde etki YOK (ηp²=0,004; p=0,116); inhibisyon, çalışma belleği ve set değiştirme ayrı ayrı da anlamsız. Avustralya denemesinde bilişsel esneklik yalnız ERKEK çocuklarda çıktı — alt grup bulgusudur, genel örneklemde yok.' . "\n" . 'NEDEN "orta" ve neden "güçlü" DEĞİL: etkiler küçük, birincil olumlu ölçüm kör değil ve laboratuvar yürütücü işlev ölçümleri null. Buna karşılık iki bağımsız RCT ve bir kör ölçümde tekrar var; kütüphanedeki transfer iddiaları içinde en iyi desteklenen kayıt bu.',
+         'Davul/pad ya da beden perküsyonu; enstrüman şart değil'],
+
+        ['Tempo Merdiveni ile Hareket', 'Ritimli hareket', 'Metronom + davul', 2, 12,
+         'Sabit bir tempoda hareketle (yürüme, alkış, adım) başlanır. Tempo kademe kademe '
+         . 'değiştirilir — bir seferde tek kademe, her kademede en az sekiz vuruş kalınır. '
+         . 'Hareket temposu takip eder; duraklama yoktur. İlerletme: kademeler arası fark büyütülür, '
+         . 'sonra yön değişimi eklenir. Amaç hız değil, geçişin bozulmadan yapılmasıdır.',
+         'Değişen dış tempoya hareketle uyum, geçiş sırasında sürekliliği koruma', 'orta',
+         'İki bağımsız kümelenmiş RCT: Williams ve ark., Avustralya, 8 anaokulu / 213 çocuk, 8 haftada 16–20 oturum (Early Childhood Research Quarterly, 2023) ve Hong Kong tekrarı, n=286, 8 haftada 16 oturum (Child Development, 2026).' . "\n" . 'NE BULUNDU: öğretmen bildirimli öz-düzenleme bileşiğinde anlamlı ama KÜÇÜK etki (ηp²=0,019; p=0,008); alt ölçekler davranışsal 0,035 · duygusal 0,032 · bilişsel 0,029. Kör değerlendiricili Head–Toes–Knees–Shoulders görevinde de anlamlı ve küçük (ηp²=0,034; p=0,007) — öğretmen bildirimine dayanmayan tek olumlu ölçüm bu.' . "\n" . 'NE BULUNMADI: yürütücü işlev bileşiğinde etki YOK (ηp²=0,004; p=0,116); inhibisyon, çalışma belleği ve set değiştirme ayrı ayrı da anlamsız. Avustralya denemesinde bilişsel esneklik yalnız ERKEK çocuklarda çıktı — alt grup bulgusudur, genel örneklemde yok.' . "\n" . 'NEDEN "orta" ve neden "güçlü" DEĞİL: etkiler küçük, birincil olumlu ölçüm kör değil ve laboratuvar yürütücü işlev ölçümleri null. Buna karşılık iki bağımsız RCT ve bir kör ölçümde tekrar var; kütüphanedeki transfer iddiaları içinde en iyi desteklenen kayıt bu.',
+         'Metronom (ya da tempo değiştirebilen bir çalgı), açık alan'],
+
         ['Nabızla Nefes', 'Nefes ve tempo', 'Metronom', 1, 8,
          'Oturumun açılış veya kapanış rutini. Metronom 60 BPM te çalar. Dört vuruşta burundan alma, dört vuruşta ağızdan '
          . 'verme; eğitmen önce kendisi gösterir. Katılımcılar dik ve rahat oturur, göğüs kafesinin hareketini izler. '
@@ -1640,4 +1667,37 @@ function seed_technique_audit_2026(): void
         throw $ex;
     }
     site_text_set('sistem_teknik_denetimi_2026', '1');
+}
+
+/**
+ * RAMSR TEMELLİ TEKNİKLER — tek seferlik yerleştirme.
+ *
+ * Ayrı bir bayrak kullanır: seed_ritmoterapi_techniques() zaten çalışmış
+ * kurulumlarda o bayrak konmuş olduğu için bu iki kayıt oraya eklenemezdi.
+ * Desen aynı: INSERT OR IGNORE, tek sefer, eğitmen silerse geri gelmez.
+ */
+const RAMSR_TEKNIKLERI = ['Sekiz Aç – Sekiz Kapa', 'Tempo Merdiveni ile Hareket'];
+
+function seed_ramsr_techniques(): void
+{
+    if (site_text('sistem_ramsr_teknikleri') === '1') { return; }
+    $pdo = db();
+    $ins = $pdo->prepare(
+        'INSERT OR IGNORE INTO teknikler
+            (ad, kategori, enstruman, seviye, sure_dk, aciklama, hedef_beceri, kanit_duzeyi, kaynak, malzeme, aktif, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)'
+    );
+    $yeni = array_flip(RAMSR_TEKNIKLERI);
+    $pdo->exec('BEGIN');
+    try {
+        foreach (seed_technique_rows() as $satir) {
+            if (!isset($yeni[$satir[0]])) { continue; }
+            $ins->execute([...$satir, now_str()]);
+        }
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+    site_text_set('sistem_ramsr_teknikleri', '1');
 }

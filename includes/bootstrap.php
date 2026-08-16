@@ -450,6 +450,7 @@ seed_unsupported_technique_studies();     // arka plan kaynakları; kanıt düze
 seed_timbre_technique_2026();             // "Kalın–İnce Tını" tekniği + 7 doğrulanmış kaynak
 seed_ritmoterapi_techniques();            // sertifika kursundan 16 etkinlik; kanıt düzeyleri kurstan BAĞIMSIZ verildi
 seed_technique_audit_2026();              // kütüphane denetimi: dil + kanıt düzeyi tutarlılığı
+seed_ramsr_techniques();                  // iki bagimsiz RCT ile tekrarlanmis tek aile
 ensure_student_codes();
 auto_backup_daily();
 purge_expired_personal_data();   // saklama süresi dolan iletişim talepleri
