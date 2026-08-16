@@ -5,7 +5,7 @@
  * Metronom Stüdyosu'ndan AYRILDI: iki modül de Space tuşunu istiyordu ve
  * alıştırmanın üstüne metronom açılıyordu. Ayrı sayfada Space tek sahibe ait.
  *
- * 3 seviye × 8 ders × 16 alıştırma = 384 deterministik örnek (abcjs portesi).
+ * 4 seviye × 8 ders × 16 alıştırma = 512 deterministik örnek (abcjs portesi).
  */
 define('RITIM', 1);
 require __DIR__ . '/includes/bootstrap.php';
@@ -70,6 +70,7 @@ require APP_DIR . '/includes/view/header.php';
         <option value="1" selected>Kolay — temel değerler</option>
         <option value="2">Orta — onaltılık ve senkop</option>
         <option value="3">Zor — üçleme ve karma deşifre</option>
+        <option value="4">İleri — altılama, beşleme, onaltılık bağ</option>
       </select>
     </label>
     <label class="form-alan">Tempo

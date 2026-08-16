@@ -88,7 +88,34 @@ window.RitimOkuma = (function () {
     trr:     { ad: 'Üçlemede son iki sus',     abc: '(3Bzz',     onset: [0],                    bolum: 3 },
     rtt:     { ad: 'Üçlemede ilk sus',         abc: '(3zBB',     onset: [1 / 3, 2 / 3],         bolum: 3 },
     trt:     { ad: 'Üçlemede orta sus',        abc: '(3BzB',     onset: [0, 2 / 3],             bolum: 3 },
-    ttr:     { ad: 'Üçlemede son sus',         abc: '(3BBz',     onset: [0, 1 / 3],             bolum: 3 }
+    ttr:     { ad: 'Üçlemede son sus',         abc: '(3BBz',     onset: [0, 1 / 3],             bolum: 3 },
+
+    /* ---- SEVİYE 4 hücreleri ----
+       Tuplet yazımı AÇIK biçimde: (p:q:r = q'nun zamanında p nota, r nota
+       boyunca. ABC'nin kısa biçiminde (6 "2'nin zamanında 6" demek ve bir
+       vuruşluk altılama için yanlış süre üretiyor. */
+    ssssss:  { ad: 'Altılama',                 abc: '(6:4:6B/B/B/B/B/B/',
+               onset: [0, 1 / 6, 2 / 6, 3 / 6, 4 / 6, 5 / 6], bolum: 6 },
+    s6_rr:   { ad: 'Altılamada iki sus',       abc: '(6:4:6B/B/z/B/B/z/',
+               onset: [0, 1 / 6, 3 / 6, 4 / 6],               bolum: 6 },
+    sssss5:  { ad: 'Beşleme',                  abc: '(5:4:5B/B/B/B/B/',
+               onset: [0, 0.2, 0.4, 0.6, 0.8],                bolum: 5 },
+    s5_r:    { ad: 'Beşlemede orta sus',       abc: '(5:4:5B/B/z/B/B/',
+               onset: [0, 0.2, 0.6, 0.8],                     bolum: 5 },
+    /* DİKKAT — bu hücre bir kez yanlış yazıldı: son nota SEKİZLİK ('B-')
+       olduğu için vuruş 1,25 vuruşa taşıyordu. Doğrusu son ONALTILIK'ın
+       bağlanması ('B/-'): dört onaltılık = tam bir vuruş, dördüncüsü
+       sonraki vuruşa uzuyor. */
+    s_tie:   { ad: 'Onaltılık bağ başlangıcı', abc: 'B/B/B/B/-',
+               onset: [0, 0.25, 0.5, 0.75],                   bolum: 4, bagSonu: true },
+    /* Bağın devamı DÖRT onaltılıktır, üç değil: ilki bağın karşılığıdır
+       (yazılır ama VURULMAZ — onset listesinde yok). Üç yazılsaydı ölçü
+       çeyrek vuruş eksik kalırdı; mevcut 'tie_end' hücresi de aynı deseni
+       izliyor (zB- / BB). */
+    s_tie_e: { ad: 'Onaltılık bağın devamı',   abc: 'B/B/B/B/',
+               onset: [0.25, 0.5, 0.75],                      bolum: 4, bagBasi: true },
+    r_ss_r:  { ad: 'Susla çevrili iki onaltılık', abc: 'z/B/B/z/',
+               onset: [0.25, 0.5],                            bolum: 4 }
   };
 
   /*
@@ -126,6 +153,23 @@ window.RitimOkuma = (function () {
       { ad: 'Ritmik yer değiştirme', parca: [['re'], ['r_s_e'], ['rtt'], ['s_dot'], ['off_tie', 'tie_end']] },
       { ad: 'Karma dayanıklılık', parca: [['ttt'], ['ssss'], ['dot_s'], ['rtt'], ['s_e_s'], ['off_tie', 'tie_end']] },
       { ad: 'Usta deşifre', parca: [['q'], ['ee'], ['ssss'], ['e_ss'], ['ss_e'], ['s_e_s'], ['dot_s'], ['s_dot'], ['r_s_e'], ['s_r_ss'], ['off_tie', 'tie_end'], ['ttt'], ['trr'], ['rtt'], ['trt'], ['ttr']] }
+    ],
+    /*
+     * SEVİYE 4 — İLERİ.
+     * Sıra: önce vuruşu 6'ya bölme (altılama, ikiye bölmenin katı olduğu
+     * için 4'ten sonra en kolay adım), sonra 5'e bölme (hiçbir alt katıyla
+     * örtüşmez, en zoru), ardından onaltılık düzeyinde bağ ve karma.
+     * Son iki ders yalnız dayanıklılık: yeni bilgi yok, süre uzun.
+     */
+    4: [
+      { ad: 'Altılamaya giriş', parca: [['q'], ['ee'], ['ssss'], ['ssssss']] },
+      { ad: 'Altılama ve sus', parca: [['ssssss'], ['s6_rr'], ['ssss'], ['q']] },
+      { ad: 'Beşlemeye giriş', parca: [['q'], ['ee'], ['sssss5']] },
+      { ad: 'Beşleme ve sus', parca: [['sssss5'], ['s5_r'], ['ee'], ['q']] },
+      { ad: 'Onaltılık bağ', parca: [['q'], ['s_tie', 's_tie_e'], ['ssss'], ['r_ss_r']] },
+      { ad: 'Bölünme değiştirme', parca: [['ssss'], ['ttt'], ['ssssss'], ['sssss5'], ['ee']] },
+      { ad: 'Yoğun sus okuma', parca: [['r_ss_r'], ['s_r_ss'], ['r_e_s'], ['s6_rr'], ['s5_r'], ['rq']] },
+      { ad: 'İleri deşifre', parca: [['q'], ['ee'], ['ssss'], ['ttt'], ['ssssss'], ['sssss5'], ['s6_rr'], ['s5_r'], ['s_tie', 's_tie_e'], ['off_tie', 'tie_end'], ['dot_s'], ['r_ss_r'], ['s_e_s'], ['s_r_ss']] }
     ]
   };
 
@@ -238,7 +282,7 @@ window.RitimOkuma = (function () {
     opts = opts || {};
     if (kok.__roIptal) { kok.__roIptal(); }
 
-    var seviye = [1, 2, 3].indexOf(Number(opts.seviye)) >= 0 ? Number(opts.seviye) : 1;
+    var seviye = [1, 2, 3, 4].indexOf(Number(opts.seviye)) >= 0 ? Number(opts.seviye) : 1;
     var bpm = Math.max(35, Math.min(180, Number(opts.bpm) || 60));
     var rehber = ['tam', 'olcu', 'sessiz'].indexOf(opts.rehber) >= 0 ? opts.rehber : 'tam';
     var spb = 60 / bpm;
@@ -1438,7 +1482,7 @@ window.RitimOkuma = (function () {
 
   /** Yol sayfası için ders listesi: her seviyede 8 ders, ders başına 16 örnek. */
   function dersListesi(seviye) {
-    seviye = [1, 2, 3].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
+    seviye = [1, 2, 3, 4].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
     return DERSLER[seviye].map(function (d, i) {
       return { no: i + 1, ad: d.ad, ornekSayisi: 16 };
     });
@@ -1449,7 +1493,7 @@ window.RitimOkuma = (function () {
     sapmaSinifi: sapmaSinifi,
     dersListesi: dersListesi,
     katalogBoyutu: function (seviye) {
-      seviye = [1, 2, 3].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
+      seviye = [1, 2, 3, 4].indexOf(Number(seviye)) >= 0 ? Number(seviye) : 1;
       return katalogOlustur(seviye).length;
     }
   };

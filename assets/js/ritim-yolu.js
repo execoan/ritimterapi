@@ -32,13 +32,14 @@
     return { yildiz: y, adet: adet };
   }
 
-  var SEVIYE_ADI = { 1: 'Kolay — temel değerler', 2: 'Orta — onaltılık ve senkop', 3: 'Zor — üçleme ve karma' };
+  var SEVIYE_ADI = { 1: 'Kolay — temel değerler', 2: 'Orta — onaltılık ve senkop',
+                     3: 'Zor — üçleme ve karma', 4: 'İleri — altılama, beşleme, bağ' };
 
   /* 24 düğümlük düz adım listesi + türetilmiş durum */
   var adimlar = [];
   var durum = {};
   var dersBilgisi = {};
-  [1, 2, 3].forEach(function (seviye) {
+  [1, 2, 3, 4].forEach(function (seviye) {
     var tamam = tamamlananlar(seviye);
     ro.dersListesi(seviye).forEach(function (ders) {
       var id = 'R' + seviye + '-D' + ders.no;
@@ -65,7 +66,7 @@
     ozetEl.innerHTML = toplamBiten + '/24<small>ders tamamlandı</small>';
   }
 
-  [1, 2, 3].forEach(function (seviye, bIdx) {
+  [1, 2, 3, 4].forEach(function (seviye, bIdx) {
     var bolum = document.createElement('section');
     bolum.className = 'yol-bolum';
     var dersler = ro.dersListesi(seviye);
