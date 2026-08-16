@@ -80,31 +80,29 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <nav class="t-nav" id="tNav">
   <div class="t-kapsayici t-nav-ic">
     <a class="t-marka" href="#ust"><?= metronom_svg('t-logo', 'tg') ?><span><?= e(PUBLIC_BRAND) ?></span></a>
-    <div class="t-nav-linkler">
+    <div class="t-nav-linkler" id="tNavLinkler">
       <?php foreach ($bolumler as $b): ?>
       <?php /* "İletişim" bağlantısı atlanır: sağdaki çerçeveli düğme zaten
                oraya götürüyor — menüde iki kez "İletişim" görünüyordu. */ ?>
       <?php if ($b['anahtar'] === 'iletisim') { continue; } ?>
-      <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Canlı Deney', 'yontem' => 'Yöntem', 'program' => 'Program',
+      <a href="#<?= e($b['anahtar']) ?>"><?= e(['deney' => 'Deney', 'yontem' => 'Yöntem', 'program' => 'Program',
           'bilim' => 'Bilim', 'nabiz' => 'Nabız', 'protokoller' => 'Protokoller', 'moxo' => 'MOXO',
           'galeri' => 'Galeri', 'bizkimiz' => 'Biz Kimiz', 'video' => 'Tanıtım'][$b['anahtar']] ?? $b['baslik']) ?></a>
       <?php endforeach; ?>
     </div>
     <a class="t-btn t-btn-cerceve t-nav-kayit" href="#kayit">İletişim</a>
-    <?php /* WCAG 2.2.2 (Duraklat/Durdur/Gizle): sayfada 5 sn'den uzun süren,
-             kendiliğinden başlayan hareket var (kayan şerit, yörünge, parçacıklar).
-             İşletim sistemi tercihi (prefers-reduced-motion) zaten dinleniyor;
-             bu düğme onu ayarlayamayan kullanıcıya sayfa içi denetim verir.
-             Simge duraklat/oynat dilinde: ⏸ = animasyonlar akıyor, durdurabilirsin;
-             ▶ = durmuş, başlatabilirsin. Ad ve ipucu JS'te güncel tutulur. */ ?>
-    <button type="button" class="t-hareket-anahtari" id="tHareketAnahtari"
-            aria-pressed="false" aria-label="Sayfadaki animasyonları durdur"
-            title="Sayfadaki animasyonları durdur">
-      <span class="t-hareket-ikon" aria-hidden="true">⏸</span>
-    </button>
     <a class="t-btn t-btn-dolu" href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>">
       <?= $girisli ? 'Panele Git' : 'Giriş Yap' ?>
     </a>
+    <?php /* Dar ekranda bölüm bağlantıları GİZLENİYORDU ve yerine hiçbir şey
+             konmuyordu: telefondan gelen ziyaretçinin bölümlere gitme yolu yoktu.
+             Artık gerçek bir menü var; geniş ekranda düğme gizli, satır açık. */ ?>
+    <button type="button" class="t-menu-dugme" id="tMenuDugme"
+            aria-expanded="false" aria-controls="tNavLinkler" aria-label="Menüyü aç">
+      <span class="t-menu-cizgi" aria-hidden="true"></span>
+      <span class="t-menu-cizgi" aria-hidden="true"></span>
+      <span class="t-menu-cizgi" aria-hidden="true"></span>
+    </button>
   </div>
 </nav>
 
@@ -216,56 +214,46 @@ function metronom_svg(string $sinif, string $gradyanId): string
 <section class="t-bolum t-deney-bolum" id="deney">
   <div class="t-deney-fon" aria-hidden="true"></div>
   <div class="t-kapsayici">
-    <p class="t-bolum-ustbaslik kayarak">7 SANİYELİK CANLI DENEY</p>
-    <h2 class="kayarak">Ritim sustuğunda, vuruş sende kalır mı?</h2>
+    <p class="t-bolum-ustbaslik kayarak">10 SANİYELİK CANLI DENEY</p>
+    <h2 class="kayarak">Vuruşa dokunabilir misin?</h2>
     <p class="t-bolum-aciklama kayarak">
-      Dört vuruşu dinle. Beşinci vuruş sessiz kalacak. Onu tam olması gereken yerde
-      tek dokunuşla sen tamamla.
+      Tek kural var: duyduğun her vuruşta dokun. Sekiz vuruş çalacak,
+      sonunda kaçında vuruşa denk geldiğini göreceksin.
     </p>
 
-    <article class="t-tek-deney kayarak" id="sessizMeydan">
+    <?php /* TASARIM KARARI — tek denetim.
+             Önceki sürümde "Ritmi Başlat" ve "Vuruşu Tamamla" diye İKİ düğme
+             vardı; hangisine ne zaman basılacağı üç ayrı metinden okunuyordu
+             ve anlaşılmıyordu. Artık tek bir pad var: kapalıyken BAŞLA,
+             çalarken DOKUN. Öğrenilecek tek şey "her vuruşta dokun". */ ?>
+    <article class="t-tek-deney kayarak" id="vurusDeneyi">
       <div class="t-tek-deney-ust">
         <span class="t-canli-rozet"><i aria-hidden="true"></i> CANLI SES</span>
         <div>
-          <h3>Eksik vuruş</h3>
-          <p>Kulaklık gerekmez. Sesi açman ve tek bir kez dokunman yeterli.</p>
+          <h3>Vuruşa dokun</h3>
+          <p>Kulaklık gerekmez. Sesi aç, her vuruşta bir kez dokun.</p>
         </div>
-        <span class="t-tek-deney-sure">≈ 7 sn</span>
+        <span class="t-tek-deney-sure">8 vuruş</span>
       </div>
 
-      <div class="t-tek-deney-sahne">
-        <div class="t-tek-deney-gorsel" aria-hidden="true">
-          <div class="t-ritim-yol" id="meydanNoktalar">
-            <span data-sira="0">1</span>
-            <span data-sira="1">2</span>
-            <span data-sira="2">3</span>
-            <span data-sira="3">4</span>
-            <span class="eksik" data-sira="4">?</span>
-          </div>
-          <div class="t-sessiz-halka" id="meydanHalka">
-            <i></i><i></i><i></i>
-            <strong id="meydanMerkez">HAZIR</strong>
-            <small id="meydanAlt">4 ses + 1 sessizlik</small>
-          </div>
+      <div class="t-vurus-sahne">
+        <div class="t-vurus-noktalar" id="vurusNoktalar" aria-hidden="true">
+          <?php for ($i = 0; $i < 8; $i++): ?><span><i></i></span><?php endfor; ?>
         </div>
 
-        <div class="t-tek-deney-panel">
-          <p class="t-meydan-etiket" id="meydanEtiket">NASIL ÇALIŞIR?</p>
-          <p class="t-meydan-durum" id="meydanDurum" role="status">
-            Başlatınca dört vuruş duyacaksın. Bir sonraki vuruş sessiz olacak;
-            tam o anda büyük düğmeye dokun.
-          </p>
-          <button type="button" class="t-btn t-btn-dolu t-btn-buyuk t-meydan-baslat" id="meydanBaslat">
-            ▶ Ritmi Başlat
-          </button>
-          <button type="button" class="t-meydan-vur" id="meydanVur" disabled>
-            <span>VURUŞU TAMAMLA</span>
-            <small>boşluk tuşu da olur</small>
-          </button>
-          <div class="t-meydan-sonuc" id="meydanSonuc" hidden>
-            <strong id="meydanSonucBaslik"></strong>
-            <span id="meydanSonucDetay"></span>
-          </div>
+        <button type="button" class="t-vurus-pad" id="vurusPad">
+          <strong id="vurusPadBaslik">BAŞLA</strong>
+          <small id="vurusPadAlt">dokun ve ritmi duy</small>
+        </button>
+
+        <p class="t-vurus-durum" id="vurusDurum" role="status">
+          Dokununca sekiz vuruş çalmaya başlar. Her vuruşta aynı yere bir kez dokun —
+          boşluk tuşu da olur.
+        </p>
+
+        <div class="t-vurus-sonuc" id="vurusSonuc" hidden>
+          <strong id="vurusSonucBaslik"></strong>
+          <span id="vurusSonucDetay"></span>
         </div>
       </div>
 
@@ -825,12 +813,27 @@ function metronom_svg(string $sinif, string $gradyanId): string
       <a href="<?= e(url('ev.php')) ?>">Ev Çalışmalarım</a> — erişim kodun varsa buradan gir ·
       <a href="<?= e(url($girisli ? 'panel.php' : 'giris.php')) ?>"><?= $girisli ? 'Panel' : 'Eğitmen girişi' ?></a>
     </p>
+    <?php /* WCAG 2.2.2 (Duraklat/Durdur/Gizle): sayfada 5 sn'den uzun süren,
+             kendiliğinden başlayan hareket var. Sistem tercihi zaten dinleniyor;
+             bu düğme onu ayarlayamayan ziyaretçiye sayfa içi denetim verir.
+             ÜST MENÜDEN BURAYA ALINDI: menüde hem yer kaplıyor hem de bir
+             gezinme bağlantısı sanılıyordu — burada ne olduğu yazıyla duruyor. */ ?>
+    <p class="t-alt-kucuk">
+      <button type="button" class="t-hareket-anahtari" id="tHareketAnahtari"
+              aria-pressed="false" title="Sayfadaki animasyonları durdur">
+        <span class="t-hareket-ikon" aria-hidden="true">⏸</span>
+        <span class="t-hareket-yazi">Animasyonları durdur</span>
+      </button>
+    </p>
     <p class="t-alt-kucuk">© <?= (int)now()->format('Y') ?> <?= e(PUBLIC_BRAND) ?> ·
       <?= e(site_text('iletisim_eposta', '')) ?> · <?= e(site_text('iletisim_instagram', '')) ?></p>
   </div>
 </footer>
 
 <div class="t-isik" id="tIsik" aria-hidden="true"></div>
+<?php /* Canlı deneydeki dokunuş-vuruş eşlemesi ortak çekirdekten gelir;
+         landing.js ondan ÖNCE yüklenemez. */ ?>
+<script src="<?= e(asset('js/zamanlama-cekirdegi.js')) ?>"></script>
 <script src="<?= e(asset('js/landing.js')) ?>"></script>
 <script src="<?= e(asset('js/uygulama-yukle.js')) ?>"></script>
 </body>

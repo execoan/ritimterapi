@@ -857,6 +857,48 @@ $lj = git_('assets/js/landing.js', $jar)['govde'];
 dogrula(str_contains($lj, 'prefers-reduced-motion') && str_contains($lj, 'ritim-hareket-kapali'),
     'hareket tercihi işletim sistemi ayarını okuyor ve kalıcı');
 
+/* -------- ÜST MENÜ --------
+   Sekiz bölüm bağlantısı dar ekranda tek satıra sığmıyordu; eskiden yatay
+   kayan bir maskeyle kırpılıyorlardı (son bağlantılar yarım görünüyordu).
+   Artık açılır menü var. Maske geri gelirse bu denetim kırılır. */
+dogrula(str_contains($ig, 'id="tMenuDugme"') && str_contains($ig, 'aria-controls="tNavLinkler"'),
+    'üst menüde açılır menü düğmesi var (aria-controls bağlı)');
+dogrula(!str_contains($lc, 'mask-image: linear-gradient(90deg,'),
+    'menü bağlantılarını kırpan kaydırma maskesi kaldırıldı');
+dogrula(str_contains($lj, 'ustMenu') && str_contains($lj, "'Escape'"),
+    'menü Esc ile kapanıyor');
+/* Hareket anahtarı üst menüden alt bilgiye taşındı: menüde yer kaplıyor ve
+   gezinme bağlantısı sanılıyordu. */
+dogrula(strpos($ig, 'id="tHareketAnahtari"') > strpos($ig, '<footer'),
+    'hareket denetimi alt bilgide (üst menüde değil)');
+
+/* -------- CANLI DENEY: TEK DENETİM --------
+   Önceki sürümde "Ritmi Başlat" ve "Vuruşu Tamamla" diye iki düğme vardı ve
+   hangisine ne zaman basılacağı anlaşılmıyordu. Tek pad kuralı: bölümde
+   BİR tane düğme olmalı. */
+$deneyParca = '';
+if (preg_match('/<article[^>]*id="vurusDeneyi".*?<\/article>/s', $ig, $mD)) { $deneyParca = $mD[0]; }
+dogrula($deneyParca !== '' && substr_count($deneyParca, '<button') === 1,
+    'canlı deneyde tek denetim var (iki düğmeli kurgu geri gelmedi)',
+    'bulunan düğme: ' . substr_count($deneyParca, '<button'));
+dogrula(str_contains($deneyParca, 'id="vurusPad"') && substr_count($deneyParca, '<span></span>') >= 0
+     && substr_count($ig, 'id="vurusNoktalar"') === 1,
+    'deney sahnesinde pad ve sekiz vuruş göstergesi var');
+/* Eşleme mantığı ortak çekirdekten gelir; landing.js kendi kopyasını tutmaz */
+dogrula(str_contains($ig, 'zamanlama-cekirdegi.js'),
+    'tanıtım sayfası ortak zamanlama çekirdeğini yüklüyor');
+dogrula(str_contains($lj, 'RitimZamanlama'),
+    'deney eşlemesi ortak çekirdeği kullanıyor (kopya eşleyici yok)');
+/* Sonuç dili: değerlendirme değil, ölçüm bildirimi (CLAUDE.md §2) */
+foreach (['iyi', 'kötü', 'başarılı', 'başarısız'] as $yasakDeney) {
+    if (preg_match('/\b' . preg_quote($yasakDeney, '/') . '\b/iu', $deneyParca)) {
+        dogrula(false, 'canlı deney dili değerlendirme içermiyor', 'bulunan: ' . $yasakDeney);
+        break;
+    }
+}
+dogrula(str_contains($deneyParca, 'Bu bir değerlendirme değildir'),
+    'canlı deneyde "değerlendirme değildir" notu duruyor');
+
 $gj = git_('assets/js/grup-atolyesi.js', $jar)['govde'];
 dogrula(str_contains($gj, "ArrowRight") && str_contains($gj, "'tabindex'"),
     'radyo grubunda ok tuşu gezinmesi ve gezici odak var');

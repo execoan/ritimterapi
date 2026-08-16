@@ -81,11 +81,12 @@ h3 { letter-spacing: -.008em; }
 /* ---------- Nav ---------- */
 .t-nav {
   position: sticky; top: 0; z-index: 50;
+  /* Açılır menü panelinin çıpası */
   background: rgba(12, 10, 9, .82);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, .06);
 }
-.t-nav-ic { display: flex; align-items: center; gap: 1.2rem; min-height: 64px; }
+.t-nav-ic { display: flex; align-items: center; gap: 1.2rem; min-height: 64px; position: relative; }
 .t-marka {
   display: flex; align-items: center; gap: .6rem; text-decoration: none;
   color: rgb(var(--vurgu-acik));
@@ -95,13 +96,16 @@ h3 { letter-spacing: -.008em; }
   font-family: var(--yazi-baslik); font-weight: 600; font-size: 1.18rem; letter-spacing: -.012em;
 }
 .t-logo { width: 34px; height: 34px; }
-.t-nav-linkler { display: flex; gap: 1.1rem; margin-left: auto; }
+/* İki yandan da auto: artan boşluk yalnız markanın sağında toplanmasın.
+   Tek taraflı auto'da bağlantılar sağdaki düğmelere yapışıyordu (son
+   bağlantı ile "İletişim" arasında yalnız 16 px kalıyor, menü sıkışık
+   görünüyordu). Şimdi boşluk iki yana bölünüyor. */
+.t-nav-linkler { display: flex; gap: 1.05rem; margin-left: auto; margin-right: auto; }
 .t-nav-linkler a {
   color: var(--t-soluk); text-decoration: none; font-size: .92rem; padding: .35rem 0;
   border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
 }
 .t-nav-linkler a:hover { color: #fff; border-color: var(--t-amber); }
-@media (max-width: 720px) { .t-nav-linkler { display: none; } }
 
 .t-btn {
   display: inline-block; text-decoration: none; cursor: pointer; font-family: inherit;
@@ -774,109 +778,67 @@ h3 { letter-spacing: -.008em; }
   border: 1px solid rgba(255, 255, 255, .1); border-radius: 999px; white-space: nowrap;
 }
 
-.t-tek-deney-sahne {
-  position: relative; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(280px, .92fr);
-  min-height: 410px;
-}
-.t-tek-deney-gorsel {
-  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 2rem; padding: 2.2rem 1.5rem;
-  border-right: 1px solid rgba(255, 255, 255, .07);
-  background:
-    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
-  background-size: 28px 28px;
-}
-.t-ritim-yol {
-  position: relative; z-index: 2; display: grid; grid-template-columns: repeat(5, 46px);
-  justify-content: center; gap: .7rem;
-}
-.t-ritim-yol::before {
-  content: ''; position: absolute; left: 22px; right: 22px; top: 22px; height: 2px;
-  background: linear-gradient(90deg, rgb(var(--vurgu) / .65), rgb(var(--vurgu) / .28) 74%, rgba(167,139,250,.5));
-  z-index: -1;
-}
-.t-ritim-yol span {
-  width: 46px; height: 46px; display: grid; place-items: center; border-radius: 50%;
-  color: #a8a29e; background: #292524; border: 1px solid rgba(255,255,255,.14);
-  font-size: .82rem; font-weight: 800; transition: transform .16s, color .16s, background .16s, box-shadow .16s;
-}
-.t-ritim-yol span.eksik {
-  color: #c4b5fd; border: 1px dashed rgba(167,139,250,.65); background: rgba(139,92,246,.1);
-}
-.t-ritim-yol span.tamamlandi { color: #1c1917; background: rgb(var(--vurgu)); border-color: #fde68a; }
-.t-ritim-yol span.yandi {
-  transform: scale(1.22); color: #1c1917; background: #fde68a;
-  box-shadow: 0 0 0 8px rgb(var(--vurgu) / .1), 0 0 32px rgb(var(--vurgu) / .65);
-}
-.t-ritim-yol span.eksik.yandi {
-  background: #a78bfa; border-color: #ddd6fe; box-shadow: 0 0 0 8px rgba(139,92,246,.12), 0 0 34px rgba(139,92,246,.7);
+/* ---------- Canlı deney sahnesi: tek pad ----------
+   Tek denetim tasarımı (bkz. landing.js → vurusaDokun): kapalıyken BAŞLA,
+   çalarken DOKUN. İki ayrı düğmenin yarattığı "hangisine basacağım"
+   sorusu böylece ortadan kalkıyor. */
+.t-vurus-sahne {
+  padding: 1.6rem 1.4rem 1.4rem;
+  display: flex; flex-direction: column; align-items: center; gap: 1.1rem;
 }
 
-.t-sessiz-halka {
-  position: relative; width: 230px; height: 230px; display: grid; place-content: center;
-  text-align: center; border-radius: 50%;
-  background: radial-gradient(circle, rgb(var(--vurgu) / .12), rgb(var(--vurgu) / .025) 58%, transparent 60%);
-  border: 1px solid rgb(var(--vurgu) / .28);
-  transition: transform .18s, border-color .18s, background .3s, box-shadow .3s;
+/* Sekiz vuruş göstergesi — sırayla yanar, sonunda dokunuşun nereye
+   düştüğünü gösterir. Renk TEK BAŞINA bilgi taşımaz (WCAG 1.4.1):
+   denk olan nokta ayrıca büyür ve dolu, uzak olan halka kalır. */
+.t-vurus-noktalar { display: flex; gap: .55rem; flex-wrap: wrap; justify-content: center; }
+.t-vurus-noktalar span {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .18);
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: transform .12s ease-out, border-color .2s, background .2s;
 }
-.t-sessiz-halka i {
-  position: absolute; inset: 16%; border-radius: 50%; border: 1px solid rgb(var(--vurgu) / .18);
-  animation: sessiz-don 12s linear infinite;
+.t-vurus-noktalar span i {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255, 255, 255, .16); transition: background .2s, transform .12s;
 }
-.t-sessiz-halka i:nth-child(2) { inset: 4%; border-style: dashed; animation-duration: 18s; animation-direction: reverse; }
-.t-sessiz-halka i:nth-child(3) { inset: -8%; border-color: rgba(139,92,246,.12); animation-duration: 24s; }
-@keyframes sessiz-don { to { transform: rotate(360deg); } }
-.t-sessiz-halka strong {
-  position: relative; display: block; font-size: 1.65rem; letter-spacing: .08em; color: #fde68a;
+.t-vurus-noktalar span.yandi { border-color: rgb(var(--vurgu) / .75); transform: scale(1.12); }
+.t-vurus-noktalar span.yandi i { background: rgb(var(--vurgu-acik)); }
+.t-vurus-noktalar span.denk {
+  border-color: rgb(var(--vurgu)); background: rgb(var(--vurgu) / .22); transform: scale(1.16);
 }
-.t-sessiz-halka small { position: relative; display: block; margin-top: .25rem; color: var(--t-soluk); }
-.t-sessiz-halka.vur {
-  transform: scale(1.07); border-color: rgb(var(--vurgu-acik)); box-shadow: 0 0 45px rgb(var(--vurgu) / .22);
-}
-.t-sessiz-halka.tamamlandi {
-  border-color: #a78bfa; background: radial-gradient(circle, rgba(139,92,246,.2), rgba(139,92,246,.03) 62%, transparent 64%);
-  box-shadow: 0 0 55px rgba(139,92,246,.22);
-}
-.t-sessiz-halka.tamamlandi strong { color: #ddd6fe; }
+.t-vurus-noktalar span.denk i { background: rgb(var(--vurgu-acik)); transform: scale(1.5); }
+.t-vurus-noktalar span.uzak { border-style: dashed; border-color: rgba(255, 255, 255, .34); }
 
-.t-tek-deney-panel {
-  display: flex; flex-direction: column; justify-content: center; padding: 2rem;
-  background: linear-gradient(180deg, rgba(255,255,255,.025), transparent);
+/* Pad: sayfanın en büyük ve tek dokunulası öğesi olsun diye iri. */
+.t-vurus-pad {
+  width: min(230px, 62vw); aspect-ratio: 1; border-radius: 50%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .3rem;
+  cursor: pointer; font-family: inherit; color: var(--t-metin);
+  background: radial-gradient(circle at 50% 38%, rgb(var(--vurgu) / .22), rgba(255, 255, 255, .04) 68%);
+  border: 2px solid rgb(var(--vurgu) / .45);
+  box-shadow: 0 0 0 10px rgb(var(--vurgu) / .05), 0 18px 44px rgba(0, 0, 0, .38);
+  transition: transform .1s ease-out, box-shadow .2s, border-color .2s, background .3s;
 }
-.t-meydan-etiket {
-  margin: 0 0 .75rem; color: var(--t-amber); font-size: .72rem; font-weight: 800; letter-spacing: .18em;
+.t-vurus-pad strong { font-size: 1.5rem; font-weight: 800; letter-spacing: .08em; }
+.t-vurus-pad small { font-size: .74rem; color: var(--t-soluk); letter-spacing: .02em; }
+.t-vurus-pad:hover { border-color: rgb(var(--vurgu)); }
+.t-vurus-pad:focus-visible { outline: 3px solid rgb(var(--vurgu-acik)); outline-offset: 4px; }
+.t-vurus-pad.nabiz { box-shadow: 0 0 0 16px rgb(var(--vurgu) / .12), 0 18px 44px rgba(0, 0, 0, .38); }
+.t-vurus-pad.vur { transform: scale(.95); border-color: rgb(var(--vurgu-acik)); }
+.t-tek-deney.caliyor .t-vurus-pad { background: radial-gradient(circle at 50% 38%, rgb(var(--vurgu) / .3), rgba(255, 255, 255, .05) 68%); }
+
+.t-vurus-durum {
+  margin: 0; max-width: 34rem; text-align: center;
+  color: var(--t-soluk); font-size: .92rem; line-height: 1.55;
 }
-.t-meydan-durum {
-  min-height: 4.8em; margin: 0 0 1.2rem; color: var(--t-metin); font-size: 1.02rem; line-height: 1.65;
+.t-vurus-sonuc {
+  width: min(34rem, 100%); text-align: center;
+  background: rgba(12, 10, 9, .5); border: 1px solid rgb(var(--vurgu) / .3);
+  border-radius: 16px; padding: .9rem 1.1rem;
 }
-.t-meydan-baslat { width: 100%; text-align: center; border: 0; }
-.t-meydan-vur {
-  width: 100%; min-height: 118px; margin-top: .8rem; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: .25rem; border-radius: 20px;
-  font-family: inherit; color: #1c1917; cursor: pointer;
-  background: radial-gradient(circle at 35% 25%, #fef3c7, rgb(var(--vurgu)) 56%, rgb(var(--vurgu-derin)));
-  border: 1px solid #fde68a; box-shadow: 0 14px 38px rgb(var(--vurgu) / .28);
-  transition: transform .08s, opacity .2s, filter .2s, box-shadow .2s;
-}
-.t-meydan-vur span { font-size: 1.18rem; font-weight: 900; letter-spacing: .03em; }
-.t-meydan-vur small { font-size: .72rem; font-weight: 650; opacity: .7; }
-.t-meydan-vur:not(:disabled):hover { box-shadow: 0 18px 48px rgb(var(--vurgu) / .42); filter: brightness(1.05); }
-.t-meydan-vur:not(:disabled):active { transform: scale(.97); }
-.t-meydan-vur:disabled {
-  cursor: not-allowed; color: #78716c; border-color: rgba(255,255,255,.08);
-  background: linear-gradient(145deg, #292524, #1c1917); box-shadow: none; opacity: .62;
-}
-.t-tek-deney.sira-sende .t-meydan-vur:not(:disabled) { animation: vur-davet 1.15s ease-in-out infinite; }
-@keyframes vur-davet {
-  50% { box-shadow: 0 20px 58px rgb(var(--vurgu) / .52), 0 0 0 7px rgb(var(--vurgu) / .08); }
-}
-.t-meydan-sonuc {
-  margin-top: .9rem; padding: .85rem 1rem; border-radius: 12px;
-  background: rgba(139,92,246,.1); border: 1px solid rgba(167,139,250,.28);
-}
-.t-meydan-sonuc strong { display: block; color: #ddd6fe; margin-bottom: .15rem; }
-.t-meydan-sonuc span { display: block; color: var(--t-soluk); font-size: .78rem; line-height: 1.45; }
+.t-vurus-sonuc strong { display: block; color: rgb(var(--vurgu-acik)); margin-bottom: .25rem; font-size: 1.02rem; }
+.t-vurus-sonuc span { display: block; color: var(--t-soluk); font-size: .8rem; line-height: 1.5; }
+
 .t-tek-deney-alt {
   display: flex; justify-content: center; flex-wrap: wrap; gap: .65rem 1.4rem;
   padding: .85rem 1.2rem; color: var(--t-soluk); font-size: .78rem;
@@ -887,19 +849,14 @@ h3 { letter-spacing: -.008em; }
   .t-tek-deney { border-radius: 20px; }
   .t-tek-deney-ust { grid-template-columns: 1fr auto; }
   .t-canli-rozet { grid-column: 1 / -1; justify-self: start; }
-  .t-tek-deney-sahne { grid-template-columns: 1fr; }
   .t-tek-deney-gorsel { min-height: 350px; border-right: 0; border-bottom: 1px solid rgba(255,255,255,.07); }
-  .t-tek-deney-panel { padding: 1.35rem; }
 }
 @media (max-width: 420px) {
   .t-tek-deney-ust { padding: 1rem; }
   .t-tek-deney-ust p { display: none; }
   .t-tek-deney-gorsel { min-height: 315px; gap: 1.5rem; padding-inline: .8rem; }
-  .t-ritim-yol { grid-template-columns: repeat(5, 40px); gap: .38rem; }
-  .t-ritim-yol::before { left: 19px; right: 19px; top: 19px; }
-  .t-ritim-yol span { width: 40px; height: 40px; }
-  .t-sessiz-halka { width: 190px; height: 190px; }
-  .t-sessiz-halka strong { font-size: 1.35rem; }
+  .t-vurus-sahne { padding: 1.2rem .9rem 1.1rem; }
+  .t-vurus-noktalar span { width: 24px; height: 24px; }
   .t-tek-deney-alt { justify-content: flex-start; }
 }
 
@@ -1209,11 +1166,16 @@ body.tanitim::after {
   .t-deney-fon, .t-hero-davet-nokta, .t-nabiz-halka, .t-sapma-serit i,
   .t-profil, .t-profil-isik, .t-kayit-fon, .t-tempo-isik,
   .t-tempo-secenek.dogru, .t-tempo-secenek.yanlis, .t-tempo-sonuc.basari, .t-tempo-sonuc.hata,
-  .t-canli-rozet i, .t-sessiz-halka i, .t-tek-deney.sira-sende .t-meydan-vur,
+  .t-canli-rozet i, .t-vurus-pad.nabiz, .t-vurus-pad.vur,
   /* Vurus hizinda degisen ogeler de dahil (denetimde disarida kalmislardi) */
   .t-moxo-onson, .t-tempo-ikon, .t-tempo-nokta, .t-vurus-halkasi, .t-serit-ic
     { animation: none !important; transition: none !important; transform: none !important; }
   html { scroll-behavior: auto; }
+  /* Vuruş noktaları: BÜYÜME hareketi durur ama DURUM görünür kalmalı.
+     Blanket kurala eklenselerdi transform da silinirdi; "denk" ile "uzak"
+     ayrımını zaten kenar biçimi ve dolgu taşıyor (WCAG 1.4.1), o yüzden
+     burada yalnız geçiş kapatılır. */
+  .t-vurus-noktalar span, .t-vurus-noktalar span i { transition: none !important; }
   .t-nabiz-halka { opacity: .25; }
   /* Sinematik ölçek bölümü kısalır: yapışkan sahne yerine tek ekran */
   .t-olcek { height: auto; }
@@ -1253,12 +1215,10 @@ html.hareket-kapali *::after {
 }
 html.hareket-kapali { scroll-behavior: auto !important; }
 
-.t-hareket-anahtari { gap: .35rem; }
 .t-hareket-anahtari[aria-pressed="true"] {
   background: rgb(var(--vurgu-koyu) / .18);
   border-color: rgb(var(--vurgu-koyu));
 }
-@media (max-width: 980px) { .t-hareket-anahtari .t-hareket-metin { display: none; } }
 
 /*
  * Süs emojisi sarmalayıcısı (aria-hidden). Ekran okuyucudan gizlemek için
@@ -1509,27 +1469,73 @@ body.tanitim ::selection { background: rgb(var(--vurgu) / .45); color: #0c0a09; 
    ================================================================ */
 .t-nav-ic { max-width: 1280px; flex-wrap: nowrap; gap: 1rem; }
 .t-btn { white-space: nowrap; }
-.t-nav-linkler {
-  min-width: 0;                      /* flex çocuğu küçülebilsin */
-  overflow-x: auto; scrollbar-width: none;
-  -webkit-mask-image: linear-gradient(90deg,
-    transparent, #000 14px, #000 calc(100% - 14px), transparent);
-  mask-image: linear-gradient(90deg,
-    transparent, #000 14px, #000 calc(100% - 14px), transparent);
-}
-.t-nav-linkler::-webkit-scrollbar { display: none; }
 .t-nav-linkler a { white-space: nowrap; font-size: .92rem; }
 
-/* Animasyon anahtarı: yuvarlak, yalnız simge (⏸/▶). Metinli hâli hem
-   yer kaplıyor hem "Hareketi aç" olarak anlaşılmıyordu; duraklat/oynat
-   simgesi evrensel. Erişilebilir ad aria-label + title'da (JS günceller). */
-.t-hareket-anahtari {
-  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
+/* ================================================================
+   ÜST MENÜ — 1080 px altında açılır panel
+   ================================================================
+   ÖNCEKİ DAVRANIŞ VE NEDEN DEĞİŞTİ: bağlantılar tek satırda kalıp
+   yatay kayan bir maskeyle kırpılıyordu. Sonuç: dar ekranda son
+   bağlantılar (MOXO, Biz Kimiz) yarım görünüyor, kaydırılabildikleri
+   de belli olmuyordu — kimse maskeye dokunmayı denemez.
+   Artık sekiz bağlantı, sığmadıkları anda tek bir düğmenin altında
+   tam listeyle açılıyor. Hiçbir bağlantı kesilmiyor.
+   ================================================================ */
+.t-menu-dugme {
+  display: none; flex: 0 0 auto;
+  width: 44px; height: 44px; border-radius: 12px;
+  flex-direction: column; align-items: center; justify-content: center; gap: 4px;
   background: rgba(255, 255, 255, .05);
   border: 1px solid rgba(255, 255, 255, .18);
-  color: var(--t-soluk); cursor: pointer; padding: 0;
-  font-size: .92rem; line-height: 1; font-family: inherit;
+  cursor: pointer; padding: 0;
+  transition: border-color .2s, background .2s;
+}
+.t-menu-dugme:hover { border-color: var(--t-amber); }
+.t-menu-dugme:focus-visible { outline: 2px solid var(--t-amber); outline-offset: 2px; }
+.t-menu-cizgi {
+  width: 18px; height: 2px; border-radius: 2px; background: var(--t-metin);
+  transition: transform .22s ease, opacity .18s ease;
+}
+.t-menu-dugme[aria-expanded="true"] { border-color: var(--t-amber); background: rgb(var(--vurgu) / .12); }
+.t-menu-dugme[aria-expanded="true"] .t-menu-cizgi:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.t-menu-dugme[aria-expanded="true"] .t-menu-cizgi:nth-child(2) { opacity: 0; }
+.t-menu-dugme[aria-expanded="true"] .t-menu-cizgi:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+@media (max-width: 1080px) {
+  .t-menu-dugme { display: inline-flex; }
+  .t-nav-ic { gap: .6rem; }
+  .t-nav-linkler {
+    position: absolute; top: 100%; right: .8rem; left: .8rem;
+    display: none; flex-direction: column; gap: 0; margin: 0;
+    background: rgba(12, 10, 9, .97);
+    border: 1px solid rgb(var(--vurgu) / .28);
+    border-radius: 16px; padding: .4rem;
+    box-shadow: 0 22px 60px rgba(0, 0, 0, .55);
+    max-height: min(70vh, 520px); overflow-y: auto;
+  }
+  .t-nav-linkler.acik { display: flex; }
+  .t-nav-linkler a {
+    display: flex; align-items: center; min-height: 48px;
+    padding: 0 .9rem; border-radius: 10px; border-bottom: 0;
+    font-size: 1rem; color: var(--t-metin);
+  }
+  .t-nav-linkler a:hover { background: rgb(var(--vurgu) / .14); border-color: transparent; }
+}
+@media (min-width: 1081px) {
+  /* Geniş ekranda panel sınıfı kalsa bile satır düzeni bozulmasın */
+  .t-nav-linkler.acik { display: flex; }
+}
+
+/* Animasyon anahtarı — ÜST MENÜDEN ALT BİLGİYE TAŞINDI.
+   Menüde yuvarlak bir simgeydi; hem yer kaplıyor hem bir gezinme
+   bağlantısı sanılıyordu. Alt bilgide ne işe yaradığı yazıyla duruyor. */
+.t-hareket-anahtari {
+  display: inline-flex; align-items: center; gap: .45rem;
+  min-height: 44px; padding: .4rem .9rem; border-radius: 999px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .18);
+  color: var(--t-soluk); cursor: pointer;
+  font-family: inherit; font-size: .82rem; line-height: 1;
   transition: color .2s, border-color .2s, background .2s;
 }
 .t-hareket-anahtari:hover { color: #fff; border-color: var(--t-amber); }
@@ -1537,7 +1543,7 @@ body.tanitim ::selection { background: rgb(var(--vurgu) / .45); color: #0c0a09; 
 .t-hareket-anahtari[aria-pressed="true"] {
   background: rgb(var(--vurgu-koyu) / .2); border-color: var(--t-amber); color: rgb(var(--vurgu-acik));
 }
-.t-hareket-ikon { transform: translateX(.5px); }
+.t-hareket-ikon { font-size: .9rem; }
 
 /* ================================================================
    TANITIM VİDEOSU (CMS: Görünüm paneli)
@@ -1598,16 +1604,10 @@ html.tema-sakin .t-isik { display: none; }
    iki satırlı yapışkan başlık küçük ekranın dörtte birini yerdi.
    ================================================================ */
 @media (max-width: 720px) {
-  .t-nav { position: static; }
-  .t-nav-ic { flex-wrap: wrap; row-gap: .15rem; padding-top: .5rem; padding-bottom: .5rem; min-height: 0; }
-  .t-nav-linkler {
-    display: flex; order: 9; flex-basis: 100%; margin-left: 0;
-    gap: 1.05rem; padding: .35rem 0 .15rem;
-  }
+  .t-nav-ic { padding-top: .45rem; padding-bottom: .45rem; }
   .t-nav-kayit { display: none; }   /* İletişim: sayfa sonundaki form yeter */
   .t-marka span { font-size: 1.02rem; }
   .t-btn { padding: .5rem .95rem; font-size: .9rem; }
-  .t-hareket-anahtari { width: 38px; height: 38px; }
 
   .t-hero { padding: 2.4rem 0 2rem; }
   .t-hero h1 { font-size: clamp(2rem, 8.6vw, 2.7rem); }
@@ -1632,7 +1632,6 @@ html.tema-sakin .t-isik { display: none; }
   .t-nav-linkler a { min-height: 44px; display: inline-flex; align-items: center; }
   .t-tempo-secenek { min-height: 48px; }
   /* Beş sütunlu "ritim yolu" telefonda 40px'lik gözlere düşüyordu */
-  .t-ritim-yol { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .t-tek-deney-ust, .t-ders-turu { grid-template-columns: 1fr !important; }
   .t-bolum-ustbaslik { font-size: 13px; }
 }
@@ -1640,7 +1639,6 @@ html.tema-sakin .t-isik { display: none; }
 /* Nav markası ve animasyon anahtarı telefonda 34-38px kalıyordu */
 @media (max-width: 1024px) {
   .t-marka { min-height: 44px; }
-  .t-hareket-anahtari { width: 44px; height: 44px; }
 }
 
 /* Kart içi bağlantılar ("ders türü" kartları) 19px yüksekliğindeydi */

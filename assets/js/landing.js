@@ -385,198 +385,195 @@ var TEMA_VURGU_RGB = (function () {
   })();
 
   /* ================================================================
-     TEK CANLI DENEY — EKSİK VURUŞ
-     Dört sesli vuruştan sonra beşinci vuruş susar. Ziyaretçi o sessiz
-     hedefi tek dokunuşla tamamlar. Sürgü, seviye veya teknik terim yoktur.
-     ================================================================ */
-  (function eksikVurus() {
-    var kok = document.getElementById('sessizMeydan');
-    if (!kok) { return; }
+     TEK CANLI DENEY — VURUŞA DOKUN
+     Sekiz vuruş çalar, ziyaretçi her vuruşta pad üzerine dokunur. Sonunda
+     kaç vuruşta pencerede kaldığı ve ortalama sapması yazılır.
 
-    var baslatBtn = document.getElementById('meydanBaslat');
-    var vurBtn = document.getElementById('meydanVur');
-    var durumEl = document.getElementById('meydanDurum');
-    var etiketEl = document.getElementById('meydanEtiket');
-    var merkezEl = document.getElementById('meydanMerkez');
-    var altEl = document.getElementById('meydanAlt');
-    var halka = document.getElementById('meydanHalka');
-    var sonuc = document.getElementById('meydanSonuc');
-    var sonucBaslik = document.getElementById('meydanSonucBaslik');
-    var sonucDetay = document.getElementById('meydanSonucDetay');
-    var noktalar = Array.prototype.slice.call(document.querySelectorAll('#meydanNoktalar span'));
+     NEDEN TEK DENETİM: önceki sürümde "Ritmi Başlat" ve "Vuruşu Tamamla"
+     ayrı düğmelerdi; hangisine ne zaman basılacağı üç ayrı metinden
+     çıkıyordu ve anlaşılmıyordu. Tek pad hem kuralı ("her vuruşta dokun")
+     hem de hedefi tek yere indiriyor.
+
+     ÖLÇÜMÜN SINIRI: tarayıcı ve ses kartı gecikmesi kalibre EDİLMEZ; sonuç
+     bir değerlendirme değil, fikir verecek bir sayıdır (CLAUDE.md §2).
+     ================================================================ */
+  (function vurusaDokun() {
+    var kok = document.getElementById('vurusDeneyi');
+    if (!kok) { return; }
+    var kok2 = typeof globalThis !== 'undefined' ? globalThis : window;
+
+    var pad = document.getElementById('vurusPad');
+    var padBaslik = document.getElementById('vurusPadBaslik');
+    var padAlt = document.getElementById('vurusPadAlt');
+    var durumEl = document.getElementById('vurusDurum');
+    var sonuc = document.getElementById('vurusSonuc');
+    var sonucBaslik = document.getElementById('vurusSonucBaslik');
+    var sonucDetay = document.getElementById('vurusSonucDetay');
+    var noktalar = Array.prototype.slice.call(document.querySelectorAll('#vurusNoktalar span'));
     var profilAlan = document.getElementById('kayitProfil');
     var profilBilgi = document.getElementById('profilEklendi');
     var profilBilgiMetin = document.getElementById('profilEklendiMetin');
 
-    var TEMPO_HAVUZU = [78, 84, 90];
+    var VURUS_SAYISI = 8;
+    var BPM = 84;                 // rahat yürüyüş temposu; kimseyi acele ettirmez
+    var PENCERE_MS = 150;         // "denk geldi" sayılan yarı-pencere
     var aktif = false;
-    var vurusAcik = false;
-    var hedefZaman = 0;
+    var vurusZamanlari = [];      // planlanan vuruş anları (AudioContext saati)
+    var dokunuslar = [];          // ziyaretçinin dokunma anları
     var zamanlayicilar = [];
 
     function zamanlayiciEkle(fn, gecikme) {
       zamanlayicilar.push(setTimeout(fn, Math.max(0, gecikme)));
     }
-
     function zamanlayicilariTemizle() {
       zamanlayicilar.forEach(clearTimeout);
       zamanlayicilar = [];
     }
 
     function gorunumuSifirla() {
-      noktalar.forEach(function (n) { n.classList.remove('yandi', 'tamamlandi'); });
-      kok.classList.remove('dinliyor', 'sira-sende', 'bitti');
-      halka.classList.remove('vur', 'tamamlandi');
+      noktalar.forEach(function (n) { n.className = ''; });
+      kok.classList.remove('caliyor', 'bitti');
       sonuc.hidden = true;
-      vurBtn.disabled = true;
-      vurusAcik = false;
-      merkezEl.textContent = 'HAZIR';
-      altEl.textContent = '4 ses + 1 sessizlik';
-      etiketEl.textContent = 'NASIL ÇALIŞIR?';
+      padBaslik.textContent = 'BAŞLA';
+      padAlt.textContent = 'dokun ve ritmi duy';
     }
 
-    function gorselVurus(zaman, sira) {
-      zamanlayiciEkle(function () {
-        if (!aktif) { return; }
-        noktalar.forEach(function (n) { n.classList.remove('yandi'); });
-        if (noktalar[sira]) { noktalar[sira].classList.add('yandi', 'tamamlandi'); }
-        halka.classList.add('vur');
-        vurusuDuyur(sira === 0 ? 1.15 : 0.8);
-        zamanlayiciEkle(function () {
-          halka.classList.remove('vur');
-          if (noktalar[sira]) { noktalar[sira].classList.remove('yandi'); }
-        }, 130);
-      }, (zaman - ctx.currentTime) * 1000);
+    /**
+     * Dokunuşları vuruşlarla eşler.
+     *
+     * KENDİ EŞLEYİCİSİNİ YAZMAZ: projede zaten sınanmış bir çekirdek var
+     * (zamanlama-cekirdegi.js → eslestir, dinamik programlama ile en iyi
+     * eşleşmeyi bulur ve test/zamanlama.test.js ile kapsanıyor). Burada
+     * "en yakın vuruşu kap" gibi açgözlü bir kopya yazmak aynı işi iki
+     * yerde tutmak ve zamanla ayrışmak demekti.
+     *
+     * Çekirdek yüklenmemişse (betik engellendi) modül sessizce boş sonuç
+     * döner — sayfa kırılmaz, yalnız sayı gösterilmez.
+     */
+    function eslestir() {
+      var zaman = kok2 && kok2.RitimZamanlama;
+      if (!zaman) { return []; }
+      var sonuc = zaman.eslestir(dokunuslar, vurusZamanlari, { esikSn: 1.2 });
+      return sonuc.eslesenler.map(function (e) {
+        return { sira: e.hedefIdx, sapmaMs: e.sapmaMs };
+      });
     }
 
     function sonucuFormaEkle(metin) {
       if (profilAlan) { profilAlan.value = metin; }
       if (profilBilgi && profilBilgiMetin) {
-        profilBilgi.hidden = false;
+        profilBilgi.hidden = metin === '';
         profilBilgiMetin.textContent = metin;
       }
     }
 
-    function bitir(sapmaMs) {
+    function bitir() {
       if (!aktif) { return; }
       aktif = false;
-      vurusAcik = false;
       zamanlayicilariTemizle();
-      vurBtn.disabled = true;
-      baslatBtn.textContent = '↻ Bir Daha Dene';
-      kok.classList.remove('dinliyor', 'sira-sende');
+      sesKes();
+      kok.classList.remove('caliyor');
       kok.classList.add('bitti');
+      padBaslik.textContent = 'YENİDEN';
+      padAlt.textContent = 'bir tur daha';
+
+      var sapmalar = eslestir();
       sonuc.hidden = false;
 
-      if (sapmaMs === null) {
-        merkezEl.textContent = 'KAÇTI';
-        altEl.textContent = 'Bir sonraki tur hazır';
-        etiketEl.textContent = 'BU TUR TAMAMLANMADI';
-        durumEl.textContent = 'Sessiz vuruş geçti. Bir sonraki turda dört sesi dinleyip beşinciyi sen tamamla.';
-        sonucBaslik.textContent = 'Vuruşu duymadan sürdürmek ilk anda şaşırtabilir.';
-        sonucDetay.textContent = 'İstersen hemen yeniden deneyebilirsin.';
+      if (!sapmalar.length) {
+        sonucBaslik.textContent = 'Hiç dokunuş kaydedilmedi.';
+        sonucDetay.textContent = 'Sekiz vuruş çalarken aynı yere dokunman (ya da boşluk tuşuna basman) yeterli.';
+        durumEl.textContent = 'Hazır olduğunda bir tur daha çalabilirsin.';
         sonucuFormaEkle('');
         return;
       }
 
-      var mutlak = Math.round(Math.abs(sapmaMs));
-      var yon = sapmaMs < 0 ? 'erken' : 'geç';
-      noktalar.forEach(function (n) { n.classList.remove('yandi'); });
-      if (noktalar[4]) { noktalar[4].classList.add('yandi', 'tamamlandi'); }
-      halka.classList.add('tamamlandi');
-      merkezEl.textContent = 'BULDUN';
-      altEl.textContent = mutlak + ' ms ' + yon;
-      etiketEl.textContent = 'EKSİK VURUŞ TAMAMLANDI';
+      var pencerede = 0, toplam = 0;
+      sapmalar.forEach(function (d) {
+        var mutlak = Math.abs(d.sapmaMs);
+        toplam += mutlak;
+        if (mutlak <= PENCERE_MS) { pencerede++; }
+        var n = noktalar[d.sira];
+        if (n) { n.className = mutlak <= PENCERE_MS ? 'denk' : 'uzak'; }
+      });
+      var ortalama = Math.round(toplam / sapmalar.length);
 
-      if (mutlak <= 70) {
-        sonucBaslik.textContent = 'Tam yerine çok yakın.';
-        durumEl.textContent = 'Sessizlik geldi ama nabız sende devam etti.';
-      } else if (mutlak <= 160) {
-        sonucBaslik.textContent = 'Nabzı korudun.';
-        durumEl.textContent = 'Eksik vuruşu ' + mutlak + ' ms ' + yon + ' tamamladın.';
-      } else {
-        sonucBaslik.textContent = 'Bir tur daha?';
-        durumEl.textContent = 'Vuruş ' + mutlak + ' ms ' + yon + ' geldi. Ritmi yeniden dinleyebilirsin.';
-      }
-      sonucDetay.textContent = mutlak + ' ms ' + yon + ' · cihaz gecikmesi bu kısa tanıtımda kalibre edilmez.';
-      sonucuFormaEkle('Eksik vuruş deneyi: ' + mutlak + ' ms ' + yon);
+      /* DİL: yalnız ne olduğu yazılır — "iyi/kötü" yorumu yok (CLAUDE.md §2). */
+      sonucBaslik.textContent = VURUS_SAYISI + ' vuruşun ' + pencerede + ' tanesinde vuruşa denk geldin.';
+      sonucDetay.textContent = 'Ortalama sapma ' + ortalama + ' ms · denk sayılan aralık ±'
+        + PENCERE_MS + ' ms · cihaz gecikmesi bu kısa tanıtımda kalibre edilmez.';
+      durumEl.textContent = 'Atölyede aynı iş kulaklıkla ve sabit koşullarda yapılır; buradaki sayı fikir vermek içindir.';
+      sonucuFormaEkle('Vuruşa dokun: ' + pencerede + '/' + VURUS_SAYISI + ' · ort. ' + ortalama + ' ms');
     }
 
-    function vur() {
-      if (!aktif || !vurusAcik) { return; }
-      var sapma = (ctx.currentTime - hedefZaman) * 1000;
-      vurusAcik = false;
-      klik(ctx.currentTime, true, 'yumusak');
-      vurusuDuyur(1.25);
-      // Düğmeyi aynı click döngüsü içinde devre dışı bırakmak bazı
-      // tarayıcı/erişilebilirlik katmanlarında tıklamayı iptal edilmiş
-      // gösterebilir. Sonuç ekranını bir sonraki görevde aç.
-      setTimeout(function () { bitir(sapma); }, 0);
+    function dokun() {
+      if (!aktif) { return; }
+      dokunuslar.push(ctx.currentTime);
+      vurusuDuyur(1.1);
+      pad.classList.add('vur');
+      setTimeout(function () { pad.classList.remove('vur'); }, 110);
     }
 
     function durdur() {
       zamanlayicilariTemizle();
       aktif = false;
-      vurusAcik = false;
       sesKes();
       gorunumuSifirla();
-      baslatBtn.textContent = '▶ Ritmi Başlat';
-      durumEl.textContent = 'Tur durduruldu. Hazır olduğunda dört vuruşu yeniden dinleyebilirsin.';
+      durumEl.textContent = 'Tur durduruldu. Hazır olduğunda yeniden başlatabilirsin.';
     }
 
     function baslat() {
-      if (aktif) { durdur(); return; }
-      digerleriniKapat('eksikvurus');
+      digerleriniKapat('vurusadokun');
       sesHazirla();
       sesKes();
       gorunumuSifirla();
 
-      var bpm = TEMPO_HAVUZU[Math.floor(Math.random() * TEMPO_HAVUZU.length)];
-      var aralik = 60 / bpm;
-      var ilk = ctx.currentTime + 0.45;
-      hedefZaman = ilk + 4 * aralik;
+      var aralik = 60 / BPM;
+      var ilk = ctx.currentTime + 0.7;   // ilk vuruşa yetişecek kadar önsöz
+      vurusZamanlari = [];
+      dokunuslar = [];
       aktif = true;
-      kok.classList.add('dinliyor');
-      baslatBtn.textContent = '■ Durdur';
-      etiketEl.textContent = 'DİNLİYORSUN';
-      merkezEl.textContent = 'DİNLE';
-      altEl.textContent = 'Vuruşları içinde say';
-      durumEl.textContent = 'Dört vuruş geliyor. Beşincisi sessiz kalacak.';
+      kok.classList.add('caliyor');
+      padBaslik.textContent = 'DOKUN';
+      padAlt.textContent = 'her vuruşta bir kez';
+      durumEl.textContent = 'Sekiz vuruş çalıyor — her birinde dokun.';
 
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < VURUS_SAYISI; i++) {
         var zaman = ilk + i * aralik;
+        vurusZamanlari.push(zaman);
         klik(zaman, i === 0, 'tahta');
-        gorselVurus(zaman, i);
+        (function (sira, an) {
+          zamanlayiciEkle(function () {
+            if (!aktif) { return; }
+            var n = noktalar[sira];
+            if (n && n.className === '') { n.className = 'yandi'; }
+            pad.classList.add('nabiz');
+            zamanlayiciEkle(function () { pad.classList.remove('nabiz'); }, 120);
+          }, (an - ctx.currentTime) * 1000);
+        })(i, zaman);
       }
 
-      var sonSes = ilk + 3 * aralik;
-      zamanlayiciEkle(function () {
-        if (!aktif) { return; }
-        kok.classList.remove('dinliyor');
-        kok.classList.add('sira-sende');
-        etiketEl.textContent = 'SIRA SENDE';
-        merkezEl.textContent = 'ŞİMDİ?';
-        altEl.textContent = 'Bir sonraki vuruş sessiz';
-        durumEl.textContent = 'Nabzı içinde sürdür. Eksik vuruşun geldiğini hissettiğinde dokun.';
-        vurBtn.disabled = false;
-        vurusAcik = true;
-      }, (sonSes - ctx.currentTime) * 1000 + 145);
-
-      zamanlayiciEkle(function () { bitir(null); }, (hedefZaman - ctx.currentTime) * 1000 + 1200);
+      /* Son vuruştan sonra bir pencere kadar beklenir ki son dokunuş da sayılsın. */
+      var bitis = ilk + (VURUS_SAYISI - 1) * aralik + (PENCERE_MS / 1000) + 0.25;
+      zamanlayiciEkle(bitir, (bitis - ctx.currentTime) * 1000);
     }
 
-    baslatBtn.addEventListener('click', baslat);
-    vurBtn.addEventListener('click', function (ev) {
+    pad.addEventListener('click', function (ev) {
       ev.preventDefault();
-      vur();
+      if (aktif) { dokun(); } else { baslat(); }
     });
     document.addEventListener('keydown', function (ev) {
-      if (ev.code === 'Space' && aktif && vurusAcik) {
-        ev.preventDefault();
-        vur();
-      }
+      if (ev.code !== 'Space') { return; }
+      var odak = document.activeElement;
+      if (odak && (odak.tagName === 'INPUT' || odak.tagName === 'TEXTAREA' || odak.isContentEditable)) { return; }
+      /* Boşluk tuşu turu ancak pad odaktayken BAŞLATIR: sayfanın herhangi bir
+         yerinde boşluğa basan ziyaretçi sayfayı kaydırmak istiyordur. Tur
+         çalarken ise boşluk her yerde dokunuş sayılır — kural bu. */
+      if (!aktif && odak !== pad) { return; }
+      ev.preventDefault();
+      if (aktif) { dokun(); } else { baslat(); }
     });
-    acikModuller.push({ ad: 'eksikvurus', durdur: function () { if (aktif) { durdur(); } } });
+    acikModuller.push({ ad: 'vurusadokun', durdur: function () { if (aktif) { durdur(); } } });
   })();
 
   /* ================================================================
@@ -1287,6 +1284,60 @@ var TEMA_VURGU_RGB = (function () {
   })();
 
   /* ================================================================
+     ÜST MENÜ — dar ekranda açılır panel
+     ================================================================
+     Sekiz bölüm bağlantısı dar ekranda tek satıra sığmıyor; eskiden
+     yatay kayan bir maskeyle kırpılıyorlardı (son bağlantılar yarım
+     görünüyordu). Artık tek düğmeyle tam liste açılıyor.
+
+     Erişilebilirlik: aria-expanded düğmede, aria-controls panelde;
+     Esc kapatır ve odağı düğmeye geri verir; panel dışına tıklamak
+     kapatır; bir bağlantıya gidilince kendiliğinden kapanır.
+     ================================================================ */
+  (function ustMenu() {
+    var dugme = document.getElementById('tMenuDugme');
+    var panel = document.getElementById('tNavLinkler');
+    if (!dugme || !panel) { return; }
+
+    function ayarla(acik) {
+      panel.classList.toggle('acik', acik);
+      dugme.setAttribute('aria-expanded', acik ? 'true' : 'false');
+      dugme.setAttribute('aria-label', acik ? 'Menüyü kapat' : 'Menüyü aç');
+    }
+
+    dugme.addEventListener('click', function (ev) {
+      ev.stopPropagation();
+      ayarla(dugme.getAttribute('aria-expanded') !== 'true');
+    });
+
+    /* Bağlantıya tıklandığında panel kapanır: aksi hâlde hedef bölüm
+       açık panelin altında kalıyor ve "tıkladım ama bir şey olmadı"
+       hissi veriyor. */
+    panel.addEventListener('click', function (ev) {
+      if (ev.target.closest('a')) { ayarla(false); }
+    });
+
+    document.addEventListener('click', function (ev) {
+      if (dugme.getAttribute('aria-expanded') !== 'true') { return; }
+      if (panel.contains(ev.target) || dugme.contains(ev.target)) { return; }
+      ayarla(false);
+    });
+
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') { return; }
+      if (dugme.getAttribute('aria-expanded') !== 'true') { return; }
+      ayarla(false);
+      dugme.focus();
+    });
+
+    /* Geniş ekrana dönülünce panel sınıfı kalırsa satır düzeni bozulmasın. */
+    var genis = window.matchMedia('(min-width: 1081px)');
+    var dinle = function (e) { if (e.matches) { ayarla(false); } };
+    if (genis.addEventListener) { genis.addEventListener('change', dinle); }
+    else if (genis.addListener) { genis.addListener(dinle); }
+  })();
+
+  /* ================================================================
      Hareket denetimi (WCAG 2.2.2 — Duraklat, Durdur, Gizle)
      ================================================================ */
   (function () {
@@ -1294,6 +1345,7 @@ var TEMA_VURGU_RGB = (function () {
     if (!btn) { return; }
     var ANAHTAR = 'ritim-hareket-kapali';
     var ikon = btn.querySelector('.t-hareket-ikon');
+    var yazi = btn.querySelector('.t-hareket-yazi');
 
     /* Duraklat/oynat dili: ⏸ = animasyonlar akıyor (basınca durur),
        ▶ = durmuş (basınca başlar). "Hareketi aç" metni anlaşılmıyordu. */
@@ -1305,6 +1357,8 @@ var TEMA_VURGU_RGB = (function () {
       btn.title = ad;
       btn.setAttribute('aria-label', ad);
       if (ikon) { ikon.textContent = kapali ? '▶' : '⏸'; }
+      /* Alt bilgideki sürümde yazı da var: simge tek başına anlaşılmıyordu. */
+      if (yazi) { yazi.textContent = kapali ? 'Animasyonları başlat' : 'Animasyonları durdur'; }
       if (yaz) { try { localStorage.setItem(ANAHTAR, kapali ? '1' : '0'); } catch (e) {} }
     }
 
