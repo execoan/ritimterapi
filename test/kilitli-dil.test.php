@@ -75,6 +75,8 @@ bolum('YANLIŞ POZİTİF olmamalı — gözlemsel, meşru cümleler');
 temizGecmeli('Kalıbı ilk denemede tanıdı.', '"tanıdı" tanı-koyma değil');
 temizGecmeli('Gruptaki arkadaşlarıyla tanıştı.', '"tanıştı" tanı-koyma değil');
 temizGecmeli('Ritmi doğru tanımladı.', '"tanımladı" tanı-koyma değil');
+temizGecmeli('Eğitmen metronomu tanıttı.', '"tanıttı" tanı-koyma değil — ders anlatımı');
+temizGecmeli('Enstrüman tanıtımı yapıldı.', '"tanıtım" tanı-koyma değil');
 temizGecmeli('Kendi hatasını fark edip düzeltti.', '"düzeltti" — ogrenci-rapor.php hazır cümlesi');
 temizGecmeli('Sekiz vuruşluk kalıbı ezberden tekrarladı.', 'düz gözlem');
 temizGecmeli('Metronomla 96 BPM tempoda çalıştı.', 'düz gözlem');

@@ -150,7 +150,7 @@ function seed_technique_rows(): array
          'Davul/pad'],
 
         ['Ritim Planla–Uygula–Onar', 'Serbest doğaçlama', 'Davul / pad', 3, 15,
-         'Katılımcı veya grup 4 ölçülük bir düzen tasarlar; görevler ve girişler dağıtılır; prova edilir; tek bir iyileştirme seçilip yeniden uygulanır.',
+         'Katılımcı veya grup 4 ölçülük bir düzen tasarlar; görevler ve girişler dağıtılır; prova edilir; tek bir değişiklik seçilip yeniden uygulanır.',
          'Planlama, izleme, ekip koordinasyonu', 'yok',
          'RitimOdak kılavuzu Etkinlik 9',
          'Davul/pad, 4 ölçülük plan formu'],
@@ -199,7 +199,7 @@ function seed_technique_rows(): array
            ============================================================== */
 
         ['Düzenli mi, Düzensiz mi?', 'Metronoma eşlik', 'Metronom + çevredeki cisimler', 1, 8,
-         'Eğitmen önce metronomu tanıtır ve ne işe yaradığını gösterir. Sonra çevredeki cisimlere (masa, kitap, sandalye) '
+         'Eğitmen önce metronomu tanıtır ve ne için kullanıldığını gösterir. Sonra çevredeki cisimlere (masa, kitap, sandalye) '
          . 'kâh metronomla eşzamanlı, kâh bilerek düzensiz vurur. Katılımcı her dizi için yalnız "düzenli" veya "düzensiz" der. '
          . 'İlerletme: düzensizlik payı büyükten küçüğe indirilir (belirgin aksama → hafif erken/geç vuruş).',
          'Vuruş düzenliliğini işitsel ayırt etme', 'orta',
@@ -266,11 +266,14 @@ function seed_technique_rows(): array
          'Eller havada zıt yönlerde daire çizerek başlanır (sol saat yönü, sağ tersi). Oturunca her uzuv ayrı bir tını üretir: '
          . 'sağ el göğüs (kalın), sol el diz (ince), ayak zemin. Metronomla her uzuv kendi periyodunu korur. '
          . 'İlerletme: iki uzuvla başlanır, üçüncü ancak ilk ikisi bozulmadan sürdürülünce eklenir.',
-         'Uzuv bağımsızlığı, eşzamanlı iki motor akış', 'zayif',
+         'Uzuv bağımsızlığı, eşzamanlı iki motor akış', 'orta',
          'Ritmoterapi® sertifika kursu, 11. modül "Ritim ile Uylaşım" (POLİMETRİC). Kurs künye vermiyor. '
-         . 'Uzuv bağımsızlığı gerçek ve ölçülebilir bir motor beceridir, ama bu ETKİNLİĞİN onu geliştirdiğini ölçen '
-         . 'çalışma bulunamadı; kursun listelediği "konsantrasyon duyarlılığı" iddiasının dayanağı yok. '
-         . 'Uygulamadaki poliritim modülüyle akrabadır.',
+         . 'ORTA etiketi yakın-alan gerekçesiyle — kütüphanenin kendi kuralı: çalışılan şey ile kazanıldığı '
+         . 'söylenen şey aynıysa en fazla "orta". Burada çalışılan şey uzuv bağımsızlığının KENDİSİdir, '
+         . '"Vücut perküsyonu" ve "Adım–Alkış Çift Görevi" ile aynı sınıf. '
+         . 'DÜZELTME NOTU: bu satır önce "zayif" idi; aynı akıl yürütme kütüphanede iki farklı etiket '
+         . 'üretiyordu (denetim, Ağustos 2026). Konsantrasyon veya dikkate transfer İDDİA EDİLMEZ — '
+         . 'kursun o iddiasının dayanağı yok.',
          'Malzeme gerekmez; isteğe bağlı metronom'],
 
         ['Kâğıt Hedefler', 'Hedefli vuruş', 'Baget + A4 kâğıt', 2, 12,
@@ -1591,4 +1594,50 @@ function seed_ritmoterapi_techniques(): void
         throw $ex;
     }
     site_text_set('sistem_ritmoterapi_teknikleri', '1');
+}
+
+/**
+ * TEKNİK KÜTÜPHANESİ DENETİMİ (Ağustos 2026) — tek seferlik düzeltme.
+ *
+ * Denetimin bulguları (bkz. seed_technique_rows içindeki notlar):
+ *   • İki açıklamada sonuç vaadi tonu vardı ("iyileştirme", "işe yarar").
+ *   • "Bağımsız Uzuv" kanıt düzeyi, aynı yakın-alan gerekçesini kullanan
+ *     "Vücut perküsyonu" ve "Adım–Alkış Çift Görevi" ile çelişiyordu.
+ *
+ * SINIR: yalnız bu üç alanı ve yalnız METİN HÂLÂ TOHUM HÂLİNDEYSE günceller.
+ * Eğitmen kaydı elle düzenlediyse dokunulmaz — WHERE koşulu bunu sağlar.
+ */
+function seed_technique_audit_2026(): void
+{
+    if (site_text('sistem_teknik_denetimi_2026') === '1') { return; }
+    $pdo = db();
+
+    $duzelt = [
+        ['Ritim Planla–Uygula–Onar', 'aciklama',
+         'prova edilir; tek bir iyileştirme seçilip yeniden uygulanır.',
+         'prova edilir; tek bir değişiklik seçilip yeniden uygulanır.'],
+        ['Düzenli mi, Düzensiz mi?', 'aciklama',
+         'ne işe yaradığını gösterir.',
+         'ne için kullanıldığını gösterir.'],
+    ];
+    $pdo->exec('BEGIN');
+    try {
+        foreach ($duzelt as [$ad, $alan, $eski, $yeni]) {
+            $st = $pdo->prepare("UPDATE teknikler SET {$alan} = replace({$alan}, ?, ?)
+                                  WHERE ad = ? AND instr({$alan}, ?) > 0");
+            $st->execute([$eski, $yeni, $ad, $eski]);
+        }
+        /* Kanıt düzeyi tutarlılığı: yalnız hâlâ 'zayif' ise düzeltilir. */
+        foreach (seed_technique_rows() as $satir) {
+            if ($satir[0] !== 'Bağımsız Uzuv') { continue; }
+            $pdo->prepare('UPDATE teknikler SET kanit_duzeyi = ?, kaynak = ?
+                            WHERE ad = ? AND kanit_duzeyi = ?')
+                ->execute([$satir[7], $satir[8], $satir[0], 'zayif']);
+        }
+        $pdo->exec('COMMIT');
+    } catch (Throwable $ex) {
+        $pdo->exec('ROLLBACK');
+        throw $ex;
+    }
+    site_text_set('sistem_teknik_denetimi_2026', '1');
 }

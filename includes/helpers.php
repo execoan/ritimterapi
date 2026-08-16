@@ -318,6 +318,10 @@ const KILITLI_DIL_KALIPLARI = [
  */
 const KILITLI_DIL_ISTISNALARI = [
     'tanıdı', 'tanıştı', 'tanımla', 'tanıyor', 'tanır',
+    /* "metronomu tanıtır", "enstrüman tanıtımı" — tanı koymak değil,
+       ders anlatımıdır. Bu kök eklenmezse teknik açıklamaları boşuna
+       işaretleniyor ve eğitmen kırmızı kutuyu okumadan kapatmaya alışıyor. */
+    'tanıt',
     'düzeltti', 'düzeltir', 'düzeltme yaptı', 'kendi kendini düzelt',
 ];
 
