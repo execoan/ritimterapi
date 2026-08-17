@@ -123,9 +123,10 @@ h3 { letter-spacing: -.008em; }
 .t-nav {
   position: sticky; top: 0; z-index: 50;
   /* Açılır menü panelinin çıpası */
-  background: rgb(12 10 9 / .92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgb(250 248 245 / .86);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid var(--t-cizgi);
 }
 .t-nav-ic { display: flex; align-items: center; gap: 1.2rem; min-height: 64px; position: relative; }
 .t-marka {
@@ -143,10 +144,23 @@ h3 { letter-spacing: -.008em; }
    görünüyordu). Şimdi boşluk iki yana bölünüyor. */
 .t-nav-linkler { display: flex; gap: 1.05rem; margin-left: auto; margin-right: auto; }
 .t-nav-linkler a {
-  color: var(--t-soluk); text-decoration: none; font-size: .92rem; padding: .35rem 0;
-  border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
+  position: relative; color: var(--t-metin); text-decoration: none;
+  font-size: .95rem; font-weight: 500; padding: .45rem .1rem;
+  transition: color .18s ease;
 }
-.t-nav-linkler a:hover { color: #fff; border-color: var(--t-vurgu-metin); }
+/* Alt çizgi kenarlıkla değil sözde öğeyle: kenarlık yüksekliği değiştirmeden
+   büyüyemiyor, sözde öğe ortadan dışa doğru açılabiliyor. */
+.t-nav-linkler a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: .1rem; height: 2px;
+  border-radius: 2px; background: var(--t-vurgu-metin);
+  transform: scaleX(0); transform-origin: center;
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1);
+}
+.t-nav-linkler a:hover, .t-nav-linkler a:focus-visible { color: var(--t-vurgu-metin); }
+.t-nav-linkler a:hover::after, .t-nav-linkler a:focus-visible::after { transform: scaleX(1); }
+@media (prefers-reduced-motion: reduce) {
+  .t-nav-linkler a::after { transition: none; }
+}
 
 .t-btn {
   display: inline-block; text-decoration: none; cursor: pointer; font-family: inherit;
@@ -159,7 +173,8 @@ h3 { letter-spacing: -.008em; }
   box-shadow: 0 4px 18px rgb(var(--vurgu) / .35);
 }
 .t-btn-dolu:hover { box-shadow: 0 8px 26px rgb(var(--vurgu) / .5); }
-.t-btn-cerceve { background: transparent; color: var(--t-metin); border: 2px solid rgba(255,255,255,.25); }
+.t-btn-cerceve { background: transparent; color: var(--t-metin); border: 2px solid var(--t-cizgi-guclu); }
+.t-koyu-sahne .t-btn-cerceve { border-color: rgba(255, 255, 255, .3); }
 .t-btn-cerceve:hover { border-color: var(--t-vurgu-metin); color: var(--t-vurgu-metin); }
 .t-btn-buyuk { padding: .8rem 1.7rem; font-size: 1.05rem; }
 
@@ -589,6 +604,10 @@ h3 { letter-spacing: -.008em; }
 }
 .t-ders-turu {
   --ders-renk: 245, 158, 11;
+  /* Metin olarak kullanılan koyu karşılık: parlak ton açık zeminde 3,63:1
+     veriyordu (AA 4,5). İkon ve kenarlık parlak tonu kullanmaya devam eder
+     — orada geçerli eşik 3:1'dir (WCAG 1.4.11). */
+  --ders-metin: 146, 64, 14;
   position: relative; display: grid; grid-template-columns: auto 1fr; gap: 1rem;
   padding: 1.45rem; overflow: hidden; border-radius: 20px;
   background: linear-gradient(145deg, rgba(var(--ders-renk), .13), rgba(255, 255, 255, .025) 58%);
@@ -599,7 +618,7 @@ h3 { letter-spacing: -.008em; }
   border-radius: 50%; border: 1px solid rgba(var(--ders-renk), .16);
   box-shadow: 0 0 0 24px rgba(var(--ders-renk), .035), 0 0 0 54px rgba(var(--ders-renk), .02);
 }
-.t-ders-turu-ozel { --ders-renk: 139, 92, 246; }
+.t-ders-turu-ozel { --ders-renk: 139, 92, 246; --ders-metin: 76, 29, 149; }
 .t-ders-turu-ikon {
   position: relative; z-index: 1; display: flex; align-items: center; justify-content: center;
   width: 52px; height: 52px; border-radius: 16px;
@@ -607,7 +626,7 @@ h3 { letter-spacing: -.008em; }
 }
 .t-ders-turu > div:last-child { position: relative; z-index: 1; }
 .t-ders-turu-ust {
-  margin: 0 0 .25rem; color: rgb(var(--ders-renk)); font-size: .67rem;
+  margin: 0 0 .25rem; color: rgb(var(--ders-metin)); font-size: .67rem;
   font-weight: 900; letter-spacing: .14em;
 }
 .t-ders-turu h3 { margin-bottom: .45rem; font-size: 1.3rem; }
@@ -615,7 +634,7 @@ h3 { letter-spacing: -.008em; }
 .t-ders-turu ul { margin: 0 0 1rem; padding-left: 1.05rem; color: var(--t-metin); font-size: .84rem; }
 .t-ders-turu li { margin-bottom: .25rem; }
 .t-ders-turu-link {
-  color: rgb(var(--ders-renk)); font-size: .86rem; font-weight: 800; text-decoration: none;
+  color: rgb(var(--ders-metin)); font-size: .86rem; font-weight: 800; text-decoration: none;
 }
 .t-ders-turu-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -1781,3 +1800,12 @@ html.tema-sakin .t-isik { display: none; }
    bölümlerin nerede başladığı okunur kalsın — yığılmış kart dizileri
    birbirine karışmasın. */
 .t-bolum + .t-bolum { border-top: 1px solid var(--t-cizgi); }
+
+/* Üst menü: aydınlık zeminde okunurluk ayrıntıları.
+   Marka serif yazıyla ayrışır; logo boyutu biraz büyütüldü. */
+.t-nav .t-marka span { font-size: 1.22rem; }
+.t-nav .t-logo { width: 36px; height: 36px; }
+.t-nav-ic { min-height: 68px; gap: 1rem; }
+/* Sayfa kaydırma göstergesi menünün altında kalıyor; aydınlık bantta
+   ince ve vurgulu olması yeterli. */
+.t-ilerleme { height: 3px; }

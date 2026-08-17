@@ -349,10 +349,28 @@ require APP_DIR . '/includes/view/header.php';
         <label class="form-alan">Tür
           <select id="oyunTur" class="secim">
             <option value="" selected>Hepsi</option>
-            <option value="metal">Metal</option>
-            <option value="rock">Rock</option>
-            <option value="pop">Pop</option>
-            <option value="jazz">Jazz</option>
+            <optgroup label="Türkiye">
+              <option value="turkpop">Türkçe Pop</option>
+              <option value="turkrock">Türkçe Rock</option>
+              <option value="anadolu">Anadolu / Halk</option>
+            </optgroup>
+            <optgroup label="Dünya">
+              <option value="metal">Metal</option>
+              <option value="rock">Rock</option>
+              <option value="pop">Pop</option>
+              <option value="jazz">Jazz</option>
+              <option value="klasik">Klasik</option>
+              <option value="hiphop">Hip-Hop</option>
+              <option value="elektronik">Elektronik</option>
+              <option value="funk">Funk / Soul</option>
+              <option value="latin">Latin</option>
+              <option value="reggae">Reggae</option>
+              <option value="blues">Blues</option>
+            </optgroup>
+            <optgroup label="Atölye için">
+              <option value="film">Film &amp; Oyun</option>
+              <option value="cocuk">Çocuk</option>
+            </optgroup>
           </select>
         </label>
         <button type="button" class="btn btn-birincil" id="oyunBaslat">Oyunu Başlat</button>

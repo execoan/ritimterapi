@@ -1560,10 +1560,140 @@
     { tur: 'jazz', ad: 'Autumn Leaves', sanatci: 'Cannonball Adderley', bpm: 132 },
     { tur: 'jazz', ad: 'Take the “A” Train', sanatci: 'Duke Ellington', bpm: 160 },
     { tur: 'jazz', ad: 'Cantaloupe Island', sanatci: 'Herbie Hancock', bpm: 105 },
-    { tur: 'jazz', ad: 'Watermelon Man', sanatci: 'Herbie Hancock', bpm: 120 }
+    { tur: 'jazz', ad: 'Watermelon Man', sanatci: 'Herbie Hancock', bpm: 120 },
+
+    /* TÜRKÇE POP */
+    { tur: 'turkpop', ad: 'Şımarık', sanatci: 'Tarkan', bpm: 100 },
+    { tur: 'turkpop', ad: 'Kuzu Kuzu', sanatci: 'Tarkan', bpm: 95 },
+    { tur: 'turkpop', ad: 'Dudu', sanatci: 'Tarkan', bpm: 104 },
+    { tur: 'turkpop', ad: 'Sen Ağlama', sanatci: 'Sezen Aksu', bpm: 92 },
+    { tur: 'turkpop', ad: 'Gülümse', sanatci: 'Sezen Aksu', bpm: 118 },
+    { tur: 'turkpop', ad: 'Araba', sanatci: 'Barış Manço', bpm: 128 },
+    { tur: 'turkpop', ad: 'Aşkın Açamadığı Kapı', sanatci: 'Mustafa Sandal', bpm: 100 },
+    { tur: 'turkpop', ad: 'Çakkıdı', sanatci: 'Hadise', bpm: 128 },
+    { tur: 'turkpop', ad: 'Ah Bir Ateş Ver', sanatci: 'Sertab Erener', bpm: 110 },
+
+    /* TÜRKÇE ROCK */
+    { tur: 'turkrock', ad: 'Zaman', sanatci: 'Duman', bpm: 132 },
+    { tur: 'turkrock', ad: 'Her Şeyi Yak', sanatci: 'Duman', bpm: 138 },
+    { tur: 'turkrock', ad: 'Bu Sabah Yağmur Var İstanbul’da', sanatci: 'Şebnem Ferah', bpm: 76 },
+    { tur: 'turkrock', ad: 'Uçtu Uçtu', sanatci: 'mor ve ötesi', bpm: 140 },
+    { tur: 'turkrock', ad: 'Cambaz', sanatci: 'mor ve ötesi', bpm: 148 },
+    { tur: 'turkrock', ad: 'Dönence', sanatci: 'Barış Manço', bpm: 120 },
+    { tur: 'turkrock', ad: 'Sarı Çizmeli Mehmet Ağa', sanatci: 'Barış Manço', bpm: 104 },
+    { tur: 'turkrock', ad: 'Deli Kızın Türküsü', sanatci: 'Teoman', bpm: 84 },
+
+    /* ANADOLU / HALK — aksak usuller: olcu alanı usulün payını gösterir */
+    { tur: 'anadolu', ad: 'Çayda Çıra', sanatci: 'Elazığ yöresi', bpm: 120, olcu: 4 },
+    { tur: 'anadolu', ad: 'Ankara’nın Bağları', sanatci: 'Ankara yöresi', bpm: 132, olcu: 9 },
+    { tur: 'anadolu', ad: 'Fidayda', sanatci: 'Ankara yöresi', bpm: 138, olcu: 9 },
+    { tur: 'anadolu', ad: 'Harmandalı', sanatci: 'Ege yöresi', bpm: 126, olcu: 9 },
+    { tur: 'anadolu', ad: 'Ali Paşa', sanatci: 'Trakya yöresi', bpm: 130, olcu: 9 },
+    { tur: 'anadolu', ad: 'Halay (temel kalıp)', sanatci: 'Doğu Anadolu', bpm: 116, olcu: 2 },
+    { tur: 'anadolu', ad: 'Roman havası (temel kalıp)', sanatci: 'Trakya', bpm: 130, olcu: 9 },
+    { tur: 'anadolu', ad: 'Zeybek (ağır)', sanatci: 'Ege yöresi', bpm: 60, olcu: 9 },
+
+    /* KLASİK */
+    { tur: 'klasik', ad: 'Rondo Alla Turca', sanatci: 'W. A. Mozart', bpm: 128 },
+    { tur: 'klasik', ad: 'Küçük Bir Gece Müziği (1. bölüm)', sanatci: 'W. A. Mozart', bpm: 132 },
+    { tur: 'klasik', ad: '5. Senfoni (1. bölüm)', sanatci: 'L. van Beethoven', bpm: 108 },
+    { tur: 'klasik', ad: 'Für Elise', sanatci: 'L. van Beethoven', bpm: 72 },
+    { tur: 'klasik', ad: 'Ay Işığı Sonatı (1. bölüm)', sanatci: 'L. van Beethoven', bpm: 54 },
+    { tur: 'klasik', ad: 'Dört Mevsim — İlkbahar', sanatci: 'A. Vivaldi', bpm: 108 },
+    { tur: 'klasik', ad: 'Canon in D', sanatci: 'J. Pachelbel', bpm: 64 },
+    { tur: 'klasik', ad: 'Macar Dansı No. 5', sanatci: 'J. Brahms', bpm: 132 },
+    { tur: 'klasik', ad: 'Bolero', sanatci: 'M. Ravel', bpm: 72, olcu: 3 },
+
+    /* HİP-HOP */
+    { tur: 'hiphop', ad: 'Lose Yourself', sanatci: 'Eminem', bpm: 171 },
+    { tur: 'hiphop', ad: 'In Da Club', sanatci: '50 Cent', bpm: 90 },
+    { tur: 'hiphop', ad: 'Sicko Mode', sanatci: 'Travis Scott', bpm: 155 },
+    { tur: 'hiphop', ad: 'HUMBLE.', sanatci: 'Kendrick Lamar', bpm: 150 },
+    { tur: 'hiphop', ad: 'Rapper’s Delight', sanatci: 'The Sugarhill Gang', bpm: 112 },
+    { tur: 'hiphop', ad: 'Süperstar', sanatci: 'Ceza', bpm: 100 },
+    { tur: 'hiphop', ad: 'Holocaust', sanatci: 'Sagopa Kajmer', bpm: 92 },
+
+    /* ELEKTRONİK / DANS */
+    { tur: 'elektronik', ad: 'Around the World', sanatci: 'Daft Punk', bpm: 121 },
+    { tur: 'elektronik', ad: 'One More Time', sanatci: 'Daft Punk', bpm: 123 },
+    { tur: 'elektronik', ad: 'Sandstorm', sanatci: 'Darude', bpm: 136 },
+    { tur: 'elektronik', ad: 'Levels', sanatci: 'Avicii', bpm: 126 },
+    { tur: 'elektronik', ad: 'Titanium', sanatci: 'David Guetta ft. Sia', bpm: 126 },
+    { tur: 'elektronik', ad: 'Blue Monday', sanatci: 'New Order', bpm: 130 },
+    { tur: 'elektronik', ad: 'Born Slippy', sanatci: 'Underworld', bpm: 138 },
+
+    /* FUNK / SOUL */
+    { tur: 'funk', ad: 'Superstition', sanatci: 'Stevie Wonder', bpm: 100 },
+    { tur: 'funk', ad: 'I Wish', sanatci: 'Stevie Wonder', bpm: 106 },
+    { tur: 'funk', ad: 'Get Up (I Feel Like Being a) Sex Machine', sanatci: 'James Brown', bpm: 108 },
+    { tur: 'funk', ad: 'Papa’s Got a Brand New Bag', sanatci: 'James Brown', bpm: 130 },
+    { tur: 'funk', ad: 'Give Up the Funk', sanatci: 'Parliament', bpm: 106 },
+    { tur: 'funk', ad: 'Chameleon', sanatci: 'Herbie Hancock', bpm: 96 },
+    { tur: 'funk', ad: 'Respect', sanatci: 'Aretha Franklin', bpm: 115 },
+    { tur: 'funk', ad: 'Ain’t No Mountain High Enough', sanatci: 'Marvin Gaye & Tammi Terrell', bpm: 130 },
+
+    /* LATİN */
+    { tur: 'latin', ad: 'The Girl from Ipanema', sanatci: 'Stan Getz & João Gilberto', bpm: 130 },
+    { tur: 'latin', ad: 'Mas Que Nada', sanatci: 'Sergio Mendes', bpm: 128 },
+    { tur: 'latin', ad: 'Oye Como Va', sanatci: 'Santana', bpm: 116 },
+    { tur: 'latin', ad: 'Smooth', sanatci: 'Santana ft. Rob Thomas', bpm: 116 },
+    { tur: 'latin', ad: 'Bailando', sanatci: 'Enrique Iglesias', bpm: 122 },
+    { tur: 'latin', ad: 'La Bamba', sanatci: 'Ritchie Valens', bpm: 150 },
+    { tur: 'latin', ad: 'Despacito', sanatci: 'Luis Fonsi', bpm: 89 },
+
+    /* REGGAE */
+    { tur: 'reggae', ad: 'Three Little Birds', sanatci: 'Bob Marley', bpm: 76 },
+    { tur: 'reggae', ad: 'Could You Be Loved', sanatci: 'Bob Marley', bpm: 103 },
+    { tur: 'reggae', ad: 'Is This Love', sanatci: 'Bob Marley', bpm: 74 },
+    { tur: 'reggae', ad: 'The Tide Is High', sanatci: 'The Paragons', bpm: 100 },
+    { tur: 'reggae', ad: 'Red Red Wine', sanatci: 'UB40', bpm: 106 },
+
+    /* BLUES */
+    { tur: 'blues', ad: 'The Thrill Is Gone', sanatci: 'B. B. King', bpm: 96 },
+    { tur: 'blues', ad: 'Pride and Joy', sanatci: 'Stevie Ray Vaughan', bpm: 132 },
+    { tur: 'blues', ad: 'Hoochie Coochie Man', sanatci: 'Muddy Waters', bpm: 86 },
+    { tur: 'blues', ad: 'Sweet Home Chicago', sanatci: 'Robert Johnson', bpm: 92 },
+    { tur: 'blues', ad: 'Crossroads', sanatci: 'Cream', bpm: 148 },
+
+    /* FİLM VE OYUN MÜZİĞİ */
+    { tur: 'film', ad: 'Star Wars — Ana Tema', sanatci: 'John Williams', bpm: 104 },
+    { tur: 'film', ad: 'Indiana Jones — Raiders Marşı', sanatci: 'John Williams', bpm: 104 },
+    { tur: 'film', ad: 'Pirates of the Caribbean', sanatci: 'Klaus Badelt', bpm: 128 },
+    { tur: 'film', ad: 'Mission: Impossible', sanatci: 'Lalo Schifrin', bpm: 116, olcu: 5 },
+    { tur: 'film', ad: 'Süper Mario Bros. — Yer Üstü', sanatci: 'Koji Kondo', bpm: 100 },
+    { tur: 'film', ad: 'Tetris (Korobeiniki)', sanatci: 'geleneksel', bpm: 150 },
+
+    /* ÇOCUK ŞARKILARI — küçük gruplarda tanıdık nabız */
+    { tur: 'cocuk', ad: 'Daha Dün Annemizin', sanatci: 'geleneksel', bpm: 100 },
+    { tur: 'cocuk', ad: 'Portakalı Soydum', sanatci: 'geleneksel', bpm: 108 },
+    { tur: 'cocuk', ad: 'Mini Mini Bir Kuş', sanatci: 'geleneksel', bpm: 112 },
+    { tur: 'cocuk', ad: 'Ali Baba’nın Çiftliği', sanatci: 'geleneksel', bpm: 120 },
+    { tur: 'cocuk', ad: 'Kaptan Amca', sanatci: 'geleneksel', bpm: 116 },
+    { tur: 'cocuk', ad: 'İyi ki Doğdun', sanatci: 'geleneksel', bpm: 96, olcu: 3 }
   ];
-  var TUR_ETIKET = { hepsi: '🎼 Tümü', metal: '🤘 Metal', rock: '🎸 Rock', pop: '🎤 Pop', jazz: '🎷 Jazz' };
+  var TUR_ETIKET = {
+    hepsi: '🎼 Tümü', metal: '🤘 Metal', rock: '🎸 Rock', pop: '🎤 Pop', jazz: '🎷 Jazz',
+    turkpop: '🎙 Türkçe Pop', turkrock: '🎸 Türkçe Rock', anadolu: '🪕 Anadolu / Halk',
+    klasik: '🎻 Klasik', hiphop: '🎧 Hip-Hop', elektronik: '🎛 Elektronik',
+    funk: '🕺 Funk / Soul', latin: '💃 Latin', reggae: '🌴 Reggae', blues: '🎺 Blues',
+    film: '🎬 Film & Oyun', cocuk: '🧸 Çocuk'
+  };
   var seciliTur = 'hepsi';
+
+  /* Bir ölçü payı için "9/8" gibi tam etiket üretir. Payda ölçü seçicideki
+     data-payda'dan okunur — şarkı verisinde ayrıca tutulsaydı ikisi zamanla
+     ayrışırdı. Seçicide karşılığı yoksa geleneksel /4 varsayılır. */
+  function olcuEtiketi(olcu) {
+    var sec = m.el && m.el.olcu;
+    if (sec) {
+      for (var i = 0; i < sec.options.length; i++) {
+        if (parseInt(sec.options[i].value, 10) === olcu) {
+          return olcu + '/' + (sec.options[i].getAttribute('data-payda') || '4');
+        }
+      }
+    }
+    return olcu + '/4';
+  }
 
   function sarkilariCiz() {
     var arama = tr_kucult(m.el.sarkiAra.value || '');
@@ -1577,7 +1707,7 @@
       b.type = 'button';
       b.className = 'm-sarki';
       b.innerHTML = '<b>' + s.ad + '</b><i>' + s.sanatci + '</i>'
-        + '<span>' + s.bpm + ' BPM' + (s.olcu ? ' · ' + s.olcu + '/4' : '') + '</span>';
+        + '<span>' + s.bpm + ' BPM' + (s.olcu ? ' · ' + olcuEtiketi(s.olcu) : '') + '</span>';
       b.addEventListener('click', function () {
         bpmAyarla(s.bpm > 240 ? 240 : s.bpm);
         if (s.bpm > 240) { window.alert(s.ad + ' aslında ' + s.bpm + ' BPM — metronom üst sınırı 240 olarak ayarlandı.'); }
