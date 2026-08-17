@@ -1137,15 +1137,42 @@ body.tanitim::after {
               radial-gradient(closest-side, rgba(139, 92, 246, .13), transparent 70%) 85% 60% / 55% 65% no-repeat;
   animation: fon-suzul 26s ease-in-out infinite alternate;
 }
-.t-kayit-ic { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 420px; gap: 2.4rem; align-items: start; }
-@media (max-width: 900px) { .t-kayit-ic { grid-template-columns: 1fr; } }
+/* Metin ve form YAN YANA DEĞİL, ALT ALTA: yan yana dizilimde form 420 px'e
+   sıkışıp 860 px yüksekliğe uzuyordu (ölçüldü). Tam genişlikte form, alanları
+   ızgaraya yayabildiği için hem kısalıyor hem yatay okunuyor. */
+.t-kayit-ic { position: relative; z-index: 1; display: block; }
+/* div.kayarak — FORM da "kayarak" sınıfını taşıyor; eleman seçicisi
+   olmadan bu kural formu da 46rem'e sıkıştırıyordu. */
+.t-kayit-ic > div.kayarak { max-width: 46rem; margin-bottom: 2rem; }
 .t-kayit-gizlilik {
   font-size: .86rem; color: var(--t-soluk); background: var(--t-yuzey-2);
   border-left: 3px solid var(--t-cizgi); padding: .7rem .9rem; border-radius: 0 10px 10px 0; margin-top: 1.2rem;
 }
 .t-kayit-form {
   background: var(--t-yuzey); border: 1px solid var(--t-cizgi); border-radius: 20px;
-  padding: 1.6rem 1.4rem; box-shadow: var(--t-golge-guclu);
+  padding: 1.8rem 1.6rem; box-shadow: var(--t-golge-guclu);
+  /* Alanlar yan yana: 240 px'in altına düşmeyen sütunlar, telefonda tek sütun. */
+  display: grid; gap: .3rem 1.2rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: start;
+}
+/* Satırın tamamını kaplayan parçalar: başlık, uzun alanlar, uyarılar, düğme. */
+.t-kayit-form > h3,
+.t-kayit-form > .t-form-flash,
+.t-kayit-form > .t-ders-secim,
+.t-kayit-form > .t-profil-eklendi,
+.t-kayit-form > .t-kayit-alt,
+.t-kayit-form > .t-bal-kupu,
+.t-kayit-form > .t-btn,
+.t-kayit-form > input[type="hidden"],
+.t-kayit-form .t-alan-genis { grid-column: 1 / -1; }
+/* Gönder düğmesi tam genişlik yerine sağa yaslı: 1000 px'lik bir düğme
+   tıklanabilir değil, dev bir şerit gibi duruyor. */
+.t-kayit-form > .t-btn { justify-self: end; min-width: 16rem; text-align: center; }
+/* Telefonda sağa yaslı 256 px'lik düğme dar sütunun içinde tuhaf duruyor;
+   orada tam genişlik doğru olan. */
+@media (max-width: 600px) {
+  .t-kayit-form > .t-btn { justify-self: stretch; min-width: 0; }
 }
 .t-kayit-form h3 { font-size: 1.15rem; margin-bottom: 1rem; }
 .t-alan { display: block; margin-bottom: .9rem; }
@@ -1166,7 +1193,10 @@ body.tanitim::after {
   width: 100%; margin-bottom: .4rem; padding: 0; color: var(--t-metin);
   font-size: .88rem; font-weight: 600;
 }
-.t-ders-secim-grid { display: grid; gap: .45rem; }
+.t-ders-secim-grid {
+  display: grid; gap: .55rem;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
 .t-ders-secim label { position: relative; display: block; cursor: pointer; }
 .t-ders-secim input {
   position: absolute; width: 1px; height: 1px; opacity: .01; pointer-events: none;

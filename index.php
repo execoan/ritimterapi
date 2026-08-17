@@ -791,14 +791,14 @@ function metronom_svg(string $sinif, string $gradyanId): string
           </label>
         </div>
       </fieldset>
-      <label class="t-alan">
+      <label class="t-alan t-alan-genis">
         <span>Eklemek istediğiniz bir şey var mı? <small>(isteğe bağlı)</small></span>
         <textarea name="mesaj" rows="3" maxlength="600" placeholder="Uygun gün/saatiniz, merak ettikleriniz…"></textarea>
       </label>
       <div class="t-profil-eklendi" id="profilEklendi" hidden>
         <?= ikon('kulaklik', 't-ikon-satir') ?> Canlı deneme sonucunuz talebe eklenecek: <span id="profilEklendiMetin"></span>
       </div>
-      <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk t-tam-genislik">Mesajımı Gönder →</button>
+      <button type="submit" class="t-btn t-btn-dolu t-btn-buyuk">Mesajımı Gönder →</button>
       <p class="t-kayit-alt">Formu göndermek sizi hiçbir şeye bağlamaz.</p>
     </form>
   </div>
